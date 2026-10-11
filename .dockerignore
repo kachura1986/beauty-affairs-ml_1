@@ -1,0 +1,26 @@
+# Ignore virtual environments and IDE-related files
+.venv
+.idea
+.vscode
+
+# Ignore version control system files
+.git
+.gitignore
+
+# Ignore Python cache files
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore logs and temporary files
+.temp
+*.log
+*.tmp
+
+# Exclude local configuration files
+.env
+
+# Exclude runs directory
+runs
+

@@ -1,0 +1,22 @@
+# Ignore virtual environments and IDE-related files
+.venv
+.idea
+
+# Ignore version control system files
+.git
+
+# Ignore Python cache files
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore logs and temporary files
+tools_
+.nicegui
+.temp
+*.log
+*.tmp
+
+# Exclude local configuration files
+.env

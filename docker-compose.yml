@@ -1,0 +1,15 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: beauty-affairs-ml
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - ".env"
+
+    restart: always
