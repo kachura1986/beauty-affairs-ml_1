@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,11 +10,24 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(extra='ignore')
 
     # Application settings
-    APP_TITLE: str = "Beauty Affair ML API"
-    DESCRIPTION: str = "API for Beauty Affair ML."
+    APP_TITLE: str = "Demo Backend API"
+    DESCRIPTION: str = "API for Demo Project."
     HOST: str = '127.0.0.1'
     PORT: int = 8000
 
+    RUNS_DIR: Path = Path('./runs')
+
+    # LLM settings
+    OLLAMA_HOST: str
+    GEMINI_API_KEY: str | None = None
+
+    TEMPERATURE: float = 0
+    MAX_TOKENS: int = 4096
+
+    AZURE_OPENAI_API_KEY: str | None = None
+    AZURE_OPENAI_ENDPOINT: str | None = None
+    AZURE_OPENAI_CHAT_MODEL: str | None = None
+    OPENAI_API_VERSION: str | None = None
 
 
 settings = Settings()

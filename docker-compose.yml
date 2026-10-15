@@ -1,10 +1,12 @@
+name: demo
+
 services:
   backend:
     build:
       context: .
       dockerfile: Dockerfile
 
-    container_name: beauty-affairs-ml
+    container_name: backend
 
     ports:
       - "8000:8000"
