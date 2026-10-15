@@ -1,0 +1,90 @@
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Any, Awaitable, Callable
+
+from pydantic import BaseModel
+
+
+class ToolErrorCode(StrEnum):
+    VALIDATION = 'validation'
+    UNKNOWN_TOOL = 'unknown_tool'
+    INVARIANT_VIOLATED = 'invariant_violated'
+
+
+@dataclass(frozen=True)
+class ToolError:
+    error_code: ToolErrorCode
+    message: str
+    hint: str
+    retryable: bool
+    retry_after: float | None = None
+
+    def to_model(self) -> str:
+        """
+        Format error message for LLM.
+
+        Returns:
+            str: Error message formatted for LLM.
+        """
+        text = (
+            f'ERROR {self.error_code.value}. '
+            f'{self.message} '
+            f'Hint: {self.hint}.'
+        )
+
+        if self.retry_after is not None:
+            text += f' Retry after {self.retry_after:.1f} sec.'
+
+        if self.retryable:
+            text += ' Retry is possible.'
+        else:
+            text += ' Retrying with the same arguments will not help.'
+
+        return text
+
+
+@dataclass
+class ToolResult:
+    status: str  # "ok" | "error"
+    content: str = ''
+    error: ToolError | None = None
+    truncated: bool = False
+
+    @property
+    def retryable(self) -> bool:
+        return self.error is not None and self.error.retryable
+
+    def to_model(self) -> str:
+        """
+        Convert the tool result into text that can be sent to the model.
+
+        Returns:
+            str: Text formatted for LLM.
+        """
+
+        # Successful result: return the content and explicitly mark truncation
+        if self.status == 'ok':
+            tail = '\n[...output truncated...]' if self.truncated else ''
+            return self.content + tail
+
+        # An error result must contain a ToolError
+        # If it does not, the ToolResult violates its internal contract
+        if self.error is None:
+            error = ToolError(
+                error_code=ToolErrorCode.INVARIANT_VIOLATED,
+                message='The tool returned an error without details.',
+                hint='Choose another way to perform the action.',
+                retryable=False,
+            )
+            return error.to_model()
+
+        return self.error.to_model()
+
+
+@dataclass
+class Tool:
+    name: str
+    description: str
+    parameters: dict[str, Any]
+    fn: Callable[..., str | Awaitable[str]]
+    args_model: type[BaseModel] | None = None
