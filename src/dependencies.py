@@ -1,8 +1,6 @@
 import logging
 from functools import lru_cache
 
-from google import genai
-from ollama import AsyncClient
 from openai import AsyncAzureOpenAI
 
 from application import AgentService, LLMModelResolver
@@ -19,9 +17,7 @@ def get_logger() -> logging.Logger:
 
 # LLM
 @lru_cache(maxsize=1)
-def get_llm_clients() -> tuple[AsyncClient, genai.Client | None, AsyncAzureOpenAI | None]:
-    ollama_host = settings.OLLAMA_HOST
-    gemini_api_key = settings.GEMINI_API_KEY
+def get_llm_clients() -> tuple[AsyncAzureOpenAI | None]:
     azure_openai_api_key = settings.AZURE_OPENAI_API_KEY
     azure_openai_endpoint = settings.AZURE_OPENAI_ENDPOINT
     azure_openai_api_version = settings.OPENAI_API_VERSION
@@ -29,8 +25,6 @@ def get_llm_clients() -> tuple[AsyncClient, genai.Client | None, AsyncAzureOpenA
 
     logger = get_logger()
 
-    if not gemini_api_key:
-        logger.warning("GEMINI_API_KEY is not set; Gemini provider will be unavailable.")
 
     if not all((
             azure_openai_api_key,
@@ -38,13 +32,7 @@ def get_llm_clients() -> tuple[AsyncClient, genai.Client | None, AsyncAzureOpenA
             azure_openai_api_version,
             azure_openai_chat_model,
     )):
-        logger.warning(
-            "Azure OpenAI provider is not fully configured; "
-            "Azure OpenAI provider will be unavailable."
-        )
-
-    ollama_client = AsyncClient(host=ollama_host)
-    genai_client = genai.Client(api_key=gemini_api_key) if gemini_api_key else None
+        logger.warning("Azure OpenAI provider is not fully configured; Azure OpenAI provider will be unavailable.")
 
     azure_openai_client = AsyncAzureOpenAI(
         api_key=azure_openai_api_key,
@@ -54,17 +42,14 @@ def get_llm_clients() -> tuple[AsyncClient, genai.Client | None, AsyncAzureOpenA
         max_retries=0,
     )
 
-    return ollama_client, genai_client, azure_openai_client
+    return azure_openai_client,
 
 
 @lru_cache(maxsize=1)
 def get_model_resolver() -> LLMModelResolver:
-    ollama_client, genai_client, azure_openai_client = get_llm_clients()
+    azure_openai_client, = get_llm_clients()
 
     return LLMModelResolver(
-        ollama_client=ollama_client,
-        genai_client=genai_client,
-        ollama_host=settings.OLLAMA_HOST,
         default_temperature=settings.TEMPERATURE,
         default_max_tokens=settings.MAX_TOKENS,
         azure_openai_client=azure_openai_client,

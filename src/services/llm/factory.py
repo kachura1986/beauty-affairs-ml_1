@@ -1,18 +1,12 @@
-from google import genai
-from ollama import AsyncClient
 from openai import AsyncAzureOpenAI
 
 from .azure_openai import AzureOpenAIProvider
-from .gemini import GeminiProvider
 from .model import LLMModel
-from .ollama import OllamaProvider
 from .provider import LLMProvider
 
 
 def create_llm_provider(
         provider_name: str,
-        ollama_client: AsyncClient,
-        genai_client: genai.Client | None,
         temperature: float = 0.0,
         max_tokens: int = 4096,
         azure_openai_client: AsyncAzureOpenAI | None = None,
@@ -23,8 +17,6 @@ def create_llm_provider(
 
     Args:
         provider_name (str): Provider identifier (e.g. "gemini", "ollama" or "azure_openai").
-        ollama_client (AsyncClient): Ollama client instance.
-        genai_client (genai.Client | None): Gemini client instance.
         temperature (float, optional): Temperature for the LLM. Defaults to 0.0.
         max_tokens (int, optional): Maximum tokens for the LLM. Defaults to 4096.
         azure_openai_client (AsyncAzureOpenAI | None): Azure OpenAI client instance.
@@ -36,25 +28,7 @@ def create_llm_provider(
     Raises:
         ValueError: If the provider is not supported or is not configured.
     """
-
-    if provider_name == 'gemini':
-        if genai_client is None:
-            raise ValueError("Gemini provider is not configured")
-
-        return GeminiProvider(
-            genai_client=genai_client,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-
-    elif provider_name == 'ollama':
-        return OllamaProvider(
-            ollama_client=ollama_client,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-
-    elif provider_name == 'azure_openai':
+    if provider_name == 'azure_openai':
         if azure_openai_client is None or not azure_openai_chat_model:
             raise ValueError("Azure OpenAI provider is not configured")
 
@@ -71,8 +45,6 @@ def create_llm_provider(
 
 def create_llm_model(
         model_id: str,
-        ollama_client: AsyncClient,
-        genai_client: genai.Client | None,
         temperature: float = 0.0,
         max_tokens: int = 4096,
         azure_openai_client: AsyncAzureOpenAI | None = None,
@@ -83,8 +55,6 @@ def create_llm_model(
 
     Args:
         model_id (str): Identifier in format "provider:model_name".
-        ollama_client (AsyncClient): Ollama client instance.
-        genai_client (genai.Client | None): Gemini client instance.
         temperature (float, optional): Temperature for the LLM. Defaults to 0.0.
         max_tokens (int, optional): Maximum tokens for the LLM. Defaults to 4096.
         azure_openai_client (AsyncAzureOpenAI | None): Azure OpenAI client instance.
@@ -104,8 +74,6 @@ def create_llm_model(
 
     provider = create_llm_provider(
         provider_name=provider_name,
-        ollama_client=ollama_client,
-        genai_client=genai_client,
         temperature=temperature,
         max_tokens=max_tokens,
         azure_openai_client=azure_openai_client,

@@ -18,9 +18,6 @@ class Settings(BaseSettings):
     RUNS_DIR: Path = Path('./runs')
 
     # LLM settings
-    OLLAMA_HOST: str
-    GEMINI_API_KEY: str | None = None
-
     TEMPERATURE: float = 0
     MAX_TOKENS: int = 4096
 
