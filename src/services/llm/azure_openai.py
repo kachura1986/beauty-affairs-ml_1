@@ -37,9 +37,9 @@ class AzureOpenAIProvider:
 
         return [
             {
-                "id": f"azure_openai:{self._chat_model}",
-                "name": self._chat_model,
-                "provider": "azure_openai",
+                'id': f'azure_openai:{self._chat_model}',
+                'name': self._chat_model,
+                'provider': 'azure_openai',
             }
         ]
 
@@ -48,13 +48,13 @@ class AzureOpenAIProvider:
             await self._client.models.list()
 
             return {
-                "provider": "azure_openai",
-                "status": "healthy",
+                'provider': 'azure_openai',
+                'status': 'healthy',
             }
 
         except Exception as exc:
             return {
-                "provider": "azure_openai",
-                "status": "unhealthy",
-                "error": str(exc),
+                'provider': 'azure_openai',
+                'status': 'unhealthy',
+                'error': str(exc),
             }

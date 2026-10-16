@@ -11,9 +11,7 @@ RE_JSON_BLOCKS = re.compile(r'```json\s*|\s*```')
 
 
 class BaseLLMModel(LLMModel, ABC):
-    """
-    Define the shared implementation for asynchronous model providers.
-    """
+    """Define the shared implementation for asynchronous model providers."""
 
     def __init__(self, allowed_roles: set[str] | None = None) -> None:
         """
