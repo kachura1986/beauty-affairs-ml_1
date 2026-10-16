@@ -2,7 +2,7 @@ import operator
 from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
-from services.llm import LLMProvider
+from services.llm import LLMModel
 from ..domain import AgentPolicy, AgentResult, Budget, BudgetLimits, Task, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace
@@ -19,7 +19,7 @@ class AgentContext:
 
     task: Task
     tools: ToolRegistry
-    llm: LLMProvider
+    llm: LLMModel
     trace: Trace
     policy: AgentPolicy
 

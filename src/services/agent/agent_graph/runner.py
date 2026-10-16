@@ -1,4 +1,4 @@
-from services.llm import LLMProvider
+from services.llm import LLMModel
 from .graph import GRAPH
 from .state import AgentContext, create_initial_state
 from ..domain import AgentPolicy, AgentResult, Task
@@ -9,7 +9,7 @@ from ..trace import Trace
 async def run_graph(
         task: Task,
         tools: ToolRegistry,
-        llm: LLMProvider,
+        llm: LLMModel,
         trace: Trace,
         policy: AgentPolicy,
 ) -> AgentResult:
@@ -19,7 +19,7 @@ async def run_graph(
     Args:
         task (Task): The task to run.
         tools (ToolRegistry): The tools to use.
-        llm (LLMProvider): The LLM to use.
+        llm (LLMModel): The LLM to use.
         trace (Trace): The trace to use.
         policy (AgentPolicy): The policy to use.
     """

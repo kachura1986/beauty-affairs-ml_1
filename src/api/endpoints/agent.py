@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from api.schemas.chat_request import ChatRequest
-from application import AgentService, LLMModelResolver
-from dependencies import get_agent_service, get_logger, get_model_resolver
+from application import AgentService
+from dependencies import get_agent_service, get_logger
 from services.llm import UnknownRoleError
 
 router = APIRouter()
@@ -55,10 +55,7 @@ async def agent_chat_stream(
             str: Serialized server-sent event.
         """
         try:
-            result = await agent_service.run(
-                messages=request.messages,
-                model_id=request.model_id,
-            )
+            result = await agent_service.run(request.messages)
 
             if result.answer:
                 yield sse_event("token", content=result.answer)
@@ -94,16 +91,3 @@ async def agent_chat_stream(
     )
 
     return streaming_response
-
-
-@router.get('/models')
-async def list_models(llm_resolver: LLMModelResolver = Depends(get_model_resolver)) -> object:
-    """Returns the list of all available local and cloud models.
-
-    Args:
-        llm_resolver (LLMModelResolver): Orchestrator responsible for retrieving available models.
-
-    Returns:
-        object: Collection of available local and cloud models.
-    """
-    return await llm_resolver.get_available_models()

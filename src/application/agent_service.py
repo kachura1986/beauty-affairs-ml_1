@@ -1,12 +1,11 @@
 from collections.abc import Sequence
 from uuid import uuid4
 
-from application.llm_model_resolver import LLMModelResolver
 from services.agent.agent_graph import run_graph
 from services.agent.domain import AgentPolicy, AgentResult, Task
 from services.agent.tools import ToolRegistry
 from services.agent.trace import Trace
-from services.llm import Message
+from services.llm import LLMModel, Message
 
 
 class AgentService:
@@ -16,15 +15,15 @@ class AgentService:
 
     def __init__(
             self,
-            model_resolver: LLMModelResolver,
+            llm: LLMModel,
             tools: ToolRegistry,
             policy: AgentPolicy | None = None,
     ) -> None:
-        self._model_resolver = model_resolver
+        self._llm = llm
         self._tools = tools
         self._policy = policy or AgentPolicy()
 
-    async def run(self, messages: Sequence[Message], model_id: str) -> AgentResult:
+    async def run(self, messages: Sequence[Message]) -> AgentResult:
         """
         Execute the agent_graph for the complete conversation history.
 
@@ -60,14 +59,12 @@ class AgentService:
 
         task = Task(prompt=prompt, messages=history)
 
-        llm = self._model_resolver.resolve(model_id)
-
         trace = Trace(str(uuid4()))
 
         return await run_graph(
             task=task,
             tools=self._tools,
-            llm=llm,
+            llm=self._llm,
             trace=trace,
             policy=self._policy,
         )

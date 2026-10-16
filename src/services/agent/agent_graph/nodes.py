@@ -3,7 +3,7 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
-from services.llm import LLMProvider, Reply
+from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
 from ..context import build_window, observation, tool_message
 from ..domain import AgentResult, TerminationReason
@@ -25,7 +25,7 @@ def _check_budget(budget) -> TerminationReason | None:
 
 async def _request_llm(
         *,
-        llm: LLMProvider,
+        llm: LLMModel,
         tools: ToolRegistry,
         trace: Trace,
         budget,
