@@ -29,6 +29,7 @@ class AzureOpenAIModel(BaseLLMModel):
             max_tokens (int): Maximum number of tokens to generate.
         """
         super().__init__()
+
         self._model_name = model_name
         self._client = azure_openai_client
         self._temperature = temperature
@@ -41,7 +42,8 @@ class AzureOpenAIModel(BaseLLMModel):
 
     @staticmethod
     def _extract_text(response: Any) -> str:
-        """Extract response text from the first completion choice.
+        """
+        Extract response text from the first completion choice.
 
         Args:
             response (Any): Raw Azure OpenAI completion response.
@@ -62,7 +64,8 @@ class AzureOpenAIModel(BaseLLMModel):
         return getattr(message, 'content', None) or ''
 
     def _format_chat_messages(self, messages: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-        """Validate and format chat messages for the Azure OpenAI API.
+        """
+        Validate and format chat messages for the Azure OpenAI API.
 
         Args:
             messages (Sequence[Mapping[str, Any]]): Messages to format, including optional tool calls.
@@ -95,8 +98,8 @@ class AzureOpenAIModel(BaseLLMModel):
             if name:
                 formatted_message['name'] = name
 
-            if role == "assistant":
-                raw_tool_calls = message.get("tool_calls") or []
+            if role == 'assistant':
+                raw_tool_calls = message.get('tool_calls') or []
 
                 if raw_tool_calls:
                     tool_calls: list[dict[str, Any]] = []
@@ -159,7 +162,8 @@ class AzureOpenAIModel(BaseLLMModel):
 
     @staticmethod
     def _extract_tool_calls(response: Any) -> list[dict[str, Any]]:
-        """Extract and normalize tool calls from a completion response.
+        """
+        Extract and normalize tool calls from a completion response.
 
         Args:
             response (Any): Raw Azure OpenAI completion response.
@@ -220,7 +224,8 @@ class AzureOpenAIModel(BaseLLMModel):
 
     @staticmethod
     def _extract_usage(response: Any) -> tuple[int, int]:
-        """Extract input and output token counts from a completion response.
+        """
+        Extract input and output token counts from a completion response.
 
         Args:
             response (Any): Raw Azure OpenAI completion response.
@@ -244,7 +249,8 @@ class AzureOpenAIModel(BaseLLMModel):
             stop: Sequence[str] | None = None,
             timeout: float | None = None,
     ) -> str:
-        """Asynchronously generate a complete text response.
+        """
+        Asynchronously generate a complete text response.
 
         Args:
             messages (Sequence[Message]): Dialogue messages forming the context.
@@ -303,7 +309,8 @@ class AzureOpenAIModel(BaseLLMModel):
             stop: Sequence[str] | None = None,
             timeout: float | None = None,
     ) -> AsyncIterator[str]:
-        """Asynchronously stream the generated response text.
+        """
+        Asynchronously stream the generated response text.
 
         Args:
             messages (Sequence[Message]): Dialogue messages forming the context.
@@ -332,7 +339,8 @@ class AzureOpenAIModel(BaseLLMModel):
         ]
 
         async def request() -> Any:
-            """Execute an Azure OpenAI completion request.
+            """
+            Execute an Azure OpenAI completion request.
 
             Returns:
                 Any: Raw Azure OpenAI completion response.
@@ -399,7 +407,8 @@ class AzureOpenAIModel(BaseLLMModel):
             timeout: float | None = None,
             stop: Sequence[str] | None = None,
     ) -> Reply:
-        """Send a chat request and return a normalized response.
+        """
+        Send a chat request and return a normalized response.
 
         Args:
             messages (Sequence[Mapping[str, Any]]): Chat messages, including optional tool-call data.
