@@ -21,10 +21,11 @@ class Settings(BaseSettings):
     TEMPERATURE: float = 0
     MAX_TOKENS: int = 4096
 
-    AZURE_OPENAI_API_KEY: str | None = None
-    AZURE_OPENAI_ENDPOINT: str | None = None
-    AZURE_OPENAI_CHAT_MODEL: str | None = None
-    OPENAI_API_VERSION: str | None = None
+    AZURE_OPENAI_API_KEY: str
+    AZURE_OPENAI_ENDPOINT: str
+    AZURE_OPENAI_CHAT_MODEL: str
+    AZURE_OPENAI_EMBEDDING_MODEL: str
+    OPENAI_API_VERSION: str
 
 
 settings = Settings()

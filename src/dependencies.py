@@ -7,7 +7,9 @@ from application import AgentService
 from core.config import settings
 from core.logger import setup_logging
 from services.agent.tools import DEMO_TOOLS
+from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel, LLMModel
+from services.text_normalization.text_normalizer import TextNormalizer
 
 
 # Logger
@@ -35,6 +37,16 @@ def get_azure_model() -> LLMModel:
         azure_openai_client=azure_openai_client(),
         temperature=settings.TEMPERATURE,
         max_tokens=settings.MAX_TOKENS,
+    )
+
+
+# Embedding
+def get_azure_embedder() -> AzureOpenAIEmbedder:
+    return AzureOpenAIEmbedder(
+        client=azure_openai_client(),
+        model_name=settings.AZURE_OPENAI_EMBEDDING_MODEL,
+        dimensions=1024,
+        normalizer=TextNormalizer(),
     )
 
 
