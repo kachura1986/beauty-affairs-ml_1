@@ -19,6 +19,6 @@ async def health_check(logger: logging.Logger = Depends(get_logger)) -> HealthRe
     Returns:
         HealthResponse: Status of the application.
     """
-    logger.info(f"'{settings.app_title}' is running")
+    logger.info(f"'{settings.APP_TITLE}' is running")
 
-    return HealthResponse(status="ok", app=settings.app_title)
+    return HealthResponse(status="ok", app=settings.APP_TITLE)
