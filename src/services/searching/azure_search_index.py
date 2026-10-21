@@ -6,12 +6,12 @@ from azure.search.documents.indexes.models import SearchIndex
 class AzureSearchIndex(Protocol):
     """Define the application-level interface for asynchronous Azure Search indices."""
 
-    async def create(self) -> SearchIndex:
+    def build_schema(self) -> SearchIndex:
         """
-        Create the search index.
+        Build the search index schema.
 
         Returns:
-            SearchIndex: The created search index instance.
+            SearchIndex: The created search index schema.
         """
         ...
 

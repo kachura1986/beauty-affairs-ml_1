@@ -25,12 +25,12 @@ class BaseAzureSearchIndex(AzureSearchIndex, ABC):
         self._embedder = embedder
 
     @abstractmethod
-    async def create(self) -> SearchIndex:
+    def build_schema(self) -> SearchIndex:
         """
-        Create the search index.
+        Build the search index schema.
 
         Returns:
-            SearchIndex: The created search index instance.
+            SearchIndex: The created search index schema.
         """
         pass
 
