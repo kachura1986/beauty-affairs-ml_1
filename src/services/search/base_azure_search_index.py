@@ -47,7 +47,7 @@ class BaseAzureSearchIndex(AzureSearchIndex, ABC):
             list[dict]: A list of search results, each represented as a dictionary.
         """
         query_embedding = await self._embedder.embed(query_text)
-        vector_query = VectorizedQuery(vector=query_embedding, fields='description_vector')
+        vector_query = VectorizedQuery(vector=query_embedding, fields='description_vector', k_nearest_neighbors=top_k)
 
         search_results = await self._search_client.search(
             search_text=None,

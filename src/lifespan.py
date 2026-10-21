@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from openai import AsyncAzureOpenAI
 from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.aio import SearchIndexClient
 
 from application import AgentService
 from core.config import settings
@@ -12,6 +12,7 @@ from services.agent.tools import DEMO_TOOLS
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel
 from services.text_normalization.text_normalizer import TextNormalizer
+from services.search.azure_search_manager import AzureSearchManager
 
 
 @asynccontextmanager
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
 
     openai_client = None
     search_client = None
+    azure_search_manager = None
 
     try:
         # Azure OpenAI client
@@ -60,9 +62,14 @@ async def lifespan(app: FastAPI):
         # Azure AI Search
         search_credential = AzureKeyCredential(settings.SEARCH_API_KEY)
         search_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT, credential=search_credential)
+        azure_search_manager = AzureSearchManager(
+            search_index_client=search_client,
+            embeddings_client=app.state.azure_embedder,
+        )
 
         app.state.search_credential = search_credential
         app.state.search_index_client = search_client
+        app.state.azure_search_manager = azure_search_manager
 
         logger.info("Application startup completed.")
 
@@ -71,9 +78,15 @@ async def lifespan(app: FastAPI):
     finally:
         logger.info("Shutting down FastAPI server...")
 
+        if azure_search_manager is not None:
+            try:
+                await azure_search_manager.close()
+            except Exception:
+                logger.exception("Failed to close Azure Search Manager")
+
         if search_client is not None:
             try:
-                search_client.close()
+                await search_client.close()
             except Exception:
                 logger.exception("Failed to close Azure Search client")
 

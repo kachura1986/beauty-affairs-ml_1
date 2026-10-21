@@ -2,7 +2,7 @@ import logging
 from functools import lru_cache
 
 from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.aio import SearchIndexClient
 from fastapi import Request
 from openai import AsyncAzureOpenAI
 
@@ -10,6 +10,7 @@ from application import AgentService
 from core.logger import setup_logging
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import LLMModel
+from services.search.azure_search_manager import AzureSearchManager
 
 
 # Logger
@@ -44,3 +45,7 @@ def get_search_index_client(request: Request) -> SearchIndexClient:
 
 def get_search_credential(request: Request) -> AzureKeyCredential:
     return request.app.state.search_credential
+
+
+def get_azure_search_manager(request: Request) -> AzureSearchManager:
+    return request.app.state.azure_search_manager

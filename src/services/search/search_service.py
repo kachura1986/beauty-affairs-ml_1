@@ -46,7 +46,8 @@ class SearchService:
         Returns:
             str: Filter for brands.
         """
-        query = " or ".join([f"brand_name eq '{brand}'" for brand in brand_list])
+        # Replace single quotes in brand names to prevent syntax errors in the filter
+        query = " or ".join([f"brand_name eq '{brand.replace(chr(39), chr(39) * 2)}'" for brand in brand_list])
 
         if exclude:
             return f"not ({query})"
