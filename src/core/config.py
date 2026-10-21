@@ -27,5 +27,9 @@ class Settings(BaseSettings):
     AZURE_OPENAI_EMBEDDING_MODEL: str
     OPENAI_API_VERSION: str
 
+    # Searching
+    SEARCH_API_KEY: str
+    SEARCH_ENDPOINT: str
+
 
 settings = Settings()
