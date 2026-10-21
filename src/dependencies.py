@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from functools import lru_cache
 
 from azure.core.credentials import AzureKeyCredential
@@ -7,10 +8,13 @@ from fastapi import Request
 from openai import AsyncAzureOpenAI
 
 from application import AgentService
+from core.config import settings
 from core.logger import setup_logging
+from services.agent.tools import DEMO_TOOLS
 from services.embedding import AzureOpenAIEmbedder
-from services.llm import LLMModel
+from services.llm import AzureOpenAIModel, LLMModel
 from services.search.azure_search_manager import AzureSearchManager
+from services.text_normalization.text_normalizer import TextNormalizer
 
 
 # Logger
@@ -19,33 +23,132 @@ def get_logger() -> logging.Logger:
     return setup_logging("app.log")
 
 
+@dataclass
+class PipelineDependencies:
+    openai_client: AsyncAzureOpenAI
+    azure_model: LLMModel
+    azure_embedder: AzureOpenAIEmbedder
+    agent_service: AgentService
+    search_credential: AzureKeyCredential
+    search_index_client: SearchIndexClient
+    azure_search_manager: AzureSearchManager
+
+    @classmethod
+    async def create(cls) -> "PipelineDependencies":
+        logger = get_logger()
+        openai_client = None
+        search_client = None
+        search_manager = None
+
+        try:
+            openai_client = AsyncAzureOpenAI(
+                api_key=settings.AZURE_OPENAI_API_KEY,
+                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT.rstrip("/"),
+                api_version=settings.OPENAI_API_VERSION,
+                timeout=20.0,
+                max_retries=0,
+            )
+
+            azure_model = AzureOpenAIModel(
+                model_name=settings.AZURE_OPENAI_CHAT_MODEL,
+                azure_openai_client=openai_client,
+                temperature=settings.TEMPERATURE,
+                max_tokens=settings.MAX_TOKENS,
+            )
+
+            azure_embedder = AzureOpenAIEmbedder(
+                client=openai_client,
+                model_name=settings.AZURE_OPENAI_EMBEDDING_MODEL,
+                dimensions=1024,
+                normalizer=TextNormalizer(),
+            )
+
+            agent_service = AgentService(llm=azure_model, tools=DEMO_TOOLS)
+
+            search_credential = AzureKeyCredential(settings.SEARCH_API_KEY)
+
+            search_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT, credential=search_credential)
+
+            search_manager = AzureSearchManager(search_index_client=search_client, embeddings_client=azure_embedder)
+
+            return cls(
+                openai_client=openai_client,
+                azure_model=azure_model,
+                azure_embedder=azure_embedder,
+                agent_service=agent_service,
+                search_credential=search_credential,
+                search_index_client=search_client,
+                azure_search_manager=search_manager,
+            )
+
+        except BaseException:
+            logger.exception("Failed to initialize pipeline dependencies")
+
+            if search_manager is not None:
+                try:
+                    await search_manager.close()
+                except Exception:
+                    logger.exception("Failed to close search manager")
+
+            if search_client is not None:
+                try:
+                    await search_client.close()
+                except Exception:
+                    logger.exception("Failed to close search client")
+
+            if openai_client is not None:
+                try:
+                    await openai_client.close()
+                except Exception:
+                    logger.exception("Failed to close OpenAI client")
+
+            raise
+
+    async def close(self) -> None:
+        logger = get_logger()
+
+        for name, resource in (
+                ("Azure Search Manager", self.azure_search_manager),
+                ("Azure Search client", self.search_index_client),
+                ("Azure OpenAI client", self.openai_client),
+        ):
+            try:
+                await resource.close()
+            except Exception:
+                logger.exception("Failed to close %s", name)
+
+
 # Dependency providers
+def get_pipeline_dependencies(request: Request) -> PipelineDependencies:
+    return request.app.state.dependencies
+
+
 # LLM
 def get_azure_openai_client(request: Request) -> AsyncAzureOpenAI:
-    return request.app.state.azure_openai_client
+    return get_pipeline_dependencies(request).openai_client
 
 
 def get_azure_model(request: Request) -> LLMModel:
-    return request.app.state.azure_model
+    return get_pipeline_dependencies(request).azure_model
 
 
 def get_azure_embedder(request: Request) -> AzureOpenAIEmbedder:
-    return request.app.state.azure_embedder
+    return get_pipeline_dependencies(request).azure_embedder
 
 
 # Agent
 def get_agent_service(request: Request) -> AgentService:
-    return request.app.state.agent_service
+    return get_pipeline_dependencies(request).agent_service
 
 
 # Searching
 def get_search_index_client(request: Request) -> SearchIndexClient:
-    return request.app.state.search_index_client
+    return get_pipeline_dependencies(request).search_index_client
 
 
 def get_search_credential(request: Request) -> AzureKeyCredential:
-    return request.app.state.search_credential
+    return get_pipeline_dependencies(request).search_credential
 
 
 def get_azure_search_manager(request: Request) -> AzureSearchManager:
-    return request.app.state.azure_search_manager
+    return get_pipeline_dependencies(request).azure_search_manager
