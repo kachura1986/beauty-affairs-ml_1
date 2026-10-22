@@ -10,8 +10,13 @@ from azure.search.documents.indexes.models import (
     VectorSearchProfile,
 )
 
+from .azure_search_index import AzureSearchIndex
+from .azure_search_index_manager import AzureSearchIndexManager
+from .base_azure_search_index import BaseAzureSearchIndex
+from ..embedding import Embedder
 
-class ServicesSearchIndex:
+
+class ServicesSearchIndex(AzureSearchIndex, BaseAzureSearchIndex):
     @classmethod
     def build_schema(cls, index_name: str) -> SearchIndex:
         """
@@ -71,3 +76,19 @@ class ServicesSearchIndex:
         schema = SearchIndex(name=index_name, fields=fields, vector_search=vector_search)
 
         return schema
+
+    def __init__(self, index_name: str, azure_search_index_manager: AzureSearchIndexManager, embedder: Embedder):
+        self._search_client = azure_search_index_manager.get_instance_index(index_name)
+        self._embedder = embedder
+        super().__init__(self._search_client, self._embedder)
+
+        self._fields_to_embed = ['name', 'description']
+
+    async def upsert_documents(self, documents: list[dict]) -> None:
+        """
+        Update or upload documents to the search_index search_index.
+
+        Args:
+            documents (list[dict]): A list of documents to upload or update.
+        """
+        await self._upsert_documents(documents=documents, fields_to_embed=self._fields_to_embed)

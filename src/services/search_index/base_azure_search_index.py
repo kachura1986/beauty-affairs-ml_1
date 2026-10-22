@@ -74,3 +74,12 @@ class BaseAzureSearchIndex:
 
         # Upload updated documents
         await self._search_client.merge_or_upload_documents(documents=documents)
+
+    async def get_document_count(self) -> int:
+        """
+        Get the total number of documents in the search index.
+
+        Returns:
+            int: The total number of documents in the index.
+        """
+        return await self._search_client.get_document_count()

@@ -102,7 +102,7 @@ class PipelineDependencies:
         logger = get_logger()
 
         for name, resource in (
-                ("Azure Search client", self.azure_search_index_client),
+                ("Azure Search client", self.azure_search_index_manager),
                 ("Azure OpenAI client", self.openai_client),
         ):
             try:

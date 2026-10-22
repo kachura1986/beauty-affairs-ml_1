@@ -1,3 +1,4 @@
+from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.search.documents.indexes.models import SearchIndex
 
@@ -13,6 +14,7 @@ class AzureSearchIndexManager:
             search_index_client (SearchIndexClient): An instance of the SearchIndexClient class.
         """
         self.search_index_client = search_index_client
+        self._search_clients: list[SearchClient] = []
 
     async def create_indexes(self, schemas: list[SearchIndex]) -> None:
         """
@@ -45,14 +47,17 @@ class AzureSearchIndexManager:
         Returns:
             SearchClient: The search_index client for the given search_index name.
         """
-        return self.search_index_client.get_search_client(index_name)
+        search_client = self.search_index_client.get_search_client(index_name)
+        self._search_clients.append(search_client)
+
+        return search_client
 
     async def list_index_names(self) -> set[str]:
         """
         Lists all search_index names available in the search_index service.
 
         Returns:
-            set[str]: A set of search_index names.
+            set[str]: A set of all search_index names.
         """
         return {index_name async for index_name in self.search_index_client.list_index_names()}
 
@@ -65,3 +70,12 @@ class AzureSearchIndexManager:
         """
         for index_name in index_names:
             await self.search_index_client.delete_index(index_name)
+
+    async def close(self) -> None:
+        """Closes all search_index clients."""
+        try:
+            for search_client in self._search_clients:
+                await search_client.close()
+        finally:
+            self._search_clients.clear()
+            await self.search_index_client.close()
