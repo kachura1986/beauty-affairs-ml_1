@@ -20,9 +20,10 @@ from services.text_normalization.text_normalizer import TextNormalizer
 # Logger
 @lru_cache(maxsize=1)
 def get_logger() -> logging.Logger:
-    return setup_logging("app.log")
+    return setup_logging('app.log')
 
 
+# DI container
 @dataclass
 class PipelineDependencies:
     openai_client: AsyncAzureOpenAI
@@ -119,36 +120,36 @@ class PipelineDependencies:
 
 
 # Dependency providers
-def get_pipeline_dependencies(request: Request) -> PipelineDependencies:
+def _get_pipeline_dependencies(request: Request) -> PipelineDependencies:
     return request.app.state.dependencies
 
 
 # LLM
 def get_azure_openai_client(request: Request) -> AsyncAzureOpenAI:
-    return get_pipeline_dependencies(request).openai_client
+    return _get_pipeline_dependencies(request).openai_client
 
 
 def get_azure_model(request: Request) -> LLMModel:
-    return get_pipeline_dependencies(request).azure_model
+    return _get_pipeline_dependencies(request).azure_model
 
 
 def get_azure_embedder(request: Request) -> AzureOpenAIEmbedder:
-    return get_pipeline_dependencies(request).azure_embedder
+    return _get_pipeline_dependencies(request).azure_embedder
 
 
 # Agent
 def get_agent_service(request: Request) -> AgentService:
-    return get_pipeline_dependencies(request).agent_service
+    return _get_pipeline_dependencies(request).agent_service
 
 
 # Searching
 def get_search_index_client(request: Request) -> SearchIndexClient:
-    return get_pipeline_dependencies(request).search_index_client
+    return _get_pipeline_dependencies(request).search_index_client
 
 
 def get_search_credential(request: Request) -> AzureKeyCredential:
-    return get_pipeline_dependencies(request).search_credential
+    return _get_pipeline_dependencies(request).search_credential
 
 
 def get_azure_search_manager(request: Request) -> AzureSearchManager:
-    return get_pipeline_dependencies(request).azure_search_manager
+    return _get_pipeline_dependencies(request).azure_search_manager
