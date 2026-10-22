@@ -53,7 +53,7 @@ class AzureSearchIndexManager:
         """
         await self._search_client.delete_documents(documents=documents)
 
-    async def update_documents(self, documents: list[dict]) -> None:
+    async def upsert_documents(self, documents: list[dict]) -> None:
         """
         Update or upload documents to the search_index search_index.
 

@@ -183,7 +183,7 @@ class IndexService:
                 index_instance = self._get_index_instance(index_type, index_name)
 
                 if index_instance:
-                    await index_instance.update_documents(docs)
+                    await index_instance.upsert_documents(docs)
 
     async def create_indexes(self, products: dict[str, list[dict]], services: dict[str, list[dict]]) -> None:
         """
