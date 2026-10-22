@@ -14,7 +14,7 @@ class AzureSearchIndexManager:
             search_index_client (SearchIndexClient): An instance of the SearchIndexClient class.
         """
         self.search_index_client = search_index_client
-        self._search_clients: list[SearchClient] = []
+        self._search_clients: dict[str, SearchClient] = {}
 
     async def create_indexes(self, schemas: list[SearchIndex]) -> None:
         """
@@ -47,10 +47,10 @@ class AzureSearchIndexManager:
         Returns:
             SearchClient: The search_index client for the given search_index name.
         """
-        search_client = self.search_index_client.get_search_client(index_name)
-        self._search_clients.append(search_client)
+        if index_name not in self._search_clients:
+            self._search_clients[index_name] = self.search_index_client.get_search_client(index_name)
 
-        return search_client
+        return self._search_clients[index_name]
 
     async def list_index_names(self) -> set[str]:
         """
@@ -74,8 +74,8 @@ class AzureSearchIndexManager:
     async def close(self) -> None:
         """Closes all search_index clients."""
         try:
-            for search_client in self._search_clients:
-                await search_client.close()
+            for client in self._search_clients.values():
+                await client.close()
         finally:
             self._search_clients.clear()
             await self.search_index_client.close()

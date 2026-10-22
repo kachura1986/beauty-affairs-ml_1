@@ -17,15 +17,15 @@ class AzureSearchIndex(Protocol):
     #         list[dict]: A list of search_index results, each represented as a dictionary.
     #     """
     #     ...
-    #
-    # async def delete_documents(self, documents: list[dict]) -> None:
-    #     """
-    #     Delete documents from the search_index search_index.
-    #
-    #     Args:
-    #         documents (list[dict]): A list of documents to delete.
-    #     """
-    #     ...
+
+    async def delete_documents(self, documents: list[dict]) -> None:
+        """
+        Delete documents from the search_index search_index.
+
+        Args:
+            documents (list[dict]): A list of documents to delete.
+        """
+        ...
 
     async def upsert_documents(self, documents: list[dict]) -> None:
         """

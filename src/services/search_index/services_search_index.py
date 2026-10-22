@@ -10,13 +10,12 @@ from azure.search.documents.indexes.models import (
     VectorSearchProfile,
 )
 
-from .azure_search_index import AzureSearchIndex
 from .azure_search_index_manager import AzureSearchIndexManager
 from .base_azure_search_index import BaseAzureSearchIndex
 from ..embedding import Embedder
 
 
-class ServicesSearchIndex(AzureSearchIndex, BaseAzureSearchIndex):
+class ServicesSearchIndex(BaseAzureSearchIndex):
     @classmethod
     def build_schema(cls, index_name: str) -> SearchIndex:
         """
@@ -92,3 +91,12 @@ class ServicesSearchIndex(AzureSearchIndex, BaseAzureSearchIndex):
             documents (list[dict]): A list of documents to upload or update.
         """
         await self._upsert_documents(documents=documents, fields_to_embed=self._fields_to_embed)
+
+    async def delete_documents(self, documents: list[dict]) -> None:
+        """
+        Delete documents from the search_index search_index.
+
+        Args:
+            documents (list[dict]): A list of documents to delete.
+        """
+        await self._search_client.delete_documents(documents=documents)
