@@ -13,7 +13,7 @@ from core.logger import setup_logging
 from services.agent.tools import DEMO_TOOLS
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel, LLMModel
-from services.search.azure_search_manager import AzureSearchManager
+from services.search.azure_index_manager import AzureSearchManager
 from services.text_normalization.text_normalizer import TextNormalizer
 
 
@@ -32,14 +32,14 @@ class PipelineDependencies:
     agent_service: AgentService
     search_credential: AzureKeyCredential
     search_index_client: SearchIndexClient
-    azure_search_manager: AzureSearchManager
+    azure_index_manager: AzureSearchManager
 
     @classmethod
     async def create(cls) -> "PipelineDependencies":
         logger = get_logger()
         openai_client = None
-        search_client = None
-        search_manager = None
+        search_index_client = None
+        index_manager = None
 
         try:
             openai_client = AsyncAzureOpenAI(
@@ -68,9 +68,9 @@ class PipelineDependencies:
 
             search_credential = AzureKeyCredential(settings.SEARCH_API_KEY)
 
-            search_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT, credential=search_credential)
+            search_index_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT, credential=search_credential)
 
-            search_manager = AzureSearchManager(search_index_client=search_client, embeddings_client=azure_embedder)
+            index_manager = AzureSearchManager(search_index_client=search_index_client)
 
             return cls(
                 openai_client=openai_client,
@@ -78,22 +78,16 @@ class PipelineDependencies:
                 azure_embedder=azure_embedder,
                 agent_service=agent_service,
                 search_credential=search_credential,
-                search_index_client=search_client,
-                azure_search_manager=search_manager,
+                search_index_client=search_index_client,
+                azure_index_manager=index_manager,
             )
 
         except BaseException:
             logger.exception("Failed to initialize pipeline dependencies")
 
-            if search_manager is not None:
+            if search_index_client is not None:
                 try:
-                    await search_manager.close()
-                except Exception:
-                    logger.exception("Failed to close search manager")
-
-            if search_client is not None:
-                try:
-                    await search_client.close()
+                    await search_index_client.close()
                 except Exception:
                     logger.exception("Failed to close search client")
 
@@ -109,7 +103,6 @@ class PipelineDependencies:
         logger = get_logger()
 
         for name, resource in (
-                ("Azure Search Manager", self.azure_search_manager),
                 ("Azure Search client", self.search_index_client),
                 ("Azure OpenAI client", self.openai_client),
         ):
