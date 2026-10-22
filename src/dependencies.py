@@ -120,36 +120,10 @@ class PipelineDependencies:
 
 
 # Dependency providers
-def _get_pipeline_dependencies(request: Request) -> PipelineDependencies:
+def get_pipeline_dependencies(request: Request) -> PipelineDependencies:
     return request.app.state.dependencies
-
-
-# LLM
-def get_azure_openai_client(request: Request) -> AsyncAzureOpenAI:
-    return _get_pipeline_dependencies(request).openai_client
-
-
-def get_azure_model(request: Request) -> LLMModel:
-    return _get_pipeline_dependencies(request).azure_model
-
-
-def get_azure_embedder(request: Request) -> AzureOpenAIEmbedder:
-    return _get_pipeline_dependencies(request).azure_embedder
 
 
 # Agent
 def get_agent_service(request: Request) -> AgentService:
-    return _get_pipeline_dependencies(request).agent_service
-
-
-# Searching
-def get_search_index_client(request: Request) -> SearchIndexClient:
-    return _get_pipeline_dependencies(request).search_index_client
-
-
-def get_search_credential(request: Request) -> AzureKeyCredential:
-    return _get_pipeline_dependencies(request).search_credential
-
-
-def get_azure_search_manager(request: Request) -> AzureSearchManager:
-    return _get_pipeline_dependencies(request).azure_search_manager
+    return get_pipeline_dependencies(request).agent_service
