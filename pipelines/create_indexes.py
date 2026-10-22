@@ -1,7 +1,7 @@
 import asyncio
 
-from services.search.products_index import build_products_schema
-from services.search.services_index import build_services_schema
+from services.search_index.products_index import build_products_schema
+from services.search_index.services_index import build_services_schema
 from dependencies import PipelineDependencies
 
 

@@ -13,7 +13,7 @@ from core.logger import setup_logging
 from services.agent.tools import DEMO_TOOLS
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel, LLMModel
-from services.search.azure_index_manager import AzureSearchManager
+from services.search_index.azure_index_manager import AzureSearchManager
 from services.text_normalization.text_normalizer import TextNormalizer
 
 
@@ -89,7 +89,7 @@ class PipelineDependencies:
                 try:
                     await search_index_client.close()
                 except Exception:
-                    logger.exception("Failed to close search client")
+                    logger.exception("Failed to close search_index client")
 
             if openai_client is not None:
                 try:

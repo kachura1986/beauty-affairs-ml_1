@@ -1,50 +1,34 @@
-from abc import ABC, abstractmethod
-
 from azure.search.documents.aio import SearchClient
-from azure.search.documents.indexes.models import SearchIndex
 from azure.search.documents.models import VectorizedQuery
 
-from .azure_search_index import AzureSearchIndex
 from ..embedding import Embedder
 
 
-class BaseAzureSearchIndex(AzureSearchIndex, ABC):
-    """Define the shared implementation for asynchronous Azure Search indices."""
+class AzureSearchIndexManager:
+    """Manage Azure Cognitive Search indices and perform search_index operations."""
 
-    def __init__(self, index_name: str, search_client: SearchClient, embedder: Embedder) -> None:
+    def __init__(self, search_client: SearchClient, embedder: Embedder) -> None:
         """
-        Initialize the search index with a search client and an embedder.
+        Initializes an instance of AzureSearchIndexManager.
 
         Args:
-            index_name (str): The name of the search index.
-            search_client (SearchClient): Client to perform asynchronous search operations.
+            search_client (SearchClient): Client to perform asynchronous search_index operations.
             embedder (Embedder): Handles asynchronous text embedding generation.
         """
-        self._index_name = index_name
         self._search_client = search_client
         self._embedder = embedder
 
-    @abstractmethod
-    def build_schema(self) -> SearchIndex:
-        """
-        Build the search index schema.
-
-        Returns:
-            SearchIndex: The created search index schema.
-        """
-        pass
-
     async def search(self, query_text: str, top_k: int, filters: str | None = None) -> list[dict]:
         """
-        Search the index and retrieve the top matching results.
+        Search the search_index and retrieve the top matching results.
 
         Args:
-            query_text (str): The search query text.
+            query_text (str): The search_index query text.
             top_k (int): The number of top results to retrieve.
-            filters (str | None, optional): A filter expression to apply to the search results.
+            filters (str | None, optional): A filter expression to apply to the search_index results.
 
         Returns:
-            list[dict]: A list of search results, each represented as a dictionary.
+            list[dict]: A list of search_index results, each represented as a dictionary.
         """
         query_embedding = await self._embedder.embed(query_text)
         vector_query = VectorizedQuery(vector=query_embedding, fields='description_vector', k_nearest_neighbors=top_k)
@@ -62,7 +46,7 @@ class BaseAzureSearchIndex(AzureSearchIndex, ABC):
 
     async def delete_documents(self, documents: list[dict]) -> None:
         """
-        Delete documents from the search index.
+        Delete documents from the search_index search_index.
 
         Args:
             documents (list[dict]): A list of documents to delete.
@@ -71,7 +55,7 @@ class BaseAzureSearchIndex(AzureSearchIndex, ABC):
 
     async def update_documents(self, documents: list[dict]) -> None:
         """
-        Update or upload documents to the search index.
+        Update or upload documents to the search_index search_index.
 
         Args:
             documents (list[dict]): A list of documents to upload or update.
