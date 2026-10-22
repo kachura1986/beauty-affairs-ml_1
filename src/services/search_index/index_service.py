@@ -2,15 +2,15 @@ import asyncio
 
 from azure.search.documents.aio import SearchClient
 
-from .azure_index_manager import AzureSearchManager
-from .products_index import ProductsSearchIndex
-from .services_index import ServicesSearchIndex
+from .azure_search_index_manager import AzureSearchIndexManager
+from .products_search_index import ProductsSearchIndex
+from .services_search_index import ServicesSearchIndex
 
 
 class IndexService:
     """Performs search_index queries for products and services."""
 
-    def __init__(self, search_manager: AzureSearchManager) -> None:
+    def __init__(self, search_manager: AzureSearchIndexManager) -> None:
         self._search_manager = search_manager
 
         self._search_clients: dict[str, SearchClient] = {}

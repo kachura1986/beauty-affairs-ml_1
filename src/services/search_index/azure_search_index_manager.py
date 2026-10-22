@@ -1,77 +1,67 @@
-from azure.search.documents.aio import SearchClient
-from azure.search.documents.models import VectorizedQuery
-
-from ..embedding import Embedder
+from azure.search.documents.indexes.aio import SearchIndexClient
+from azure.search.documents.indexes.models import SearchIndex
 
 
 class AzureSearchIndexManager:
-    """Manage Azure Cognitive Search indices and perform search_index operations."""
+    """Manages Azure Cognitive Search indices and performs search_index operations."""
 
-    def __init__(self, search_client: SearchClient, embedder: Embedder) -> None:
+    def __init__(self, search_index_client: SearchIndexClient) -> None:
         """
-        Initializes an instance of AzureSearchIndexManager.
+        Initializes an instance of AzureSearchManager.
 
         Args:
-            search_client (SearchClient): Client to perform asynchronous search_index operations.
-            embedder (Embedder): Handles asynchronous text embedding generation.
+            search_index_client (SearchIndexClient): An instance of the SearchIndexClient class.
         """
-        self._search_client = search_client
-        self._embedder = embedder
+        self.search_index_client = search_index_client
 
-    async def search(self, query_text: str, top_k: int, filters: str | None = None) -> list[dict]:
+    async def create_indexes(self, schemas: list[SearchIndex]) -> None:
         """
-        Search the search_index and retrieve the top matching results.
+        Creates search_index indexes based on the provided list of search_index schemas.
 
         Args:
-            query_text (str): The search_index query text.
-            top_k (int): The number of top results to retrieve.
-            filters (str | None, optional): A filter expression to apply to the search_index results.
+            schemas (list[SearchIndex]): A list of search_index schemas.
+        """
+        for schema in schemas:
+            await self.search_index_client.create_index(schema)
+
+    async def get_index(self, index_name: str) -> SearchIndex:
+        """Retrieve a search_index search_index by name.
+
+        Args:
+            index_name: The name of the search_index.
 
         Returns:
-            list[dict]: A list of search_index results, each represented as a dictionary.
+            SearchIndex: The search_index schema retrieved from Azure AI Search.
         """
-        query_embedding = await self._embedder.embed(query_text)
-        vector_query = VectorizedQuery(vector=query_embedding, fields='description_vector', k_nearest_neighbors=top_k)
+        return await self.search_index_client.get_index(index_name)
 
-        search_results = await self._search_client.search(
-            search_text=None,
-            vector_queries=[vector_query],
-            filter=filters,
-            top=top_k,
-        )
-
-        results_list = [result async for result in search_results]
-
-        return results_list
-
-    async def delete_documents(self, documents: list[dict]) -> None:
+    def get_instance_index(self, index_name: str):
         """
-        Delete documents from the search_index search_index.
+        Retrieve a search_index client for a given search_index name.
 
         Args:
-            documents (list[dict]): A list of documents to delete.
-        """
-        await self._search_client.delete_documents(documents=documents)
+            index_name (str): The name of the search_index.
 
-    async def upsert_documents(self, documents: list[dict]) -> None:
+        Returns:
+            SearchClient: The search_index client for the given search_index name.
         """
-        Update or upload documents to the search_index search_index.
+        return self.search_index_client.get_search_client(index_name)
+
+    async def list_index_names(self) -> set[str]:
+        """
+        Lists all search_index names available in the search_index service.
+
+        Returns:
+            set[str]: A set of search_index names.
+        """
+        return {index_name async for index_name in self.search_index_client.list_index_names()}
+
+    async def delete_indexes(self, index_names: list[str]) -> None:
+        """
+        Deletes search_index indexes based on the provided list of search_index names.
 
         Args:
-            documents (list[dict]): A list of documents to upload or update.
+            index_names (list[str]): A list of search_index names to delete.
         """
-        vector_fields = ['name', 'description']
-
-        # Process and embed text fields
-        for field in vector_fields:
-            field_documents = [document for document in documents if field in document]
-            texts = [document[field] for document in field_documents]
-
-            if texts:
-                embeddings = await self._embedder.batch_embed(texts, chunk_size=16)
-
-                for document, embedding in zip(field_documents, embeddings):
-                    document[f'{field}_vector'] = embedding
-
-        # Upload updated documents
-        await self._search_client.merge_or_upload_documents(documents=documents)
+        for index_name in index_names:
+            await self.search_index_client.delete_index(index_name)

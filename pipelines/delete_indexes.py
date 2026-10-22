@@ -5,7 +5,7 @@ from dependencies import PipelineDependencies
 
 async def main(index_names: list[str]) -> None:
     dependencies = await PipelineDependencies.create()
-    azure_search_manager = dependencies.azure_index_manager
+    azure_search_manager = dependencies.azure_search_index_manager
 
     try:
         print("Deleting indexes")

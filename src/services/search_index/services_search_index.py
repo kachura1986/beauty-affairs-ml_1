@@ -11,7 +11,7 @@ from azure.search.documents.indexes.models import (
 )
 
 
-class ServicesIndex:
+class ServicesSearchIndex:
     @classmethod
     def build_schema(cls, index_name: str) -> SearchIndex:
         """
@@ -35,7 +35,7 @@ class ServicesIndex:
             SearchableField(name='subcategory_name', type='Edm.String', analyzer_name='en.lucene'),
             # Filterable search_index fields
             SearchableField(name='description', type='Edm.String', analyzer_name='en.lucene', filterable=True),
-            # Vector search_index fields
+            # Vector search_index fields (for new vector field given 'field name_vector')
             SearchField(
                 name='name_vector',
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),

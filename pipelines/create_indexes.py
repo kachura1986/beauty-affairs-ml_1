@@ -1,8 +1,8 @@
 import asyncio
 
 from dependencies import PipelineDependencies
-from services.search_index.products_index import ProductsIndex
-from services.search_index.services_index import ServicesIndex
+from services.search_index.products_search_index import ProductsSearchIndex
+from services.search_index.services_search_index import ServicesSearchIndex
 
 
 async def main() -> None:
@@ -10,9 +10,9 @@ async def main() -> None:
     Creates product and service indexes.
     """
     dependencies = await PipelineDependencies.create()
-    azure_search_manager = dependencies.azure_index_manager
+    azure_search_manager = dependencies.azure_search_index_manager
 
-    indexes = [ProductsIndex.build_schema('products_test'), ServicesIndex.build_schema('services_test')]
+    indexes = [ProductsSearchIndex.build_schema('products_test'), ServicesSearchIndex.build_schema('services_test')]
 
     try:
         print("Creating indexes")
