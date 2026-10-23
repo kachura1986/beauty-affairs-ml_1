@@ -1,5 +1,5 @@
 from azure.search.documents.aio import SearchClient
-from azure.search.documents.models import VectorizedQuery
+from azure.search.documents.models import HybridSearch, VectorizedQuery
 
 from ..embedding import Embedder
 
@@ -18,31 +18,50 @@ class BaseAzureSearchIndex:
         self._search_client = search_client
         self._embedder = embedder
 
-    async def _search(self, query_text: str, top_k: int, filters: str | None = None) -> list[dict]:
+    async def _hybrid_search(
+            self,
+            query_text: str,
+            vector_fields: list[str],
+            text_fields: list[str],
+            top_k: int,
+            vector_candidates: int | None = None,
+            filters: str | None = None,
+    ) -> list[dict]:
         """
-        Search the search_index and retrieve the top matching results.
+        Perform hybrid text and vector search.
 
         Args:
-            query_text (str): The search_index query text.
-            top_k (int): The number of top results to retrieve.
-            filters (str | None, optional): A filter expression to apply to the search_index results.
+            query_text (str): Text used for both text search and embedding generation.
+            vector_fields (list[str]): Names of vector fields to search.
+            text_fields (list[str]): Names of searchable text fields.
+            top_k (int): Number of documents to return.
+            vector_candidates (int | None): Number of candidate documents to consider for vector search.
+                If None, defaults to top_k.
+            filters (str | None): OData filter expression. If None, no filter is applied.
 
         Returns:
-            list[dict]: A list of search_index results, each represented as a dictionary.
+            list[dict]: A list of matching documents.
         """
+        # Generate the query embedding once
         query_embedding = await self._embedder.embed(query_text)
-        vector_query = VectorizedQuery(vector=query_embedding, fields='description_vector', k_nearest_neighbors=top_k)
 
+        # Search each configured vector field
+        vector_query = VectorizedQuery(
+            vector=query_embedding,
+            fields=', '.join(vector_fields),
+            k_nearest_neighbors=vector_candidates if vector_candidates is not None else top_k,
+        )
+
+        # Combine full-text search and vector search
         search_results = await self._search_client.search(
-            search_text=None,
+            search_text=query_text if text_fields else None,
+            search_fields=text_fields,
             vector_queries=[vector_query],
             filter=filters,
             top=top_k,
         )
 
-        results_list = [result async for result in search_results]
-
-        return results_list
+        return [result async for result in search_results]
 
     async def _delete_documents(self, documents: list[dict]) -> None:
         """

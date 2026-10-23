@@ -33,19 +33,6 @@ async def main() -> None:
     services = list(FileIO.load_json(services_path)[0]['data'])
 
     try:
-        # Upsert products and services
-        print("Upserting products and services")
-        await products_index_instance.upsert_documents(documents=products)
-        await services_index_instance.upsert_documents(documents=services)
-
-        await asyncio.sleep(3)
-
-        products_document_count = await products_index_instance.get_document_count()
-        services_document_count = await services_index_instance.get_document_count()
-
-        print(f"Количество документов в продуктах: {products_document_count}")
-        print(f"Количество документов в услугах: {services_document_count}")
-
         # Delete products and services
         print("Deleting products and services")
         await products_index_instance.delete_documents(documents=products)
