@@ -13,34 +13,12 @@ class IndexService:
     def __init__(self, search_manager: AzureSearchIndexManager) -> None:
         self._search_manager = search_manager
 
-        self._search_clients: dict[str, SearchClient] = {}
-
         # Index type mapping
         self.index_classes = {
             'products': ProductsSearchIndex,
             'services': ServicesSearchIndex,
         }
 
-
-    def get_index_instance(self, index_type: str, index_name: str) -> BaseAzureSearchIndex | None:
-        """
-        Retrieves an instance of a search_index search_index based on its type and name.
-
-        Args:
-            index_type (str): The type of the search_index search_index ('products' or 'services').
-            index_name (str): The name of the search_index search_index.
-
-        Returns:
-            BaseAzureSearchIndex | None: An instance of the corresponding search_index class, or None if not found.
-        """
-        index_class = self.index_classes.get(index_type)
-        if not index_class:
-            return None
-
-        search_client = self._get_search_client(index_name)
-        index_instance = index_class(index_name, search_client, self.embeddings_client)
-
-        return index_instance
 
     def _get_search_client(self, index_name: str) -> SearchClient:
         """
@@ -273,11 +251,3 @@ class IndexService:
                             existing_indexes.discard(index_name)
                             break
                         await asyncio.sleep(1)
-
-
-    async def close(self) -> None:
-        """Closes all search_index clients."""
-        for search_client in self._search_clients.values():
-            await search_client.close()
-
-        self._search_clients.clear()
