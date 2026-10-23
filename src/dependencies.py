@@ -10,10 +10,11 @@ from openai import AsyncAzureOpenAI
 from application import AgentService
 from core.config import settings
 from core.logger import setup_logging
-from services.agent.tools import DEMO_TOOLS
+from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel, LLMModel
 from services.search_index.azure_search_index_manager import AzureSearchIndexManager
+from services.search_index.products_search_index import ProductsSearchIndex
 from services.text_normalization.text_normalizer import TextNormalizer
 
 
@@ -63,13 +64,19 @@ class PipelineDependencies:
                 normalizer=TextNormalizer(),
             )
 
-            agent_service = AgentService(llm=azure_model, tools=DEMO_TOOLS)
-
             search_credential = AzureKeyCredential(settings.SEARCH_API_KEY)
 
-            azure_search_index_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT, credential=search_credential)
+            azure_search_index_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT,
+                                                          credential=search_credential)
 
             azure_search_index_manager = AzureSearchIndexManager(search_index_client=azure_search_index_client)
+
+            products_index = ProductsSearchIndex(
+                index_name='products_test',
+                azure_search_index_manager=azure_search_index_manager,
+                embedder=azure_embedder
+            )
+            agent_service = AgentService(llm=azure_model, tools=create_product_tools(products_index))
 
             return cls(
                 openai_client=openai_client,

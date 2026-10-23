@@ -34,14 +34,13 @@ class ServicesSearchIndex(BaseAzureSearchIndex):
         # Define search_index fields
         fields = [
             SimpleField(name='id', type='Edm.String', key=True),
-            SimpleField(name='price', type='Edm.Double'),
+            SimpleField(name='price', type='Edm.Double', filterable=True),
             SimpleField(name='duration', type='Edm.Int32'),
             SimpleField(name='recovery_time', type='Edm.Int32'),
             # Text search_index fields
             SearchableField(name='name', type='Edm.String', analyzer_name='en.lucene'),
             SearchableField(name='category_name', type='Edm.String', analyzer_name='en.lucene'),
             SearchableField(name='subcategory_name', type='Edm.String', analyzer_name='en.lucene'),
-            # Filterable search_index fields
             SearchableField(name='description', type='Edm.String', analyzer_name='en.lucene', filterable=True),
             # Vector search_index fields (for new vector field given 'field name_vector')
             SearchField(

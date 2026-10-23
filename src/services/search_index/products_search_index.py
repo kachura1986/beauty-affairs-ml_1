@@ -34,14 +34,13 @@ class ProductsSearchIndex(BaseAzureSearchIndex):
         # Define search_index fields
         fields = [
             SimpleField(name='id', type='Edm.String', key=True),
-            SimpleField(name='price', type='Edm.Double'),
+            SimpleField(name='price', type='Edm.Double', filterable=True),
             SimpleField(name='quantity_value', type='Edm.Double'),
             SimpleField(name='quantity_unit', type='Edm.String'),
             # Text search_index fields
             SearchableField(name='name', type='Edm.String', analyzer_name='en.lucene'),
             SearchableField(name='category_name', type='Edm.String', analyzer_name='en.lucene'),
             SearchableField(name='subcategory_name', type='Edm.String', analyzer_name='en.lucene'),
-            # Filterable search_index fields
             SearchableField(name='description', type='Edm.String', analyzer_name='en.lucene', filterable=True),
             SearchableField(name='brand_name', type='Edm.String', analyzer_name='en.lucene', filterable=True),
             # Vector search_index fields (for new vector field given 'field name_vector')
