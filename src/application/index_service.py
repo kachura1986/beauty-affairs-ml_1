@@ -2,9 +2,9 @@ import asyncio
 
 from azure.search.documents.aio import SearchClient
 
-from .azure_search_index_manager import AzureSearchIndexManager
-from .products_search_index import ProductsSearchIndex
-from .services_search_index import ServicesSearchIndex
+from services.search_index.azure_search_index_manager import AzureSearchIndexManager
+from services.search_index.products_search_index import ProductsSearchIndex
+from services.search_index.services_search_index import ServicesSearchIndex
 
 
 class IndexService:

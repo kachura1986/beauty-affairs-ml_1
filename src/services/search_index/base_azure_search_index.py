@@ -1,5 +1,5 @@
 from azure.search.documents.aio import SearchClient
-from azure.search.documents.models import HybridSearch, VectorizedQuery
+from azure.search.documents.models import VectorizedQuery
 
 from ..embedding import Embedder
 
@@ -24,6 +24,7 @@ class BaseAzureSearchIndex:
             vector_fields: list[str],
             text_fields: list[str],
             top_k: int,
+            semantic_config: str | None = None,
             vector_candidates: int | None = None,
             filters: str | None = None,
     ) -> list[dict]:
@@ -35,6 +36,7 @@ class BaseAzureSearchIndex:
             vector_fields (list[str]): Names of vector fields to search.
             text_fields (list[str]): Names of searchable text fields.
             top_k (int): Number of documents to return.
+            semantic_config (str | None): Name of the semantic configuration to use.
             vector_candidates (int | None): Number of candidate documents to consider for vector search.
                 If None, defaults to top_k.
             filters (str | None): OData filter expression. If None, no filter is applied.
@@ -59,6 +61,8 @@ class BaseAzureSearchIndex:
             vector_queries=[vector_query],
             filter=filters,
             top=top_k,
+            query_type='semantic' if semantic_config else None,
+            semantic_configuration_name=semantic_config,
         )
 
         return [result async for result in search_results]

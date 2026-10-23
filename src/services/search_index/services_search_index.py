@@ -8,6 +8,10 @@ from azure.search.documents.indexes.models import (
     SimpleField,
     VectorSearch,
     VectorSearchProfile,
+    SemanticConfiguration,
+    SemanticField,
+    SemanticPrioritizedFields,
+    SemanticSearch,
 )
 
 from .azure_search_index_manager import AzureSearchIndexManager
@@ -72,7 +76,30 @@ class ServicesSearchIndex(BaseAzureSearchIndex):
             ]
         )
 
-        schema = SearchIndex(name=index_name, fields=fields, vector_search=vector_search)
+        # Define semantic search_index configuration
+        semantic_search = SemanticSearch(
+            default_configuration_name='services-semantic-config',
+            configurations=[
+                SemanticConfiguration(
+                    name='services-semantic-config',
+                    prioritized_fields=SemanticPrioritizedFields(
+                        title_field=SemanticField(field_name='name'),
+                        content_fields=[SemanticField(field_name='description')],
+                        keywords_fields=[
+                            SemanticField(field_name='category_name'),
+                            SemanticField(field_name='subcategory_name'),
+                        ],
+                    ),
+                )
+            ],
+        )
+
+        schema = SearchIndex(
+            name=index_name,
+            fields=fields,
+            vector_search=vector_search,
+            semantic_search=semantic_search
+        )
 
         return schema
 
@@ -91,6 +118,36 @@ class ServicesSearchIndex(BaseAzureSearchIndex):
             documents (list[dict]): A list of documents to upload or update.
         """
         await self._upsert_documents(documents=documents, fields_to_embed=self._fields_to_embed)
+
+    async def search_documents(
+            self,
+            query_text: str,
+            top_k: int,
+            vector_candidates: int | None = None,
+            filters: str | None = None
+    ) -> list[dict]:
+        """
+        Perform hybrid text and vector search.
+
+        Args:
+            query_text (str): Text used for both text search and embedding generation.
+            top_k (int): Number of documents to return.
+            vector_candidates (int | None): Number of candidate documents to consider for vector search.
+                If None, defaults to top_k.
+            filters (str | None): OData filter expression. If None, no filter is applied.
+
+        Returns:
+            list[dict]: A list of matching documents.
+        """
+        return await self._hybrid_search(
+            query_text=query_text,
+            vector_fields=['name_vector', 'description_vector'],
+            text_fields=['name', 'category_name', 'subcategory_name', 'description'],
+            top_k=top_k,
+            semantic_config='services-semantic-config',
+            vector_candidates=vector_candidates,
+            filters=filters,
+        )
 
     async def delete_documents(self, documents: list[dict]) -> None:
         """

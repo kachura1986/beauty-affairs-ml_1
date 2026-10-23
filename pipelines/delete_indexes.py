@@ -26,6 +26,7 @@ async def main(index_names: list[str]) -> None:
 
 
 if __name__ == '__main__':
+    # ['products_test', 'services_test']
     index_names = []
 
     asyncio.run(main(index_names))
