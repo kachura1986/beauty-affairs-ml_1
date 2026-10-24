@@ -106,3 +106,50 @@ class BaseAzureSearchIndex:
             int: The total number of documents in the index.
         """
         return await self._search_client.get_document_count()
+
+    async def get_all_documents(self, batch_size: int = 500) -> list[dict]:
+        """
+        Get all document keys from the search index.
+
+        Args:
+            batch_size (int): Number of documents to retrieve per batch.
+
+        Returns:
+            list[dict]: List of documents containing their keys.
+        """
+        if batch_size <= 0:
+            raise ValueError("batch_size must be greater than 0")
+
+        key_field = "id"
+        documents = []
+
+        results = await self._search_client.search(search_text="*", select=[key_field], top=batch_size)
+
+        async for document in results:
+            documents.append({key_field: document[key_field]})
+
+        return documents
+
+    async def delete_all_documents(self, batch_size: int = 500) -> int:
+        """
+        Delete all documents from the search index.
+
+        Args:
+            batch_size (int): Number of documents to delete per batch.
+
+        Returns:
+            int: Number of documents submitted for deletion.
+        """
+        if batch_size <= 0:
+            raise ValueError("batch_size must be greater than 0")
+
+        documents = await self.get_all_documents()
+        deleted_count = 0
+
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i + batch_size]
+
+            await self._search_client.delete_documents(documents=batch)
+            deleted_count += len(batch)
+
+        return deleted_count
