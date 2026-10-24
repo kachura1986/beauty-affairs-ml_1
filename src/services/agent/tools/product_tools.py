@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, Field
 
 from .registry import ToolRegistry
@@ -12,8 +11,7 @@ class SearchProductsArgs(BaseModel):
         max_length=500,
         description=(
             "Search query describing the product. "
-            "Can include product name, brand, category, "
-            "or desired characteristics."
+            "Can include product name, brand, category, or desired characteristics."
         ),
     )
     top_k: int = Field(
@@ -68,14 +66,13 @@ def _build_product_filter(args: SearchProductsArgs) -> str | None:
 
 
 def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
-
     async def search_products(
-        query: str,
-        top_k: int = 10,
-        brand_name: str | None = None,
-        category_name: str | None = None,
-        min_price: float | None = None,
-        max_price: float | None = None,
+            query: str,
+            top_k: int = 10,
+            brand_name: str | None = None,
+            category_name: str | None = None,
+            min_price: float | None = None,
+            max_price: float | None = None,
     ) -> list[dict]:
         args = SearchProductsArgs(
             query=query,
@@ -87,13 +84,11 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
         )
 
         if (
-            args.min_price is not None
-            and args.max_price is not None
-            and args.min_price > args.max_price
+                args.min_price is not None
+                and args.max_price is not None
+                and args.min_price > args.max_price
         ):
-            raise ValueError(
-                "min_price must be less than or equal to max_price"
-            )
+            raise ValueError("min_price must be less than or equal to max_price")
 
         filters = _build_product_filter(args)
 
@@ -103,7 +98,7 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
             filters=filters,
         )
 
-        # Return only fields useful to the model.
+        # Return only fields useful to the model
         fields = (
             "id",
             "name",
@@ -117,23 +112,17 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
         )
 
         return [
-            {
-                key: document[key]
-                for key in fields
-                if key in document
-            }
+            {key: document[key] for key in fields if key in document}
             for document in documents
         ]
 
     return ToolRegistry([
         Tool(
-            name="search_products",
+            name="Searching products",
             description=(
-                "Search the product catalog using hybrid text and vector "
-                "search. Use this tool when the user asks to find, compare, "
-                "or recommend products available in the catalog. "
-                "Supports optional brand, category, and price filters. "
-                "Returns matching product details. Do not invent products "
+                "Search the product catalog using hybrid text and vector search. Use this tool when the user asks "
+                "to find, compare, or recommend products available in the catalog. Supports optional brand, "
+                "category, and price filters. Returns matching product details. Do not invent products "
                 "or prices that are not present in the results."
             ),
             parameters={
