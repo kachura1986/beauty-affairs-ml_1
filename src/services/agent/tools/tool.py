@@ -81,10 +81,13 @@ class ToolResult:
         return self.error.to_model()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Tool:
     name: str
     description: str
-    parameters: dict[str, Any]
     fn: Callable[..., str | Awaitable[str]]
-    args_model: type[BaseModel] | None = None
+    args_model: type[BaseModel]
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return self.args_model.model_json_schema()

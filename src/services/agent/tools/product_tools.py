@@ -125,44 +125,6 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
                 "category, and price filters. Returns matching product details. Do not invent products "
                 "or prices that are not present in the results."
             ),
-            parameters={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 500,
-                        "description": "Product search query.",
-                    },
-                    "top_k": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 50,
-                        "default": 10,
-                        "description": "Maximum number of results.",
-                    },
-                    "brand_name": {
-                        "type": ["string", "null"],
-                        "description": "Optional brand filter.",
-                    },
-                    "category_name": {
-                        "type": ["string", "null"],
-                        "description": "Optional category filter.",
-                    },
-                    "min_price": {
-                        "type": ["number", "null"],
-                        "minimum": 0,
-                        "description": "Minimum price.",
-                    },
-                    "max_price": {
-                        "type": ["number", "null"],
-                        "minimum": 0,
-                        "description": "Maximum price.",
-                    },
-                },
-                "required": ["query"],
-                "additionalProperties": False,
-            },
             fn=search_products,
             args_model=SearchProductsArgs,
         ),
