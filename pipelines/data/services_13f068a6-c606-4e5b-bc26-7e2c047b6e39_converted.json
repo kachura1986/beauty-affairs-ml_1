@@ -1,0 +1,1276 @@
+{
+  "data": {
+    "13f068a6-c606-4e5b-bc26-7e2c047b6e39": [
+      {
+        "id": "2955ffe3-b3c3-4718-876b-97ca34f1803b",
+        "name": "Payment",
+        "description": "",
+        "category_name": "Slot keep",
+        "subcategory_name": "Slot keep",
+        "price": 100.0,
+        "duration": 0,
+        "recovery_time": 0
+      },
+      {
+        "id": "0c9c7707-4f47-4258-961c-48158424ef37",
+        "name": "ALMA - VascuPen",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 499.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "eca8dc41-2267-4565-b663-99b7d4548bf1",
+        "name": "Beauty Affairs Royale Regime",
+        "description": "Short+Description%0d%0aA+professional+facial+treatment+designed+to+deeply+cleanse%2c+hydrate%2c+and+rejuvenate+the+skin.+It+targets+various+skin+concerns%2c+providing+a+custom+solution+for+a+radiant+and+healthy+complexion.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThe+Beautician+Treatment+helps+to+improve+skin+and+has+firming%2flifting+effect%2c+anti-aging+abs+shooting%2c+restore+hydration.+It+targets+signs+of+aging%2c+dullness%2c+and+uneven+skin+tone%2c+leaving+the+skin+revitalized%2c+glowing%2c+and+refreshed.%0d%0a%0d%0aInstructions%0d%0aFollow+the+treatment+steps+as+directed+by+the+professional.+The+treatment+may+involve+cleansing%2c+exfoliation%2c+mask+application%2c+and+hydration.+Afterward%2c+follow+with+a+soothing+moisturizer.%0d%0a%0d%0aActive+Ingredients%0d%0aMyristic+Acid+%2c+Glycerin+%2c+Behenic+Acid+%2c+Palmitic+Acid+%2c+Sodium+Methyl%2c+Butylene+Glycol+%2c+Glycerin%2c+Miracle+Broth%c3%a2%e2%80%9e%c2%a2%3a+A+proprietary+blend+of+sea+kelp%2c+vitamins%2c+minerals%2c+Vitality+Ferment%2c+Sea+Kelp+Extract%2c+Lime+Tea+Concentrate%2c+vitamins+A%2c+C%2c+D%2c+and+E.%0d%0aSkin+Type%3a+Suitable+for+all+skin+types.+%0d%0aFrequency%3a+Recommended+every+4-6+weeks+for+optimal+results.+",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 980.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "4f732405-955b-445b-acb3-6427aa37df6d",
+        "name": "Collagen Restore",
+        "description": "What+It+Does+%26+Benefits%0d%0aRF+Microneedling+uses+ultra-fine+needles+and+radiofrequency+energy+to+stimulate+deep+collagen+and+elastin+production%2c+improving+firmness+and+reducing+fine+lines%2c+scars%2c+and+pore+size.+The+collagen+mask+provides+intense+hydration%2c+soothes+post-treatment+redness%2c+and+reinforces+the+skin+barrier+for+optimal+recovery+and+glow.+Combining+this+treatment+with+award-winning+Circadia+products+delivers+a+next-level+service+with+improved+treatment+results%0d%0a%0d%0aInstructions%0d%0aAvoid+retinoids%2c+exfoliants%2c+and+sun+exposure+for+3%e2%80%935+days+before+and+after+treatment.+Arrive+with+clean+skin.+After+treatment%2c+use+gentle%2c+hydrating+skincare%2c+avoid+makeup+for+24%e2%80%9348+hours%2c+and+apply+SPF+daily.%0d%0aTreatment+recommended+every+4+weeks%0d%0a%0d%0aShort+(Active+Components)%0d%0aMicroneedling+with+RF+triggers+deep+skin+remodeling.+The+collagen+mask+includes+hydrolyzed+collagen%2c+peptides%2c+and+soothing+botanical+extracts+to+hydrate+and+calm+the+skin+while+supporting+tissue+repair.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+most+skin+types%2c+especially+those+with+aging%2c+textured%2c+or+dehydrated+skin.+Not+recommended+for+clients+with+active+breakouts%2c+infections%2c+or+open+wounds.+A+consultation+is+recommended+prior+to+treatment.%0d%0aFrequency%3a+every+4+weeks+%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 1098.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "c2ca21f3-8005-4ce3-a4f7-ff24f1348981",
+        "name": "HydraLift",
+        "description": "Short+Description%3a%0d%0aThe+HydraLift+Express+is+a+fast+and+effective+facial+treatment+that+combines+hydration%2c+exfoliation%2c+and+skin+lifting.+It+uses+advanced+technology+to+deeply+cleanse+the+skin%2c+infuse+moisture%2c+and+lift+the+skin+for+an+instantly+refreshed%2c+glowing%2c+and+youthful+appearance+in+just+a+short+amount+of+time.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+HydraLift+Express+treatment+delivers+deep+hydration+while+gently+exfoliating+dead+skin+cells+and+impurities.+It+stimulates+collagen+production%2c+providing+a+lifting+effect+that+reduces+fine+lines+and+enhances+skin+elasticity.+The+skin+looks+smoother%2c+plumper%2c+and+more+youthful+with+a+noticeable+glow.+Its+perfect+for+a+quick+skin+refresh+before+an+event+or+to+maintain+healthy%2c+radiant+skin.%0d%0a%0d%0aInstructions%3a%0d%0aCleanse+the+skin+to+remove+makeup+and+impurities.%0d%0aThe+HydraLift+device+is+used+to+exfoliate+the+skin+gently%2c+removing+dead+cells+and+debris.%0d%0aA+hydrating+serum+is+infused+into+the+skin+to+provide+moisture+and+nourishment.%0d%0aThe+treatment+also+uses+gentle+lifting+technology+to+firm+the+skin.%0d%0a%0d%0aActive+Ingredients%3a%0d%0aHyaluronic+Acid%3a+Deeply+hydrates+and+plumps+the+skin%3b+salicyilic+acid%2c+lactic+acid%2c+Peptides%0d%0aSkin+Type%3asuitable+for+all+skin+types%2c+including+sensitive+skin.+%0d%0aFrequency%3a+every+2+to+4+weeks",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 400.0,
+        "duration": 90,
+        "recovery_time": 15
+      },
+      {
+        "id": "b704d8b5-1b18-4e69-bc7e-ddeee3406274",
+        "name": "Lactic Peel  - ADD ON",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Peel",
+        "price": 190.0,
+        "duration": 15,
+        "recovery_time": 0
+      },
+      {
+        "id": "d9893d9a-7036-46fa-bd3c-dfee5d44ed9d",
+        "name": "Lymphatic Drainage Massage",
+        "description": "Short+Description%3a%0d%0aLymphatic++Massage+is+a+gentle%2c+therapeutic+massage+technique+that+promotes+the+natural+flow+of+lymph+fluid+throughout+the+body.+It+helps+reduce+swelling%2c+improve+circulation%2c+and+enhance+detoxification+by+stimulating+the+lymphatic+system.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+massage+helps+to+reduce+fluid+retention%2c+alleviate+tension%2c+and+boost+the+immune+system.+It+promotes+the+elimination+of+toxins%2c+improves+skin+tone%2c+and+enhances+relaxation%2c+leaving+the+body+feeling+refreshed+and+revitalized.%0d%0a%0d%0aInstructions%0d%0aA+trained+therapist+uses+gentle%2c+rhythmic+movements+to+stimulate+lymph+nodes+and+encourage+lymph+fluid+drainage.+The+massage+is+typically+performed+on+the+body%2c+focusing+on+areas+with+fluid+retention+or+congestion.%0d%0a%0d%0aActive+Ingredients%0d%0aN%2fA+(Lymphatic+Massage+uses+manual+techniques+to+stimulate+the+lymphatic+system)%0d%0aSkin+type%3a+all+type+of+skin%0d%0aFrequency%3a+Recommended+1-2+times+per+week+for+best+results.+",
+        "category_name": "Body Treatments",
+        "subcategory_name": "Body Treatments",
+        "price": 200.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "f06b2fd0-298a-4b73-9757-aa9406e7ee24",
+        "name": "Neogen Plasma High Energy Cheeks",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+High+Energy+Cheeks+treatment+is+a+non-invasive+procedure+that+uses+plasma+energy+to+rejuvenate+and+tighten+the+skin+on+the+cheeks.+This+advanced+treatment+targets+fine+lines%2c+wrinkles%2c+and+skin+laxity%2c+promoting+collagen+production+for+a+firmer%2c+smoother%2c+and+more+youthful+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aNeogen+Plasma+High+Energy+for+the+cheeks+uses+plasma+technology+to+deliver+high-energy+pulses+that+stimulate+collagen+and+elastin+production.+It+tightens+and+firms+the+skin%2c+reduces+the+appearance+of+wrinkles%2c+and+enhances+skin+texture.+This+treatment+is+especially+effective+for+treating+sagging+skin%2c+fine+lines%2c+and+loss+of+volume+on+the+cheeks%2c+resulting+in+a+lifted%2c+rejuvenated+appearance.+It+provides+a+non-invasive+solution+to+address+early+signs+of+aging%2c+leaving+the+skin+smoother%2c+firmer%2c+and+revitalized.%0d%0a%0d%0aInstructions%3a%0d%0a+Cleanse+the+cheek+area+to+remove+makeup%2c+oils%2c+or+impurities.++%0d%0aThe+Neogen+Plasma+device+is+applied+to+the+skin%2c+delivering+targeted+high-energy+plasma+pulses+to+stimulate+deep+collagen+production+and+skin+rejuvenation.+++%0d%0a%0d%0aActive+Ingredients%3a%0d%0a-No+specific+active+ingredients+are+applied+during+the+Neogen+Plasma+High+Energy+treatment+itself%0d%0aSkin+Type%3a+suitable+for+all+skin+types%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+3+to+4+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 3000.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "a9441200-aca0-44f0-b42d-be744c9194e1",
+        "name": "Neogen Plasma High Energy Full Face  Neck",
+        "description": "Neogen+Plasma+High+Energy+Full+Face+%26+Neck%0d%0a%0d%0aShort+Description%3a%0d%0aThe+Neogen+Plasma+High+Energy+Full+Face+%26+Neck+treatment+is+a+non-invasive+procedure+that+utilizes+plasma+energy+to+rejuvenate+the+skin+on+both+the+face+and+neck.+It+targets+fine+lines%2c+wrinkles%2c+sagging+skin%2c+and+uneven+texture%2c+stimulating+collagen+production+for+a+smoother%2c+firmer%2c+and+more+youthful+appearance+across+the+entire+face+and+neck+area.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a+%0d%0aThe+Neogen+Plasma+High+Energy+treatment+for+the+full+face+and+neck+uses+plasma+energy+to+stimulate+deep+layers+of+skin%2c+promoting+collagen+and+elastin+regeneration.+It+helps+improve+skin+tone%2c+tighten+sagging+areas%2c+reduce+the+appearance+of+wrinkles%2c+and+smooth+out+fine+lines.+The+treatment+is+ideal+for+addressing+signs+of+aging+on+both+the+face+and+neck%2c+including+loose+skin%2c+crow%e2%80%99s+feet%2c+neck+lines%2c+and+wrinkles%2c+offering+a+non-surgical+solution+to+rejuvenate+and+lift+the+skin.+This+procedure+results+in+a+firmer%2c+tighter%2c+and+more+youthful+appearance+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a%0d%0a1.+Cleanse+the+face+and+neck+area+thoroughly+to+remove+makeup%2c+oils%2c+and+impurities.++%0d%0a2.+A+numbing+cream+may+be+applied+to+the+treatment+areas+to+ensure+comfort.++%0d%0a3.+The+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses%2c+which+stimulate+collagen+production+and+tighten+the+skin.++%0d%0a4.+The+treatment+typically+takes+45-60+minutes+for+both+the+face+and+neck.++%0d%0a5.+After+the+procedure%2c+soothing+serums+or+moisturizers+may+be+applied+to+calm+and+hydrate+the+skin.%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0aSkin+Type%3a++%0d%0aThe+Neogen+Plasma+High+Energy+Full+Face+%26+Neck+treatment+is+suitable+for+most+skin+types%2c+particularly+those+with+visible+signs+of+aging%2c+such+as+sagging%2c+fine+lines%2c+wrinkles%2c+and+loss+of+skin+elasticity.+It+is+ideal+for+individuals+seeking+non-invasive+rejuvenation+and+tightening+in+both+the+face+and+neck+areas.+This+treatment+works+well+for+individuals+in+their+30s+to+60s+and+beyond%2c+providing+noticeable+lifting+and+firming+benefits.+However%2c+it+is+recommended+for+individuals+with+sensitive+or+reactive+skin+to+consult+with+a+practitioner+beforehand.",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 7500.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "c83b7814-17fa-4cfd-9723-06230e58f854",
+        "name": "Neogen Plasma Low Energy Full Face",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+Low+Energy+Full+Face+treatment+is+a+non-invasive+procedure+that+utilizes+low-energy+plasma+technology+to+rejuvenate+and+tighten+the+skin+across+the+entire+face.+This+treatment+helps+to+reduce+fine+lines%2c+wrinkles%2c+and+sagging%2c+improving+skin+texture%2c+tone%2c+and+overall+appearance+for+a+more+youthful%2c+refreshed+look.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a+%0d%0aThe+Neogen+Plasma+Low+Energy+Full+Face+treatment+delivers+controlled+plasma+energy+to+the+skin%2c+stimulating+collagen+production+and+promoting+skin+tightening.+This+results+in+improved+skin+elasticity+and+a+reduction+in+visible+signs+of+aging+such+as+fine+lines%2c+wrinkles%2c+and+loose+skin.+It+can+help+smooth+out+texture+irregularities%2c+minimize+pores%2c+and+reduce+pigmentation%2c+leaving+the+face+with+a+firmer%2c+brighter%2c+and+more+even-toned+appearance.+The+treatment+is+ideal+for+those+seeking+a+gentle+yet+effective+way+to+address+multiple+skin+concerns+without+the+need+for+invasive+procedures.%0d%0a%0d%0aInstructions%3a++%0d%0a%0d%0aThe+Neogen+Plasma+device+is+used+to+deliver+low-energy+plasma+pulses+across+the+face%2c+stimulating+collagen+and+promoting+skin+tightening.++%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a++suitable+for+most+skin+types%0d%0aFrequency%3a+every+2-3+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 1300.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "ae8feaed-69e6-4a3a-85b6-50de5b939b77",
+        "name": "Neogen Plasma Low Energy Lower Eyes  Crows Feet",
+        "description": "Short+Description%3a+%0d%0aThe+Neogen+Plasma+Low+Energy+Lower+Eyes+%26+Crows+Feet+treatment+is+a+non-invasive+procedure+that+uses+low-energy+plasma+technology+to+rejuvenate+the+delicate+skin+around+the+lower+eyes.+This+treatment+targets+fine+lines%2c+wrinkles%2c+and+crows+feet%2c+promoting+tighter%2c+smoother%2c+and+more+youthful+skin+in+the+under-eye+area.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a+%0d%0aNeogen+Plasma+Low+Energy+for+the+lower+eyes+and+crows+feet+uses+low-energy+plasma+pulses+to+stimulate+collagen+production+and+skin+tightening.+This+helps+to+reduce+the+appearance+of+fine+lines%2c+wrinkles%2c+and+crows+feet%2c+while+also+improving+skin+texture+and+elasticity.+The+treatment+works+gently+to+lift+sagging+skin%2c+reduce+puffiness%2c+and+brighten+the+under-eye+area%2c+offering+a+refreshed+and+rejuvenated+look.+It+is+a+non-surgical+alternative+to+more+invasive+procedures+like+eyelid+lifts%2c+providing+noticeable+improvements+in+the+appearance+of+the+eyes+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a+%0d%0a+The+Neogen+Plasma+device+is+used+to+deliver+low-energy+plasma+pulses+around+the+lower+eyes+and+crow%c3%a2%e2%82%ac%e2%84%a2s+feet%2c+stimulating+collagen+production+and+tightening+the+skin.++%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself.%0d%0a%0d%0aSkin+type%3a++suitable+for+most+skin+types%2c+particularly+those+with+fine+lines%2c+wrinkles%2c+and+sagging+skin+around+the+lower+eyes.%0d%0a%0d%0aFrequency%3a+every+2-3+weeks+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 540.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "a5cba5e7-337d-4361-82d4-f99d93f03cda",
+        "name": "Neogen Plasma Low Energy Scar Area Large",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+Low+Energy+Scar+Area+(Large)+treatment+is+a+non-invasive+procedure+that+uses+low-energy+plasma+technology+to+reduce+the+appearance+of+large+scars.+It+stimulates+collagen+production+and+skin+regeneration%2c+helping+to+smooth+and+improve+the+texture+of+scar+tissue+for+a+more+even+and+youthful+skin+surface.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aNeogen+Plasma+Low+Energy+for+large+scar+areas+uses+targeted+plasma+pulses+to+promote+the+regeneration+of+healthy+skin+tissue.+This+treatment+helps+reduce+the+visibility+of+large+scars%2c+such+as+those+from+surgery%2c+injury%2c+or+acne%2c+by+stimulating+collagen+production+and+improving+skin+texture.+The+procedure+can+flatten+raised+scars%2c+smooth+out+irregularities%2c+and+reduce+discoloration%2c+leading+to+a+more+even+and+improved+skin+appearance.+It+enhances+skin+elasticity+and+rejuvenates+the+treated+area%2c+offering+a+non-surgical+solution+for+scar+reduction+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a%0d%0a%0d%0aThe+Neogen+Plasma+device+delivers+low-energy+plasma+pulses+directly+to+the+scar+tissue%2c+stimulating+collagen+and+promoting+skin+regeneration.%0d%0aAfter+treatment%2c+soothing+serums+or+moisturizers+are+applied+to+hydrate+and+calm+the+skin.%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+especially+those+with+larger%2c+more+visible+scars%2c+including+raised+or+depressed+scars+from+surgery%2c+acne%2c+or+trauma.+%0d%0aFrequency%3a+every+2+to+3+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 700.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "01490419-496d-4252-90cd-ed31ab81c67f",
+        "name": "NeoGen Refresh",
+        "description": "Short+Description%0d%0aNeoGen+Low+Energy+Plasma+is+a+non-invasive+skin+rejuvenation+treatment+that+uses+controlled%2c+low-level+nitrogen+plasma+to+gently+heat+the+skin.+It+revitalizes+the+complexion+by+improving+texture%2c+tone%2c+and+hydration+with+minimal+downtime%2c+making+it+ideal+for+maintenance+or+first-time+resurfacing+treatments.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+treatment+stimulates+collagen+and+elastin+production%2c+enhances+skin+firmness%2c+and+reduces+fine+lines+without+damaging+the+surface+layer.+It%e2%80%99s+perfect+for+improving+dull%2c+tired-looking+skin%2c+refining+pores%2c+and+achieving+a+refreshed+glow+over+time.+Low+energy+settings+allow+for+a+gentle+yet+effective+skin+refresh+with+little+to+no+recovery+time.%0d%0a%0d%0aInstructions%0d%0aA+handheld+NeoGen+device+delivers+plasma+energy+evenly+across+the+face+at+low+energy+settings.%0d%0aMild+redness+may+occur+but+typically+resolves+within+hours.+Avoid+sun%2c+exfoliants%2c+and+actives+for+2%e2%80%933+days.+Hydration+and+SPF+are+essential+post-treatment.%0d%0a%0d%0aShort+(Main+Active+Components)%0d%0aNitrogen+Plasma+Energy%3a+Gently+heats+the+deeper+skin+layers+while+preserving+the+outer+surface%2c+promoting+controlled+regeneration.%0d%0aSubthermal+Thermal+Effect%3a+Triggers+collagen+remodeling+and+cell+renewal+without+ablating+the+skin.%0d%0aNon-ablative+Regeneration%3a+Allows+for+skin+healing+and+improvement+with+minimal+trauma+or+peeling.%0d%0a%0d%0aSkin+Type%3a+All+skin+types+and+tones+(Fitzpatrick+I%e2%80%93VI)%0d%0aIdeal+for+sensitive+skin%2c+early+aging%2c+uneven+tone%2c+or+those+seeking+regular+skin+maintenance%0d%0a%0d%0aNot+suitable+for%3a%0d%0aActive+infections%2c+open+wounds%2c+or+inflammatory+skin+conditions%0d%0aRecent+chemical+peels+or+strong+resurfacing+treatments+in+the+same+area%0d%0a%0d%0aFrequency%3a++2-4+weeks++",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 1298.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "7404e0e5-5aa9-4015-af0e-cfa705639474",
+        "name": "Precision Resurfacing",
+        "description": "What+It+Does+%26+Benefits%0d%0aTiny+needles+create+micro-injuries+in+the+skin+while+delivering+controlled+radiofrequency+energy+into+the+deeper+layers.+This+dual+action+promotes+collagen+remodeling+and+skin+tightening+from+the+inside+out.+Results+include+firmer%2c+smoother%2c+and+more+youthful-looking+skin+with+minimal+downtime.%0d%0a%0d%0aInstructions%0d%0aAvoid+sun+exposure%2c+retinoids%2c+acids%2c+and+exfoliants+5+days+before+and+after+treatment.+Arrive+with+clean%2c+makeup-free+skin.+Post-treatment+care+includes+using+gentle+skincare%2c+avoiding+heat+or+workouts+for+48+hours%2c+and+applying+SPF+daily.%0d%0a%0d%0aShort+(Active+Components)%0d%0aCombines+microneedling+with+thermal+radiofrequency+energy+to+trigger+deep+tissue+remodeling.+Often+followed+by+soothing+serums+like+peptides+or+hyaluronic+acid+to+hydrate+and+calm+the+skin.%0d%0a%0d%0aSkin+Type%0d%0aSafe+for+most+skin+types%2c+including+aging%2c+acne-scarred%2c+and+sun-damaged+skin.+Not+recommended+for+active+acne%2c+open+wounds%2c+rosacea+flares%2c+or+during+pregnancy.+Consultation+is+required+prior+to+the+first+session.%0d%0a%0d%0aFrequency%3a+every+6-8+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 1198.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "63c9edb7-8d72-46be-9923-42352d1d52fb",
+        "name": "RF Microneedling - Eyes",
+        "description": "Short+Description%3a++%0d%0aRF+Microneedling+for+the+eyes+is+a+targeted+treatment+that+combines+microneedling+with+radiofrequency+(RF)+energy+to+rejuvenate+the+delicate+skin+around+the+eyes.+This+procedure+stimulates+collagen+production%2c+reduces+fine+lines%2c+wrinkles%2c+and+puffiness%2c+and+tightens+the+skin+for+a+more+youthful%2c+refreshed+look.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aRF+Microneedling+for+the+eyes+uses+tiny+needles+to+create+controlled+micro-injuries+in+the+skin%2c+while+RF+energy+is+delivered+to+deeper+layers+of+the+skin.+This+combination+enhances+skin+texture+and+encourages+collagen+and+elastin+production.+Key+benefits+include%3a++%0d%0aReduces+Fine+Lines+%26+Wrinkles%3a+Smooths+crows+feet+and+under-eye+wrinkles+for+a+youthful+appearance.++%0d%0aTightens+Skin%3a+Firms+the+skin+around+the+eyes%2c+improving+the+overall+tone+and+elasticity.++%0d%0aReduces+Puffiness%3a+Helps+decrease+under-eye+bags+and+puffiness+by+stimulating+circulation+and+collagen.++%0d%0a-Improves+Skin+Texture%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aRadiofrequency+(RF)+Energy%3a+Stimulates+collagen+and+elastin+production+deep+within+the+skin+for+tightening+and+rejuvenation.++%0d%0a%0d%0aSkin+Type%3a+++suitable+for+most+skin+types+and+is+ideal+for+individuals+concerned+with+fine+lines%2c+wrinkles%2c+and+puffiness+around+the+eyes.+%0d%0aFrequency%3a+once+every+4+to+6+weeks%2c",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Venus Legacy RF",
+        "price": 650.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "1f67cae5-bcf5-4de2-bf1c-5cda2ea3bd44",
+        "name": "UF Eye Bag",
+        "description": "Short+Description%3a%0d%0aUltra+Forma+Eye+Bag+treatment+is+a+non-invasive+solution+designed+to+reduce+puffiness+and+tighten+skin+around+the+eyes+using+advanced+ultrasound+technology.+It+targets+sagging+and+volume+under+the+eyes+for+a+refreshed%2c+youthful+look.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThis+treatment+uses+high-intensity+focused+ultrasound+(HIFU)+to+stimulate+collagen+production+and+lift+the+delicate+eye+area.+Benefits+include+reduced+eye+bags%2c+improved+skin+firmness%2c+and+a+smoother+under-eye+contour+with+no+downtime.%0d%0a%0d%0aInstructions%3a%0d%0aEnsure+the+under-eye+area+is+clean+and+dry.+A+conductive+gel+is+applied%2c+and+the+device+is+gently+passed+over+the+eye+bag+area+in+short%2c+controlled+pulses.+Follow+any+post-care+guidelines+and+avoid+excessive+sun+exposure.%0d%0a%0d%0aShort+(Main+Active+Components)%3a%0d%0aUtilizes+focused+ultrasound+energy+(HIFU).+May+be+complemented+by+hydrating+or+anti-inflammatory+serums+like+peptides%2c+caffeine+extract%2c+or+hyaluronic+acid+to+enhance+results+and+reduce+swelling.%0d%0a%0d%0aSkin+Type%3a%0d%0aSafe+for+most+skin+types%2c+especially+mature+or+aging+skin+with+mild+to+moderate+under-eye+puffiness.+Not+recommended+for+individuals+with+extremely+sensitive+skin%2c+active+eye+infections%2c+or+severe+skin+laxity.%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 588.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "a0bb21b4-f243-4f9f-a13f-bd6c3d415915",
+        "name": "UF Inner Thighs Tightening",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 1888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "0d8bcdb5-befd-4e29-8219-6df3f9ef71c2",
+        "name": "Venus Full Face",
+        "description": "Short+Description%3a%0d%0aThe+Venus+Full+Face+treatment+utilizes+advanced+radiofrequency+(RF)+and+magnetic+pulse+technology+to+tighten%2c+lift%2c+and+rejuvenate+the+skin+on+the+entire+face.+This+non-invasive+procedure+promotes+collagen+production%2c+reduces+the+appearance+of+fine+lines+and+wrinkles%2c+and+enhances+skin+texture%2c+leaving+the+face+looking+more+youthful%2c+firm%2c+and+refreshed.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+Venus+Full+Face+treatment+is+designed+to+provide+overall+facial+rejuvenation+by+targeting+multiple+skin+concerns.+Key+benefits+include%3a++%0d%0a-+Lifts+%26+Tightens%3a+The+treatment+tightens+sagging+skin%2c+lifting+the+face+for+a+more+youthful%2c+contoured+appearance.++%0d%0aReduces+Fine+Lines+%26+Wrinkles%3a+Smoothens+out+fine+lines+and+wrinkles%2c+helping+to+reduce+the+visible+signs+of+aging.++%0d%0a-+Stimulates+Collagen+Production%3a+RF+and+magnetic+pulse+energy+stimulate+collagen+and+elastin+production%2c+improving+skin+elasticity+and+firmness+over+time.++%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aRadiofrequency+(RF)+Energy%3a+The+core+technology+used+in+this+treatment%2c+RF+energy+heats+the+dermal+layers+to+stimulate+collagen+production%2c+tighten+the+skin%2c+and+enhance+texture.++%0d%0aMagnetic+Pulses%3a+Often+used+alongside+RF+energy%2c+magnetic+pulses+help+stimulate+deeper+layers+of+the+skin+for+improved+collagen+production+and+enhanced+skin+lifting.%0d%0a%0d%0aSkin+Type%3a++suitable+for+most+skin+types%0d%0aFrequency%3a+typically+recommended+once+a+week+during+the+initial+phas",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Venus Legacy RF",
+        "price": 680.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "84d950ce-969b-4606-89a3-95caa5da0000",
+        "name": "45 min Lifting Offer",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 188.0,
+        "duration": 60,
+        "recovery_time": 15
+      },
+      {
+        "id": "2f4d6c55-d9cf-4c47-979d-a224d866464c",
+        "name": "LED - ADD ON",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 145.0,
+        "duration": 15,
+        "recovery_time": 0
+      },
+      {
+        "id": "22766e1c-b6a7-40a9-87c7-69af49688f6a",
+        "name": "Brighten & Refine",
+        "description": "What+It+Does+%26+Benefits%0d%0a%0d%0aThis+facial+provides+intensive+hydrating%2c+antioxidant%2c+and+brightening+results+by+combining+the+powerful+brightening+properties+from+the+Raspberry+Enzyme+and+Australian+Super-Berry+masks+with+the+addition+of+Lactic+Acid+to+increase+cell+turnover%2c+hydrate%2c+and+balance+the+skin.+Brighter+more+youthful+skin+will+be+revealed%2c+leaving+the+skin+glowing+and+rejuvenated.%0d%0a%0d%0aInstructions%0d%0aAvoid+active+ingredients+(retinoids%2c+acids%2c+exfoliants)+for+3%e2%80%935+days+before+and+after+treatment.+Arrive+with+clean+skin.+After+treatment%2c+follow+a+simple%2c+gentle+skincare+routine+with+no+makeup+for+24%e2%80%9348+hours.+Use+SPF+daily+and+avoid+direct+sun+exposure+and+heat.%0d%0a%0d%0aShort+(Active+Components)%0d%0aMicroneedling+uses+ultra-fine+needles+to+stimulate+collagen+and+enhance+absorption.+Rejuran+Booster+contains+PN+(polynucleotides)+to+promote+skin+regeneration%2c+along+with+hydrating+and+anti-inflammatory+ingredients.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+most+skin+types%2c+especially+aging%2c+textured%2c+acne-scarred%2c+and+dull+skin.+%0d%0aRecommended+Treatment+Plan%3a+Every+4+weeks+or+as+needed+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 588.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "356e5c3d-fcc7-4203-9706-160a0f672e01",
+        "name": "- Hifu Eye Lifting Offer PAID Deposit",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 98.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "8ff54ba0-0f65-45b0-86ad-758020c5c12a",
+        "name": "Neogen Plasma High Energy Scar Area Small",
+        "description": "Short+Description%3a+%0d%0aThe+Neogen+Plasma+High+Energy+Scar+Area+(Small)+treatment+is+a+non-invasive+procedure+that+uses+advanced+plasma+technology+to+target+and+reduce+the+appearance+of+small+scars.+It+stimulates+collagen+production+and+enhances+skin+regeneration%2c+helping+to+smooth+and+improve+the+texture+of+scar+tissue+for+a+more+even+and+youthful+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aNeogen+Plasma+High+Energy+for+small+scar+areas+uses+targeted+plasma+energy+to+promote+skin+healing+by+stimulating+collagen+production+beneath+the+surface.+This+helps+to+flatten+raised+scars%2c+reduce+discoloration%2c+and+improve+overall+skin+texture.+The+treatment+is+effective+for+small+scars%2c+such+as+those+from+acne%2c+small+wounds%2c+or+minor+injuries%2c+and+works+to+create+a+smoother%2c+more+even+skin+surface+with+improved+elasticity.+The+procedure+reduces+the+visibility+of+scars+while+enhancing+the+skins+overall+appearance.%0d%0a%0d%0aInstructions%3a%0d%0a1.+Cleanse+the+scar+area+thoroughly+to+remove+oils%2c+makeup%2c+and+impurities.++%0d%0a2.+A+numbing+cream+may+be+applied+to+ensure+comfort+during+the+procedure.++%0d%0a3.+The+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses+directly+to+the+small+scar+tissue%2c+stimulating+collagen+production+and+smoothing+the+skin.++%0d%0a4.+The+treatment+typically+takes+about+15-20+minutes%2c+depending+on+the+size+and+location+of+the+scar.++%0d%0a5.+After+the+procedure%2c+soothing+serums+or+moisturizers+may+be+applied+to+help+hydrate%2c+calm%2c+and+support+healing.%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+%0d%0aThe+Neogen+Plasma+High+Energy+Scar+Area+(Small)+treatment+is+suitable+for+most+skin+types%2c+especially+those+with+small+scars%2c+such+as+acne+scars%2c+minor+cuts%2c+or+light+surgical+scars.+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 1750.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "779de89b-df80-4a4f-80a4-6fd365459c29",
+        "name": "Neogen Plasma High Energy Upper Lip",
+        "description": "Short+Description%3a++%0d%0aThe+Neogen+Plasma+High+Energy+Upper+Lip+treatment+is+a+non-invasive+procedure+that+uses+plasma+technology+to+target+and+rejuvenate+the+delicate+skin+around+the+upper+lip.+It+effectively+reduces+fine+lines%2c+wrinkles%2c+and+skin+laxity%2c+helping+to+smooth+and+tighten+the+skin+for+a+more+youthful%2c+refreshed+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a+%0d%0aNeogen+Plasma+High+Energy+for+the+upper+lip+uses+targeted+plasma+energy+to+stimulate+collagen+production%2c+tightening+and+rejuvenating+the+skin.+This+treatment+is+particularly+effective+for+reducing+the+appearance+of+fine+lines+and+wrinkles+around+the+upper+lip%2c+often+referred+to+as+%22%22smoker%27s+lines%22%22+or+%22lipstick+lines.%22+The+treatment+also+improves+skin+texture%2c+elasticity%2c+and+overall+tone%2c+offering+a+non-invasive+solution+to+restore+a+smoother%2c+firmer%2c+and+more+youthful+upper+lip+area.%0d%0a%0d%0aInstructions%3a++%0d%0aThe+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses+to+the+upper+lip+area%2c+stimulating+collagen+and+tightening+the+skin.++%0d%0aAfter+the+procedure%2c+soothing+serums+or+moisturizers+are+often+applied+to+calm+and+hydrate+the+skin.%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+particularly+those+with+fine+lines+and+wrinkles+around+the+upper+lip.+%0d%0aFrequency%3a+every+3-4+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 1500.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "ba382744-54b3-4b1b-9176-0b9451c08887",
+        "name": "Plasma Barrier facial",
+        "description": "What+It+Does+%26+Benefits%0d%0aPROBLEMATIC+%26+IRRITATED+SKIN+%e2%80%93It+has+an+antioxidant+impact+on+the+skin%e2%80%99s+immune+system.+It+reduces+the+damaging+effect+of+chronic+skin+diseases+%e2%80%93+such+as+atopic+dermatitis%2c+eczema%2c+rosacea%2c+psoriasis+and+seborrhoea.+SKIN+REGENERATION+%26+ANTI-AGEING+%e2%80%93+Cold+plasma+stimulate%e2%80%99+s+regeneration%2c+boosts+production+of+new+collagen%2c+stimulates+the+formation+of+new+blood+vessels+and+assist+in+healing+wounds.+It+also+strengthens+the+skin+immunity+and+the+skin%e2%80%99s+barrier+%0d%0aBOOSTS+ABSORBTION+%e2%80%93+Plasma+increases+epidermal+permeability+in+the+first+12+hours+after+treatment+by+%7e24%25.+to+boost+results+and+improve+absorption+of+active+ingredients.%0d%0a%0d%0aShort+(Active+Components)%0d%0aCold+plasma+technology+(Dr.+Platon)+delivers+low-temperature+energy+to+stimulate+skin+healing+and+oxygenation.%0d%0aAntioxidants%e2%80%94such+as+Vitamin+C%2c+E%2c+and+ferulic+acid%e2%80%94combat+oxidative+stress+and+improve+skin+tone.%0d%0aLED+therapy+(red+or+blue+light)+targets+inflammation%2c+bacteria%2c+and+collagen+production.%0d%0a%0d%0aSkin+Type%0d%0aSafe+and+effective+for+all+skin+types%2c+including+sensitive%2c+acne-prone%2c+and+rosacea-prone+skin.%0d%0aNot+suitable+for+open+wounds%2c+active+infections%2c+or+during+severe+flare-ups.%0d%0a%0d%0aFrequency%3a+2-4+Weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 188.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "d8192188-8ec8-466f-b2e7-8f4df1b5ba21",
+        "name": "- ALASTIN Venus Legacy RF | LED Offer",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 288.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "83e40996-f820-4b71-9990-afc2f0514100",
+        "name": "Acne Treatment",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 500.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "66901a28-4c3f-4c0c-a85b-e677b182ce86",
+        "name": "- Hifu Smile Lines Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 148.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "a3df2734-3f83-471c-84ba-e3198fd1ef5e",
+        "name": "ALMA - Clear lift - Skin Rejuvenation 1064",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 799.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "8cc88121-16ed-4682-88c9-f710381f5ade",
+        "name": "ALMA - Deep Pigmentation/Melasma",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 899.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "56530147-af49-45df-84cd-07aeecec7304",
+        "name": "Collagen Boosting Microneedling  Facial",
+        "description": "+Short+Description%3a+The+Collagen+Boosting+Microneedling+Facial+uses+tiny+needles+to+create+controlled+micro-injuries+in+the+skin%2c+stimulating+collagen+production.+This+non-invasive+treatment+improves+skin+texture%2c+reduces+fine+lines+and+acne+scars%2c+and+enhances+skin+elasticity%2c+leaving+you+with+smoother%2c+firmer%2c+and+more+youthful-looking+skin.%0d%0aWhat+It+Does+%26+Benefits%3a++stimulates+collagen+production+by+creating+tiny+controlled+micro-injuries+in+the+skin.+This+process+promotes+natural+healing%2c+improving+skin+texture%2c+tone%2c+and+elasticity.+The+treatment+targets+fine+lines%2c+wrinkles%2c+acne+scars%2c+hyperpigmentation%2c+and+enlarged+pores%2c+leaving+skin+smoother%2c+firmer%2c+and+more+youthful.%0d%0a%0d%0aActive+Ingredients%3a+depends+on+the+skin.+During+the+microneedling+procedure%2c+topical+serums+containing+active+ingredients+such+as+hyaluronic+acid%2c+vitamin+C%2c+or+growth+factors+may+be+applied+to+enhance+results.++%0d%0aSkin+Type%3a+all+skin+type+%0d%0aFrequency%3a+The+recommended+frequency+of+treatments+varies+based+on+individual+skin+concerns+and+goals.",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "collagen Boosting Treatments",
+        "price": 590.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "ba553234-e9bf-4a21-8e87-4ba4c07dc65f",
+        "name": "Neogen Low Energy Chest",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 1300.0,
+        "duration": 0,
+        "recovery_time": 0
+      },
+      {
+        "id": "b0d2bc0f-a4bd-4647-bf90-eeaa2078c3e9",
+        "name": "Neogen Plasma High Energy Full Face",
+        "description": "Short+Description%3a+it%27s+a+non-invasive+skin+rejuvenation+procedure+that+uses+plasma+technology+to+target+signs+of+aging%2c+including+fine+lines%2c+wrinkles%2c+and+skin+laxity+across+the+entire+face.+This+treatment+stimulates+collagen+production%2c+tightening+and+lifting+the+skin+for+a+smoother%2c+firmer%2c+and+more+youthful+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aNeogen+Plasma+High+Energy+Full+Face+utilizes+high-energy+plasma+pulses+to+stimulate+deep+layers+of+the+skin%2c+promoting+collagen+regeneration+and+improving+skin+texture.+It+effectively+reduces+the+appearance+of+fine+lines%2c+wrinkles%2c+and+sagging%2c+while+also+improving+skin+tone+and+elasticity.+This+treatment+addresses+multiple+concerns+across+the+face%2c+including+forehead+lines%2c+nasolabial+folds%2c+and+sagging+cheeks%2c+offering+an+overall+lifting+and+tightening+effect.+The+result+is+a+smoother%2c+firmer%2c+and+more+youthful+complexion+without+the+need+for+surgery.%0d%0a%0d%0aInstructions%3a%0d%0aThe+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses+to+the+skin%2c+stimulating+collagen+production+and+skin+tightening.%0d%0aAfter+the+procedure%2c+soothing+serums+or+moisturizers+may+be+applied+to+calm+and+hydrate+the+skin.%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%2c+%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+particularly+those+experiencing+signs+of+aging%2c+such+as+fine+lines%2c+wrinkles%2c+and+sagging.+%0d%0aFrequency%3a+once+every+3+to+4+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 5500.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "a308839f-e388-4439-851d-26319fba7884",
+        "name": "Neogen Plasma Low Energy Eyelid",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+Low+Energy+Eyelid+treatment+is+a+non-invasive+procedure+designed+to+rejuvenate+the+delicate+skin+around+the+eyelids.+Using+low-energy+plasma+technology%2c+this+treatment+helps+tighten+sagging+eyelid+skin%2c+reduce+fine+lines%2c+and+minimize+puffiness%2c+leaving+the+eyes+looking+more+refreshed+and+youthful.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a+%0d%0aNeogen+Plasma+Low+Energy+Eyelid+treatment+uses+controlled+low-energy+plasma+pulses+to+stimulate+collagen+and+elastin+production+in+the+skin+around+the+eyes.+It+effectively+targets+sagging+eyelids%2c+fine+lines%2c+and+crow%27s+feet%2c+offering+a+non-surgical+alternative+to+eyelid+lifts.+The+treatment+also+helps+to+reduce+puffiness+and+dark+circles%2c+providing+a+more+rejuvenated%2c+lifted+appearance+to+the+eye+area.+It+promotes+smoother%2c+firmer+skin+while+enhancing+elasticity+and+texture+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a+%0d%0aThe+Neogen+Plasma+device+is+used+to+deliver+low-energy+plasma+pulses+to+the+skin+around+the+eyelids%2c+stimulating+collagen+production+and+skin+tightening.++%0d%0aAfter+treatment%2c+soothing+products+such+as+serums+or+moisturizers+are+applied+to+calm+and+hydrate+the+skin.%0d%0a%0d%0aActive+Ingredients%3a++no+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%0d%0aFrequency%3a+recommended+once+every+2+to+3+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 440.0,
+        "duration": 30,
+        "recovery_time": 15
+      },
+      {
+        "id": "949c8736-c186-4d7f-ac0f-921814b78928",
+        "name": "RF Microneedling - Full Face",
+        "description": "Short+Description%3a%0d%0aRF+Fractional+Full+Face+is+a+non-invasive+skin+treatment+that+utilizes+radiofrequency+energy+to+promote+collagen+production%2c+tighten+skin%2c+and+improve+overall+texture%2c+pigmentation+on+the+entire+face.+This+procedure+targets+wrinkles%2c+fine+lines%2c+and+sagging+skin%2c+offering+a+refreshed%2c+youthful+appearance+with+minimal+downtime.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aRF+Fractional+Full+Face+uses+radiofrequency+(RF)+energy+to+deliver+controlled+heat+deep+into+the+skin%2c+stimulating+collagen+and+elastin+production.+The+key+benefits+of+this+treatment+include%3a++%0d%0a-Skin+Tightening%3a+Firms+the+skin+and+lifts+sagging+areas%2c+especially+around+the+jawline%2c+cheeks%2c+and+forehead.++%0d%0a-+Wrinkle+Reduction%3a+Reduces+the+appearance+of+fine+lines+and+wrinkles%2c+promoting+smoother%2c+more+youthful+skin.++%0d%0a-+Improved+Skin+Texture%3a+Enhances+overall+skin+texture%2c+minimizes+pores%2c+and+balances+skin+tone+and+reduce+pigmentation+%0d%0aInstructions%3a+%0d%0aCleanse+the+face+thoroughly+to+remove+makeup%2c+oils%2c+and+impurities.++%0d%0a+A+numbing+cream+may+be+applied+to+ensure+comfort+during+the+procedure.+The+RF+energy+is+then+delivered+to+the+entire+face+using+a+handheld+device.+The+RF+energy+penetrates+deeper+layers+of+the+skin+to+stimulate+collagen+and+tighten+the+skin.++%0d%0aActive+Ingredients+%3a+depends+on+skin+concerns+%0d%0aSkin+Type%3a+all+skin+type+%0d%0aFrequency%3a+3+to+4+sessions+spaced+4+to+6+weeks+apart%2c+depending+on+skin+concerns",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Venus Legacy RF",
+        "price": 1200.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "c2ee080c-0c2d-4277-a0ed-e9abfca1b016",
+        "name": "Skin Assessment",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 98.0,
+        "duration": 15,
+        "recovery_time": 0
+      },
+      {
+        "id": "f3e723ab-9eb6-4bbb-9d10-20aaaca1e188",
+        "name": "Sub  Neck Lift",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 1888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "53da4d4e-db70-4465-9c24-ae31ce9178f3",
+        "name": "UF Elite Full face",
+        "description": "Short+Description%0d%0aThe+UF+Elite+Full+Face+treatment+is+an+advanced+non-invasive+procedure+using+high-intensity+focused+ultrasound+(HIFU)+technology+to+lift%2c+tighten%2c+and+rejuvenate+the+entire+face.+This+cutting-edge+treatment+stimulates+deep+tissue+regeneration%2c+targeting+the+deeper+layers+of+the+skin+to+promote+collagen+production+and+reduce+the+signs+of+aging.+The+result+is+a+firmer%2c+smoother%2c+and+more+youthful+complexion%2c+with+a+noticeable+lift+and+improved+skin+texture.It%27s+include+full+face+and+neck+plus+the+booster+at+the+end+-+By+delivering+focused+ultrasound+energy+along+with+a+specialized+serum%2c+the+UF+Booster+++Serum+treatment+helps+to+hydrate%2c+nourish%2c+and+promote+a+youthful%2c+lifted+appearance.+On+Ultraformer+MPT%2c+the+%22booster%22+refers+to+the+Deep+Synergy+Booster+(DSB)+serum%2c+which+is+infused+into+the+skin+using+the+Ultra-Booster+handpiece+to+enhance+skin+tightening%2c+brighten%2c+and+hydrate.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThe+UF+Elite+Full+Face+treatment+uses+focused+ultrasound+to+penetrate+the+skin%c3%a2%e2%82%ac%e2%84%a2s+deeper+layers%2c+stimulating+collagen+and+elastin+production+for+noticeable+skin+tightening+and+rejuvenation.+Key+benefits+include%3a++%0d%0a-+Lifts+%26+Tightens+Skin%3a+Targets+sagging+skin%2c+particularly+around+the+jawline%2c+cheeks%2c+and+brow+area%2c+lifting+and+tightening+the+face+for+a+youthful+appearance.++%0d%0a-+Reduces+Fine+Lines+%26+Wrinkles%3a+Smoothens+fine+lines+and+wrinkles+by+promoting+collagen+production+and+improving+skin+elasticity.++%0d%0a-+Improves+Skin+Texture+%26+Tone%3a+Enhances+overall+skin+texture%2c+leaving+the+face+smoother%2c+firmer%2c+and+with+a+more+even+tone.++%0d%0a%0d%0aActive+Ingredients+-+the+Deep+Synergy+Booster+Serum+contains+39+active+ingredients%2c+including%3a+%0d%0aGlutathione+%0d%0aPDRN+(Salmon+DNA)+%0d%0aCentella+Asiatica+Extract+%0d%0aNiaciamide+++Adenosine+%0d%0a7+Hyaluronic+acids+%0d%0a10+Peptides+%0d%0a17+Amino+acids+%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+particularly+those+experiencing+mild+to+moderate+signs+of+aging%2c+such+as+sagging%2c+fine+lines%2c+and+wrinkles.+It+is+ideal+for+individuals+looking+for+a+non-invasive+skin+tightening+and+lifting+solution+for+the+entire+face.+If+you+have+particularly+sensitive+skin+or+specific+skin+conditions%2c+it+is+recommended+to+consult+with+a+professional+to+ensure+the+treatment+is+appropriate.%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 4888.0,
+        "duration": 120,
+        "recovery_time": 15
+      },
+      {
+        "id": "a289e6b0-0ab9-4de2-8a6a-b48623a003c4",
+        "name": "Circadia Clarity Peel",
+        "description": "Circadia+Level+Peels+are+a+customizable+series+of+progressive+chemical+peels+designed+to+gently+exfoliate%2c+brighten%2c+and+rejuvenate+the+skin+without+excessive+irritation+or+downtime.+These+peels+use+advanced+formulations+with+AHAs%2c+BHAs%2c+and+enzymes+to+target+a+variety+of+skin+concerns.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aCircadia+Level+Peels+help+improve+skin+tone+and+texture%2c+reduce+fine+lines%2c+minimize+breakouts%2c+and+fade+pigmentation.%0d%0aThis+treatment+is+designed+to+gently+and+effectively+exfoliate+while+simultaneously+hydrating+and+brightening+the+skin.+This+complex+treatment+uses+an+advanced+AHA+complex+that+is+gentle+enough+for+your+most+sensitive+skin+types%2c+resulting+in+fresh%2c+hydrated%2c+luminous+skin%0d%0aInstructions%0d%0aAvoid+retinoids%2c+acids%2c+and+exfoliating+treatments+3%e2%80%935+days+before+and+after+the+peel.+Arrive+with+clean+skin.+After+the+treatment%2c+use+only+gentle%2c+hydrating+products+and+SPF.+Avoid+direct+sun%2c+heat%2c+or+physical+exfoliation+for+several+days.%0d%0a%0d%0aShort+(Active+Components)%0d%0aFormulations+may+include+lactic+acid%2c+salicylic+acid%2c+mandelic+acid%2c+and+enzymes%e2%80%94tailored+to+your+skin+type+and+concerns.+These+ingredients+exfoliate%2c+clarify%2c+and+brighten+while+supporting+the+skin%e2%80%99s+natural+renewal+process.%0d%0aTreatment+recommended+every+2-4+weeks%0d%0a%0d%0aSkin+Type%0d%0aPeels+can+be+customized+for+most+skin+types%2c+including+acne-prone%2c+aging%2c+dull%2c+or+uneven+skin.",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 998.0,
+        "duration": 0,
+        "recovery_time": 0
+      },
+      {
+        "id": "9369cd69-6113-4afb-baf3-2918d0eee226",
+        "name": "Cancellation Fee",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 50.0,
+        "duration": 0,
+        "recovery_time": 0
+      },
+      {
+        "id": "c99708da-72c7-492a-a8a9-1b50115930ae",
+        "name": "Consultation",
+        "description": "",
+        "category_name": "Bespoke Consultation",
+        "subcategory_name": "Skin Anylysis",
+        "price": 0.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "e904aef2-1aeb-4c51-a1c3-7e21c3433ef8",
+        "name": "- Hifu Double Chin Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 148.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "fa1fdee1-8d18-4656-a08b-0f6fc0991cb7",
+        "name": "Hydralift Revive",
+        "description": "What+It+Does+%26+Benefits%0d%0aMicroneedling+activates+the+skin%e2%80%99s+regenerative+abilities+by+promoting+collagen+and+elastin+production%2c+reducing+the+appearance+of+fine+lines%2c+scars%2c+and+enlarged+pores.%0d%0aRejuran+HA+delivers+deep+hydration%2c+improves+skin+elasticity%2c+and+accelerates+cellular+repair.%0d%0aTogether%2c+they+refine+skin+texture%2c+enhance+firmness%2c+and+restore+a+youthful+glow+with+cumulative+results+over+multiple+sessions.%0d%0a%0d%0aInstructions%0d%0aAvoid+active+skincare+ingredients+(like+retinol%2c+acids%2c+or+exfoliants)+for+3%e2%80%935+days+before+treatment.%0d%0aArrive+with+clean+skin+and+avoid+sun+exposure+prior+to+your+appointment.%0d%0aPost-treatment%2c+use+only+gentle%2c+hydrating+products+and+broad-spectrum+SPF.+Avoid+makeup%2c+sweating%2c+and+sun+exposure+for+at+least+48+hours.+Full+recovery+typically+occurs+within+3%e2%80%935+days.%0d%0a%0d%0aShort+(Active+Components)%0d%0aMicroneedling+uses+ultra-fine+needles+to+create+micro-channels+in+the+skin%2c+stimulating+collagen+and+enhancing+absorption.%0d%0aRejuran+HA+combines+hyaluronic+acid+for+hydration+and+polynucleotides+(PN)+to+support+tissue+repair+and+boost+skin+resilience+at+a+cellular+level.%0d%0a%0d%0aSkin+Type%0d%0aIdeal+for+most+skin+types%2c+especially+aging%2c+dull%2c+textured%2c+or+acne-scarred+skin.%0d%0aNot+recommended+for+those+with+active+acne%2c+eczema%2c+psoriasis%2c+open+wounds%2c+or+during+pregnancy.%0d%0aFrequency%3a+every+2-4+weeks+or+as+needed",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 388.0,
+        "duration": 90,
+        "recovery_time": 0
+      },
+      {
+        "id": "95341d85-3f9f-43bf-869c-a96fbe1cb107",
+        "name": "Neogen Plasma High Energy Eyelid",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+High+Energy+Eyelid+treatment+is+a+non-invasive+procedure+that+uses+plasma+technology+to+tighten%2c+lift%2c+and+rejuvenate+the+delicate+skin+around+the+eyes.+It+effectively+reduces+sagging%2c+fine+lines%2c+and+wrinkles+on+the+eyelids%2c+providing+a+more+youthful+and+refreshed+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+Neogen+Plasma+High+Energy+Eyelid+treatment+delivers+targeted+plasma+energy+to+stimulate+collagen+production+in+the+skin+around+the+eyes.+It+helps+tighten+the+upper+and+lower+eyelid+skin%2c+reducing+the+appearance+of+drooping+eyelids+and+fine+lines.+The+treatment+also+smooths+out+wrinkles+and+enhances+the+overall+texture+and+elasticity+of+the+skin%2c+offering+a+non-surgical+solution+to+eye-area+rejuvenation.+Its+particularly+effective+for+addressing+aging+signs+such+as+%22%22hooded%22%22+eyelids+and+crows+feet.%0d%0a%0d%0aInstructions%3a++%0d%0a1.+Cleanse+the+eyelid+area+thoroughly+to+remove+makeup%2c+oils%2c+and+impurities.++%0d%0a2.+A+numbing+cream+may+be+applied+to+the+eyelid+area+to+ensure+comfort+during+the+procedure.++%0d%0a3.+The+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses%2c+targeting+the+skin+to+stimulate+collagen+production+and+skin+tightening.++%0d%0a4.+The+procedure+typically+takes+around+15-20+minutes+for+the+eyelid+area.++%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+%0d%0aSkin+Type%3a+suitable+for+all+skin+types%2c+particularly+those+with+signs+of+aging%2c+such+as+drooping+eyelids%2c+fine+lines%2c+or+crows+feet.+%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+3+to+4+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 2200.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "5667519f-f629-4876-badb-f26b64afb1d7",
+        "name": "UF Decolletage",
+        "description": "Short+Description%3a%0d%0aThe+UF+Decolletage+treatment+uses+advanced+high-intensity+focused+ultrasound+(HIFU)+technology+to+target+and+reduce+fat+in+the+chin+area%2c+helping+to+sculpt+and+tighten+the+skin.+This+non-invasive+procedure+stimulates+collagen+production%2c+improves+skin+elasticity%2c+and+addresses+the+appearance+of+a+double+chin%2c+resulting+in+a+more+defined+jawline+and+a+youthful%2c+contoured+profile.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aUF+Decolletage+is+a+specialized+skincare+treatment+designed+to+target+the+delicate+skin+on+the+chest+and+neck+area.+It+helps+restore+hydration%2c+elasticity%2c+and+overall+smoothness%2c+while+minimizing+signs+of+aging.%0d%0a%0d%0aKey+Benefits%3a%0d%0aReduces+Fine+Lines+%26+Wrinkles%3a+Smooths+and+softens+the+appearance+of+wrinkles%2c+giving+the+skin+a+more+youthful+look.%0d%0aDeep+Hydration%3a+Keeps+the+skin+moisturized%2c+preventing+dryness+and+promoting+a+supple+texture.%0d%0aImproves+Skin+Elasticity%3a+Firms+and+tones+the+skin+for+a+more+lifted%2c+youthful+appearance.%0d%0aEven+Skin+Tone+%26+Brightening%3a+Helps+to+brighten+dark+spots+and+even+out+skin+tone%2c+giving+a+radiant%2c+healthy+glow.%0d%0a%0d%0aInstructions%3a++%0d%0aTreatment%3a+The+UF+Double+Chin+device+is+used+to+deliver+focused+ultrasound+energy+to+the+subcutaneous+fat+layers+beneath+the+chin.+The+ultrasound+waves+target+fat+cells%2c+causing+them+to+break+down+and+be+naturally+eliminated+by+the+body.+%0d%0a%0d%0aActive+Ingredients%3a%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU)%3a+Delivers+precise+ultrasound+energy+that+targets+fat+cells+and+stimulates+collagen+production%2c+leading+to+skin+tightening+and+fat+reduction.%0d%0a%0d%0aSkin+Type%3a%0d%0aUF+Decolletage+is+suitable+for+all+skin+types%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 1888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "1b4add31-7c08-4888-ad2f-3fbfcca6dd6e",
+        "name": "UF Submentum & Neck",
+        "description": "Short+Description%3a+%0d%0aThe+UF+Submentum+%26+Neck+treatment+uses+high-intensity+focused+ultrasound+(HIFU)+technology+to+target+and+tighten+the+skin+in+the+submentum+(under-chin)+and+neck+area.+This+non-invasive+procedure+stimulates+collagen+production%2c+lifting+sagging+skin+and+reducing+the+appearance+of+a+double+chin%2c+resulting+in+a+more+sculpted+and+youthful+neck+and+jawline+without+the+need+for+surgery.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+UF+Submentum+%26+Neck+treatment+focuses+on+tightening+the+skin+and+defining+the+jawline+and+neck+area.+Key+benefits+include%3a++%0d%0aReduces+Double+Chin%3a+Targets+excess+skin+and+fat+under+the+chin%2c+helping+to+reduce+the+appearance+of+a+double+chin+and+refine+the+jawline.++%0d%0aLifts+%26+Tightens+the+Neck%3a+Firms+and+tightens+the+skin+around+the+neck%2c+reducing+sagging+and+creating+a+more+youthful%2c+defined+contour.++%0d%0aImproves+Skin+Elasticity%3a+Stimulates+collagen+production+to+improve+skin+elasticity%2c+making+the+skin+firmer+and+smoother.++%0d%0a%0d%0aInstructions%3a++%0d%0aThe+UF+Submentum+%26+Neck+device+uses+focused+ultrasound+energy+to+penetrate+the+deeper+layers+of+the+skin+in+the+submentum+and+neck+areas.+This+energy+stimulates+collagen+production%2c+tightens+the+skin%2c+and+reduces+the+appearance+of+sagging+or+double+chin.+%0d%0a%0d%0aActive+Ingredients%3a+n%2fa++%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU)%3a+The+primary+technology+used+in+this+treatment%2c+delivering+targeted+ultrasound+energy+to+deeper+skin+layers%2c+which+stimulates+collagen+production+and+helps+tighten+the+skin+in+the+submentum+and+neck+areas.%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 1888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "cd5d738f-5702-4c42-a713-04d4fdaeba03",
+        "name": "Venus Sculpt Ritual",
+        "description": "Short+Description%0d%0a%0d%0aVenus+Legacy+is+a+non-invasive+treatment+that+uses+radio+frequency+and+pulsed+electromagnetic+fields+to+gently+heat+the+skin%e2%80%99s+deeper+layers.+This+promotes+natural+collagen+and+elastin+production%2c+reduces+fat+cell+volume%2c+and+helps+contour+the+face+and+body.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aTightens+and+firms+the+skin+by+stimulating+collagen+and+elastin.%0d%0aReduces+the+appearance+of+cellulite+and+wrinkles.%0d%0aHelps+contour+the+body+and+improve+overall+skin+texture+and+tone.%0d%0aMinimal+discomfort+and+no+downtime+required.%0d%0a%0d%0aInstructions%0d%0aA+handpiece+is+moved+across+the+skin%2c+delivering+gentle+heat+while+using+suction+to+enhance+energy+absorption.%0d%0aAftercare+is+minimal%3b+clients+may+experience+slight+redness+or+warmth+but+can+resume+normal+activities+immediately.%0d%0a%0d%0aShort+(Main+Technology)%0d%0a%0d%0aRadio+Frequency+(RF)%3a+Heats+the+dermis+to+stimulate+collagen+and+elastin.%0d%0aPulsed+Electromagnetic+Fields+(PEMF)%3a+Enhances+skin+regeneration+and+circulation.%0d%0aVariPulse%e2%84%a2+Suction%3a+Improves+penetration%2c+lymphatic+drainage%2c+and+fat+breakdown.%0d%0aReal-time+Thermal+Feedback%3a+Ensures+safety+and+consistent+energy+delivery.%0d%0a%0d%0aSkin+Type%0d%0aAll+skin+tones+and+types%2c+including+darker+complexions.%0d%0aBest+for%3a+Mild+to+moderate+skin+laxity%2c+cellulite%2c+wrinkles%2c+and+localized+fat.%0d%0a%0d%0aFrequency%3a+Performed+in+a+series+of+sessions+(typically+6%e2%80%9310)%2c+spaced+weekly+or+as+advised.",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 678.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "f78db9a6-a7ed-4848-a09e-48c8f083e0dd",
+        "name": "Bespoke Signature Facial",
+        "description": "Short+Description%0d%0aA+luxurious%2c+custom+facial+treatment+that+combines+multiple+techniques+to+cleanse%2c+calm%2c+clarify%2c+refine%2c+and+nourish+the+complexion.+This+signature+facial+includes+exfoliation%2c+LED+therapy%2c+ultrasound%2c+scalp+and+hand+massages%2c+and+deep+hydration+with+targeted+serums+and+moisturizers.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThe+Bespoke+Signature+Facial+targets+all+aspects+of+skin+rejuvenation+by+thoroughly+cleansing%2c+exfoliating%2c+and+nourishing+the+skin.+The+combination+of+LED+therapy%2c+ultrasound%2c+and+massages+helps+to+improve+circulation%2c+refine+texture%2c+and+boost+hydration%2c+leaving+the+skin+glowing%2c+calm%2c+and+revitalized.%0d%0a%0d%0aInstructions%0d%0aThe+treatment+begins+with+a+deep+cleanse%2c+followed+by+gentle+exfoliation+and+LED+therapy.+Ultrasound+is+then+used+to+penetrate+active+ingredients+deeper+into+the+skin.+Scalp+and+hand+massages+promote+relaxation+while+the+facial+concludes+with+hydrating+serums+and+moisturizers.%0d%0a%0d%0aActive+Ingredients%0d%0aHyaluronic+Acid%0d%0aVitamin+C%0d%0aPeptides%0d%0aNiacinamide%0d%0a%0d%0aFrequency%3a+Recommended+every+4-6+weeks+for+optimal+results.+%0d%0aSkin+type%3a+Suitable+for+all+skin+types",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 570.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "68cd5e21-cacc-4d63-aa89-2a720ce42499",
+        "name": "Gentle Glow Peel",
+        "description": "What+It+Does+%26+Benefits%0d%0aCircadia%e2%80%99s+lactic+acid+peel+gently+exfoliates+the+skin%2c+encouraging+cell+turnover%2c+fading+pigmentation%2c+and+boosting+radiance+without+causing+irritation.+The+post-repair+mask+immediately+calms+and+hydrates%2c+reinforcing+the+skin+barrier+and+leaving+your+complexion+smooth%2c+plump%2c+and+revitalized.%0d%0a%0d%0aInstructions%0d%0aAvoid+exfoliants%2c+retinoids%2c+and+strong+actives+3%e2%80%935+days+before+and+after+the+treatment.+Arrive+with+clean+skin.+Post-treatment%2c+apply+only+gentle+moisturizers+and+SPF%2c+and+avoid+sun+exposure%2c+heat%2c+and+active+skincare+for+2%e2%80%933+days.%0d%0a%0d%0aShort+(Active+Components)%0d%0aThe+lactic+acid+peel+contains+alpha-hydroxy+acids+(AHAs)+that+gently+dissolve+dead+skin+cells+and+hydrate.+The+Circadia+post-repair+mask+includes+calming+peptides%2c+antioxidants%2c+and+barrier-restoring+ingredients+to+reduce+redness+and+replenish+moisture.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+dry%2c+dull%2c+sensitive%2c+and+aging+skin+types.+Not+recommended+for+broken+or+severely+inflamed+skin.+%0d%0aFrequency%3a+very+2-4+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 188.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "3b65c762-62c7-434c-a46c-659878966589",
+        "name": "- Hifu Chin Neck Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 248.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "117a4f41-8734-4782-bf05-f5590f16e457",
+        "name": "Hifu Eye Lifting Treatment PAID Instore",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 188.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "9d45119d-3a0a-4686-9a7c-62305ea37055",
+        "name": "LUXE Lift Facial",
+        "description": "",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 460.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "d6f16dbc-d092-4749-89c6-1bcfee5db378",
+        "name": "Turnaround Time",
+        "description": "",
+        "category_name": "Slot keep",
+        "subcategory_name": "Slot keep",
+        "price": 0.0,
+        "duration": 15,
+        "recovery_time": 0
+      },
+      {
+        "id": "c9dabc0c-df5a-4715-adb8-93eefcfe63fa",
+        "name": "UF Face Tightening & Brightening",
+        "description": "Short+Description%0d%0a%0d%0aUF+Face+Tightening+%26+Brightening+is+a+non-invasive+treatment+that+lifts+and+firms+the+skin+using+HIFU+technology.+It+enhances+skin+tone+and+radiance+while+improving+overall+facial+contours.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThis+treatment+boosts+collagen+production+to+tighten+the+skin%2c+reduce+fine+lines%2c+and+improve+elasticity.+It+also+brightens+the+complexion+and+delivers+a+more+youthful+and+refreshed+look+without+downtime.%0d%0a%0d%0aInstructions%0d%0aApply+to+clean+skin+using+a+HIFU+handpiece+in+targeted+areas+of+the+face.+A+numbing+cream+may+be+used+before+treatment+for+comfort.+No+recovery+time+is+required+after+the+procedure.%0d%0a%0d%0aShort+description%3a+High-Intensity+Focused+Ultrasound+(HIFU)%0d%0aThermal+coagulation+zones%0d%0aNatural+collagen+and+elastin+stimulation%0d%0a%0d%0aSkin+type%3a+Suitable+for+normal%2c+dry%2c+and+combination+skin+types+with+early+to+moderate+aging+signs+or+dullness%0d%0aNot+suitable+for+active+acne%2c+open+wounds%2c+severe+rosacea%2c+or+during+pregnancy%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 2888.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "7c9ece82-1e6a-4959-8385-183bcec28747",
+        "name": "UF Refresh Lift",
+        "description": "+Short+Description%0d%0aFirmer%2c+lifted+and+more+contoured+skin+with+Ultraformer+MPT%2c+The+non-invasive+treatment+is+designed+to+revitalise+your+skin+and+enhance+a+youthful+radiant+glow.+With+Ultrasound+technology+which+harnesses+the+body%e2%80%99s+natural+regenerative+process+to+lift%2c+tighten+and+tone+the+skin.+%0d%0a%0d%0aInstructions%0d%0aThe+skin+is+cleansed+and+a+soothing+ultrasound+gel+is+applied+to+the+treatment+area.%0d%0aThe+Ultraformer+MPT+device+is+used+to+deliver+focused+ultrasound+energy+at+multiple+depths+(1.5mm+to+6mm)+to+target+the+SMAS+layer+and+dermis.%0d%0a%0d%0aShort+(Main+Active+Components)%0d%0aMicro-Focused+Ultrasound+(MFU)%3a+Delivers+precise+thermal+energy+to+stimulate+collagen+production+and+tighten+skin+layers.%0d%0a%0d%0aWhat+It+Does+%26+Benefits+%0d%0aMulti-Depth+Targeting%3a+Penetrates+skin+at+various+levels+(epidermis%2c+dermis%2c+SMAS)+for+lifting%2c+contouring%2c+and+wrinkle+reduction.%0d%0aThermal+Coagulation+Points+(TCPs)%3a+Create+controlled+injury+zones+that+trigger+neocollagenesis+without+damaging+the+skin+surface.%0d%0a%0d%0aSkin+Type%3a+All+skin+types+and+tones+(Fitzpatrick+I%e2%80%93VI)%0d%0aBest+for+individuals+with+mild+to+moderate+skin+laxity%2c+sagging+jawline+or+neck%2c+fine+lines%2c+and+early+signs+of+aging%0d%0a%0d%0aNot+suitable+for%3a%0d%0aSevere+sagging+or+volume+loss+(may+require+surgical+intervention)%0d%0aOpen+wounds%2c+active+skin+infections%2c+severe+acne+in+the+treatment+area%0d%0aMetal+implants+or+pacemakers+in+the+treatment+zone%0d%0aPregnant+or+breastfeeding+individuals%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 1198.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "925c2d86-e28e-4788-b764-535389120aff",
+        "name": "Acne Scar Treatment Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 197.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "aa4600d4-0bec-455e-a9cc-c693f5827ea2",
+        "name": "ALMA - Iris - Chest",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 699.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "ba4d52eb-c2ca-4b5f-af77-6af0a3ae2956",
+        "name": "Booster 1.5mm Serum",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 888.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "4b8159a7-1104-45ac-92bc-39222e87e96a",
+        "name": "Circadia Glow Express",
+        "description": "What+It+Does+%26+Benefits%0d%0a%0d%0aThis+superhero+Oxygen+RX+treatment+will+set+the+skin+aglow%2c+rejuvenating+it+through+improved+circulation%2c+enhanced+oxygen+and+nutrient+delivery%2c+and+heightened+cellular+function.+The+Charcoal+Milk+Mask+transforms+dry%2c+congested+skin+through+a+gentle+exfoliation+and+detoxification+utilizing+Bamboo+Charcoal+and+hydrating+the+skin+with+Olive+Squalane.+CIRCADIA%e2%80%99S+C2O2+facial+isn%27t+just+a+thrill+for+acne-prone+skin%3b+it%27s+good+for+all+skin+types%0d%0a%0d%0aInstructions%0d%0aCleanse%0d%0aAvoid+exfoliating+products+or+active+ingredients+(like+AHAs%2c+BHAs%2c+or+retinoids)+24%e2%80%9348+hours+before+and+after+treatment.%0d%0aPost-treatment%2c+follow+with+gentle+skincare%2c+hydration%2c+and+sun+protection.%0d%0a%0d%0aKey+actives+include+natural+fruit+enzymes+for+exfoliation%2c+Circadia%e2%80%99s+peptide-rich+and+antioxidant-packed+gel+mask%2c+and+LED+wavelengths+(red+or+blue)+to+address+individual+skin+concerns.%0d%0aTogether%2c+these+components+gently+renew%2c+calm%2c+and+strengthen+the+skin+barrier.%0d%0a%0d%0aSkin+Type%0d%0aSafe+and+beneficial+for+all+skin+types%2c+especially+dull%2c+sensitive%2c+dry%2c+or+mildly+congested+skin.%0d%0aNot+recommended+for+those+with+open+wounds%2c+raw+skin%2c+or+severe+active+breakouts.%0d%0a%0d%0aRecommended+Treatment+Plan%3a+2-4+WEEKLY+or+as+needed",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 258.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "c48d0dc9-47dd-42a5-a8d5-63680f4ed7e3",
+        "name": "Circadia Oxygen Facial",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 570.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "f5c98e60-31ee-4a5c-a834-76af664fd9f5",
+        "name": "Express Hydralift",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 250.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "44814348-9ab3-4e99-8596-fe39a722e1e6",
+        "name": "- Hifu Cheeks Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 148.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "ec58665d-11be-4e4c-bbf3-123e57826960",
+        "name": "LED  - Add On",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Peel",
+        "price": 145.0,
+        "duration": 15,
+        "recovery_time": 0
+      },
+      {
+        "id": "650bebad-a5e3-44e8-a5c1-bea134148f14",
+        "name": "- Rosacea Treatment Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 148.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "1d7de1c7-4e1b-4d2a-bd0e-5a8d4bf14d96",
+        "name": "Royal La Mer Facial Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 296.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "56cef098-afe8-48f7-b2d1-30223a4f3f5e",
+        "name": "Venus Abdomen (add on)",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 0.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "c2a13306-613f-4095-b0bf-62a855721e5c",
+        "name": "UF Eyebrow Lift",
+        "description": "Short+Description%3a%0d%0aThe+Ultra+Forma+Eyebrow+Lift+is+a+non-surgical+treatment+that+uses+high-intensity+focused+ultrasound+(HIFU)+to+lift+and+tighten+the+brow+area.+It+creates+a+naturally+lifted+look+by+stimulating+collagen+deep+within+the+skin.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aBy+targeting+the+deeper+layers+of+the+skin%2c+Ultra+Forma+helps+firm+sagging+tissue+and+enhances+the+contour+of+the+eyebrows.+This+results+in+a+subtle%2c+natural-looking+lift%2c+improved+skin+elasticity%2c+and+a+more+awake%2c+youthful+appearance%e2%80%94with+no+downtime.%0d%0a%0d%0aInstructions%3a%0d%0aStart+with+clean%2c+dry+skin.+Apply+a+conductive+gel+to+the+brow+area%2c+then+use+the+Ultra+Forma+device+in+upward%2c+sweeping+motions+along+the+brow+line.+Follow+post-care+instructions+such+as+avoiding+heat+exposure+or+harsh+skincare+for+24%e2%80%9348+hours.%0d%0a%0d%0aShort+(Main+Active+Components)%3a%0d%0aPowered+by+HIFU+technology+to+deliver+focused+ultrasound+energy.+May+be+paired+with+calming+post-care+ingredients+like+hyaluronic+acid%2c+niacinamide%2c+or+panthenol+to+soothe+the+skin.%0d%0a%0d%0aSkin+Type%3a%0d%0aBest+suited+for+normal+to+mature+skin+types+with+mild+to+moderate+sagging.+Not+recommended+for+highly+sensitive+skin%2c+active+skin+conditions%2c+or+individuals+with+metal+implants+in+the+treatment+area.%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 688.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "4f2a7f96-a242-4c22-a78a-a899ccee0347",
+        "name": "UF Eyes",
+        "description": "Short+Description%3a%0d%0aUltra+Forma+Periorbital+Eye+treatment+is+a+gentle%2c+non-invasive+procedure+that+targets+fine+lines%2c+wrinkles%2c+and+mild+sagging+around+the+eyes+using+high-intensity+focused+ultrasound+(HIFU).+It+rejuvenates+and+firms+the+delicate+eye+area+for+a+more+refreshed+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aBy+delivering+precise+ultrasound+energy+to+stimulate+collagen+production%2c+this+treatment+helps+tighten+the+skin%2c+smooth+crow%e2%80%99s+feet%2c+and+reduce+puffiness.+It+enhances+eye+contour+and+restores+a+youthful%2c+lifted+look%e2%80%94all+without+downtime+or+injections.%0d%0a%0d%0aInstructions%3a%0d%0aClean+the+eye+area+thoroughly.+Apply+conductive+gel%2c+then+gently+move+the+Ultra+Forma+device+in+controlled%2c+upward+strokes+around+the+orbital+bone+(avoiding+the+eyelid).+Use+a+cooling+or+hydrating+serum+post-treatment+and+avoid+sun+exposure.%0d%0a%0d%0aShort+(Main+Active+Components)%3a%0d%0aUtilizes+focused+HIFU+technology+for+deep+skin+stimulation.+Often+followed+by+calming+ingredients+like+peptides%2c+aloe+vera%2c+or+hyaluronic+acid+to+reduce+inflammation+and+hydrate.%0d%0a%0d%0aSkin+Type%3a%0d%0aSafe+for+most+skin+types%2c+especially+those+showing+early+signs+of+aging+or+mild+laxity+around+the+eyes.+Not+suitable+for+hypersensitive+skin%2c+active+eye+conditions%2c+or+individuals+with+metal+implants+near+the+treatment+zone.%0d%0aFrequency%3a+once+every+1+-3+sessions+4%e2%80%936+weeks+apart+and+maintenance+treatments+every+6%e2%80%9312+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 688.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "4d366da3-d5af-4713-9ca2-8fd85b772b0a",
+        "name": "VIP Skincare Expirince",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 28.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "4d556780-3365-4e20-94bf-3cd96d041038",
+        "name": "Booster Glow & SMAS",
+        "description": "Short+Description%3a%0d%0aBooster+Glow+%26+SMAS%27+is+an+advanced+aesthetic+treatment+designed+to+rejuvenate+the+skin+by+enhancing+its+natural+radiance+and+stimulating+deeper+layers+for+skin+tightening.+This+treatment+combines+glowing+skin+benefits+with+deep+tissue+stimulation+for+a+refreshed%2c+youthful+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aBoosts+Skin+Radiance%3a+Provides+an+immediate+glow%2c+improving+the+overall+brightness+and+luminosity+of+the+skin.%0d%0aTightens+%26+Firms+Skin%3a+Targets+the+Superficial+Musculo-Aponeurotic+System+(SMAS)+layer+to+promote+skin+lifting+and+tightening%2c+reducing+sagging.%0d%0aStimulates+Collagen+Production%3a+Encourages+collagen+regeneration%2c+which+helps+to+reduce+fine+lines+and+wrinkles.%0d%0aImproves+Skin+Texture%3a+Helps+smooth+out+rough+skin%2c+leaving+it+feeling+soft+and+revitalized.%0d%0a%0d%0aInstructions%3a%0d%0aCleanse+the+skin+thoroughly+before+the+treatment.Apply+the+booster+serum+or+gel+on+the+skin+evenly.%0d%0aUse+the+appropriate+device+(often+ultrasound+or+radiofrequency)+to+stimulate+the+SMAS+layer%2c+ensuring+deep+penetration.%0d%0aLeave+the+product+on+to+allow+it+to+absorb+fully.Follow+up+with+a+calming+moisturizer+and+sunscreen.%0d%0a%0d%0aActive+Ingredients%3a%0d%0aHyaluronic+Acid%3a+Provides+intense+hydration+and+plumps+the+skin.%0d%0aPeptides%3a+Help+boost+collagen+and+elastin+production+for+firmer%2c+younger-looking+skin.%0d%0aVitamin+C%3a+Brightens+the+skin+and+fights+free+radicals+for+added+skin+protection.%0d%0aGrowth+Factors%3a+Stimulate+skin+regeneration+and+repair.%0d%0a%0d%0aFrequency%3a%0d%0aTypically%2c+this+treatment+can+be+performed+every+4-6+weeks+for+optimal+results%2c+depending+on+individual+skin+conditions+and+goals.+%0d%0aSkin+Type%3a+suitable+for+all+skin+types",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 2888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "35831fd4-cf28-4734-8bba-521b9862485f",
+        "name": "Circadia Switch Facial",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 570.0,
+        "duration": 0,
+        "recovery_time": 0
+      },
+      {
+        "id": "c3ff69b3-40f8-4c8f-8cb8-26126fc58657",
+        "name": "Hydra Detox Cleanse",
+        "description": "What+It+Does+%26+Benefits%0d%0aThis+facial+combines+the+HydraFacial+with+award-winning+Circadia+Boosters+and+masks+to+maximize+treatment+results+and+elevate+your+HydraFacial+experience%2c+Helps+with+acne+problems+%0d%0a%0d%0aThe+Hydrafacial+gently+exfoliates%2c+extracts+impurities%2c+and+infuses+active+serums%2c+while+lymphatic+drainage+improves+circulation+and+reduces+swelling.%0d%0aLED+therapy+enhances+skin+tone+and+texture+by+targeting+inflammation%2c+acne%2c+or+signs+of+aging%e2%80%94depending+on+the+light+wavelength+used.%0d%0aTogether%2c+these+steps+promote+smoother%2c+clearer%2c+and+healthier+skin+with+no+downtime.%0d%0a%0d%0aInstructions%0d%0aFor+best+results%2c+arrive+with+a+clean+face+and+avoid+retinoids+or+strong+acids+48+hours+before+the+session.%0d%0aAfter+the+treatment%2c+use+gentle+skincare%2c+apply+SPF%2c+and+avoid+exfoliants+or+heavy+makeup+for+24+hours.%0d%0a%0d%0aShort+(Active+Components)%0d%0aActive+ingredients+include+glycolic+acid%2c+salicylic+acid%2c+hyaluronic+acid%2c+antioxidants%2c+and+peptides.%0d%0aLED+light+therapy+works+at+a+cellular+level+using+red+or+blue+light%2c+depending+on+your+skin%e2%80%99s+needs.%0d%0a%0d%0aSkin+Type%0d%0aThis+treatment+is+safe+and+effective+for+all+skin+types%2c+including+sensitive%2c+oily%2c+dry%2c+and+combination+skin.%0d%0aHowever%2c+it+is+not+recommended+for+those+with+active+rashes%2c+sunburn%2c+or+open+wounds.%0d%0aFrequency%3a+every+4+weeks+or+as+needed+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 380.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "1db2ffdf-50e5-439e-ba64-cc6c00307824",
+        "name": "Lactic Peel Facial Cosmelan Prep",
+        "description": "Short+Description%3a%0d%0aA+lactic+peel+treatment+is+a+gentle+chemical+exfoliation+procedure+that+uses+lactic+acid%2c+an+alpha-hydroxy+acid+(AHA)%2c+to+remove+dead+skin+cells%2c+improving+skin+texture+and+tone.+It%27s+ideal+for+those+looking+to+address+dullness%2c+hyperpigmentation%2c+fine+lines%2c+and+uneven+skin+tone+without+harsh+irritation.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aExfoliates+and+Renew+Skin%3a+Removes+dead+skin+cells+to+reveal+smoother%2c+fresher+skin+underneath.++%0d%0a-+Hydrates+the+Skin%3a+Lactic+acid+has+humectant+properties%2c+meaning+it+helps+the+skin+retain+moisture.++%0d%0a-+Improves+Skin+Tone%3a+Brightens+the+complexion+and+reduces+hyperpigmentation%2c+age+spots%2c+and+acne+scars.++%0d%0a-+Reduces+Fine+Lines%3a+Encourages+collagen+production%2c+promoting+firmer%2c+plumper+skin.++%0d%0a-+Gentle+Exfoliation%3a+Suitable+for+sensitive+skin+types+compared+to+other+stronger+peels.%0d%0a%0d%0aInstructions%3a%0d%0aCleanse+the+skin+thoroughly+to+remove+makeup%2c+dirt%2c+and+oils.++%0d%0aApply+the+lactic+acid+peel+solution+evenly+to+the+skin%2c+avoiding+the+eyes+and+sensitive+areas.++%0d%0aAllow+the+peel+to+sit+for+the+recommended+amount+of+time+(usually+5-15+minutes%2c+depending+on+skin+sensitivity).++%0d%0aRinse+the+face+thoroughly+with+lukewarm+water+to+neutralize+the+acid.++%0d%0aFollow+with+a+soothing+moisturizer+and+sunscreen.%0d%0a%0d%0aActive+Ingredients%3a++%0d%0a-+Lactic+Acid%3a+A+gentle+AHA+derived+from+milk+that+exfoliates+and+hydrates+the+skin.++%0d%0a-+Glycolic+Acid%3a+Sometimes+combined+with+lactic+acid+to+enhance+exfoliation+and+brighten+the+skin.++%0d%0a-+Vitamin+C%3a+May+be+included+for+additional+brightening+effects.++%0d%0a-+Hydrating+Agents%3a+Ingredients+like+aloe+vera+or+glycerin+may+be+added+to+soothe+and+hydrate+the+skin.%0d%0a%0d%0aSkin+type%3a+all+Skin+Types%0d%0aFrequency%3a+can+typically+be+performed+every+3-4+weeks%2c+depending+on+skin+type+and+condition.+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Bespoke Pigmentation Treatments",
+        "price": 190.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "81e9ecf6-8378-4e89-998e-8ff1bcfacbeb",
+        "name": "Multivitamin peel A",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Peel",
+        "price": 230.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "347d3b4a-7caf-4b46-ba32-49e60fd713f5",
+        "name": "Neogen Plasma Low Energy Scar Area Small",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+Low+Energy+Scar+Area+(Small)+treatment+is+a+non-invasive+procedure+that+uses+low-energy+plasma+technology+to+target+and+reduce+the+appearance+of+small+scars.+It+stimulates+collagen+production+and+promotes+skin+regeneration%2c+helping+to+smooth+and+improve+the+texture+of+scar+tissue+for+a+more+even%2c+youthful-looking+skin+surface.+Plasma+energy+can+reduce+acne-associated+bacteria%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aNeogen+Plasma+Low+Energy+for+small+scar+areas+utilizes+low-energy+plasma+pulses+to+promote+skin+healing+and+regeneration+by+stimulating+collagen+production+beneath+the+skin%27s+surface.+This+helps+reduce+the+visibility+of+small+scars%2c+such+as+those+from+acne%2c+minor+injuries%2c+or+small+surgical+marks%2c+by+improving+skin+texture%2c+flattening+raised+scars%2c+and+reducing+discoloration.+The+treatment+enhances+skin+elasticity+and+firmness%2c+resulting+in+a+smoother%2c+more+even+appearance.+It%27s+an+effective+non-surgical+alternative+for+scar+reduction+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a%0d%0aThe+Neogen+Plasma+device+delivers+low-energy+plasma+pulses+to+the+scar+tissue%2c+stimulating+collagen+production+and+helping+to+regenerate+healthy+skin.%0d%0a%0d%0aActive+Ingredients%3a+no+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+especially+those+with+small+scars%2c+such+as+acne+scars%2c+minor+cuts%2c+or+light+surgical+scars.+It+is+effective+for+improving+the+appearance+of+scars+while+maintaining+gentle+care+for+sensitive+skin.+%0d%0a%0d%0aFrequency%3a+every+2-3+weeks+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 350.0,
+        "duration": 45,
+        "recovery_time": 15
+      },
+      {
+        "id": "0707ac6b-1b22-4209-bcab-18fefd1f53c8",
+        "name": "Post Neogen Facial",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 0.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "8c25d1c6-0fc6-4be4-8cfd-1572042d4642",
+        "name": "Recreo Hair Rejuvenature Treatment",
+        "description": "Short+Description%3a%0d%0aThe+Recreo+Hair+Rejuvenation+Treatment+is+a+cutting-edge+treatment+designed+to+promote+healthier%2c+stronger%2c+and+fuller+hair.+Using+advanced+techniques+and+nourishing+ingredients%2c+it+revitalizes+the+scalp+and+hair+follicles%2c+helping+to+restore+hair+vitality%2c+reduce+hair+thinning%2c+and+improve+overall+hair+health.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aThe+Recreo+Hair+Rejuvenation+Treatment+works+to+revitalize+the+hair+and+scalp+by+targeting+the+root+causes+of+hair+thinning+and+damage.+It+helps%3a%0d%0a-+Stimulate+hair+growth+by+improving+blood+circulation+to+the+scalp.%0d%0a-+Strengthen+the+hair+shaft%2c+reducing+breakage+and+preventing+hair+loss.%0d%0a-+Nourish+and+replenish+hair+follicles+with+essential+nutrients.%0d%0a-+Improve+hair+texture%2c+volume%2c+and+shine.%0d%0a-+Promote+thicker%2c+fuller%2c+and+healthier-looking+hair.%0d%0a-+Support+overall+scalp+health%2c+creating+an+optimal+environment+for+hair+growth.%0d%0a%0d%0aInstructions%3a++%0d%0a1.+Start+by+thoroughly+cleansing+the+scalp+and+hair+to+remove+any+buildup+or+impurities.%0d%0a2.+Apply+the+Recreo+Hair+Rejuvenation+Treatment+to+the+scalp%2c+using+targeted+techniques+to+ensure+effective+absorption+of+the+nourishing+ingredients.%0d%0a3.+A+gentle+scalp+massage+is+performed+to+enhance+circulation+and+promote+relaxation.%0d%0a4.+Allow+the+treatment+to+absorb+for+the+recommended+time.%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aAmino+Acids%2c+Keratin%2c+Vitamins+(Vitamin+B+Complex%2c+Vitamin+E)%0d%0a%0d%0aSkin+Type%3a++suitable+for+all+hair+types%2c+especially+those+experiencing+thinning%2c+weak%2c+or+damaged+hair.%0d%0aFrequency%3a++once+a+week+during+the+initial+phase",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Hair Growth Treatments",
+        "price": 750.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "5d2672de-b36c-4d97-aaf6-ce9cb87bf71a",
+        "name": "Restylane Kysse",
+        "description": "",
+        "category_name": "Cosmetic Injectables",
+        "subcategory_name": "Dermal Fillers",
+        "price": 630.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "2ba9ab83-d116-4893-99ea-5c2412dc347d",
+        "name": "Restylane Lyft",
+        "description": "",
+        "category_name": "Cosmetic Injectables",
+        "subcategory_name": "Dermal Fillers",
+        "price": 720.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "fc0a1c6a-5b50-4001-9ea8-26544d684c79",
+        "name": "Sensitive Skin Treatment",
+        "description": "",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 0.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "643c6387-80ce-4177-8320-1f1678c82184",
+        "name": "Personalized Beauty Program",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 0.0,
+        "duration": 0,
+        "recovery_time": 0
+      },
+      {
+        "id": "12d85b70-6ea7-44f6-bbb9-6cb7a1d3c8e4",
+        "name": "Bespoke Hair Growth Treatment",
+        "description": "Short+Description%0d%0aA+customized+hair+growth+treatment+combined+with+Recreo+infrared+therapy+to+stimulate+the+scalp%2c+promote+hair+growth%2c+and+improve+hair+health.+This+innovative+therapy+rejuvenates+the+scalp+while+targeting+hair+thinning+and+loss.+Uses+low+level+lasers+light+therapy+%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+treatment+stimulates+blood+circulation+in+the+scalp%2c+promoting+hair+growth+and+strengthening+existing+hair.+The+infrared+therapy+helps+to+improve+hair+follicle+health%2c+while+the+bespoke+formula+targets+individual+hair+concerns%2c+leading+to+fuller%2c+thicker%2c+and+healthier+hair.+Improve+hair+Growth%2c+volumizing%2c+hydrating+%0d%0a%0d%0aInstructions%0d%0aApply+the+bespoke+hair+growth+treatment+to+a+clean%2c+dry+scalp.+Follow+with+the+Recreo+infrared+therapy+device+to+enhance+absorption+and+stimulation+of+the+scalp+for+20+to+30+minutes.+Follow+up+with+regular+hair+care+routines+and+use+as+directed+for+maximum+results.%0d%0a%0d%0aActive+Ingredients%3a+n%2fa+(device+only)+%0d%0aSkin+Type%3a+any+skin+type.+%0d%0aFrequency%3a+Recommended+1++time+per+month+for+optimal+results.+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Hair Growth Treatments",
+        "price": 750.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "7566ee5d-e467-4d06-8919-4ddd39d5f9e8",
+        "name": "Collagen  Microneedling + NCTF",
+        "description": "",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "collagen Boosting Treatments",
+        "price": 640.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "8c7b8690-0b63-41ef-b031-742a146146be",
+        "name": "- Hifu Eye Lifting Offer NO Deposit",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 188.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "9633586c-8107-4cb6-969a-439eea4e67f5",
+        "name": "Neogen Plasma High Energy Lower Eyes  Crows feet",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+High+Energy+Lower+Eyes+%26+Crows+Feet+treatment+is+a+non-invasive+procedure+that+uses+plasma+technology+to+target+the+delicate+skin+around+the+eyes.+It+effectively+reduces+the+appearance+of+fine+lines%2c+wrinkles%2c+and+crow%27s+feet%2c+promoting+a+smoother%2c+lifted%2c+and+more+youthful+look+in+the+lower+eye+area.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aNeogen+Plasma+High+Energy+for+the+lower+eyes+and+crows+feet+uses+plasma+pulses+to+stimulate+collagen+and+elastin+production%2c+tightening+the+skin+and+reducing+the+appearance+of+wrinkles.+It+effectively+smooths+fine+lines%2c+lifts+sagging+skin%2c+and+brightens+the+under-eye+area%2c+providing+a+rejuvenated+look.+This+treatment+also+helps+with+the+reduction+of+puffiness%2c+dark+circles%2c+and+skin+laxity%2c+offering+a+non-surgical+solution+for+eye+area+rejuvenation+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a%0d%0aThe+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses+to+the+skin%2c+targeting+crows+feet+and+the+lower+eye+area+to+stimulate+collagen+and+tighten+the+skin.++%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+especially+those+with+fine+lines%2c+wrinkles%2c+and+sagging+skin+around+the+eyes.+%0d%0aFrequency%3a+every+3-4+weeks+%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 2700.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "41f69bba-3718-4585-9840-007f0b53ab52",
+        "name": "Neogen Plasma High Energy Scar Area Large",
+        "description": "Short+Description%3a%0d%0aThe+Neogen+Plasma+High+Energy+Scar+Area+(Large)+treatment+is+a+non-invasive+procedure+designed+to+reduce+the+appearance+of+large+scars+and+acne%2c+using+plasma+energy.+This+advanced+treatment+stimulates+collagen+production+and+promotes+skin+regeneration%2c+helping+to+smooth%2c+tighten%2c+and+improve+the+texture+of+scar+tissue+for+a+more+even+and+youthful-looking+skin+surface.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aNeogen+Plasma+High+Energy+for+large+scar+or+acne+areas+uses+targeted+plasma+energy+to+promote+skin+healing+by+stimulating+deep+collagen+production+and+regeneration.+It+effectively+minimizes+the+appearance+of+large+scars%2c+including+those+from+surgery%2c+trauma%2c+or+acne%2c+while+smoothing+and+firming+the+skin.+The+treatment+helps+to+flatten+raised+scars+and+reduce+discoloration%2c+leaving+the+skin+more+even%2c+textured%2c+and+rejuvenated.+It+also+enhances+skin+elasticity%2c+promoting+a+healthier+and+more+natural+appearance.%0d%0a%0d%0aInstructions%3a%0d%0aCleanse+the+scar+area+thoroughly+to+remove+any+oils%2c+makeup%2c+or+impurities.%0d%0aA+numbing+cream+may+be+applied+to+the+area+to+ensure+comfort+throughout+the+procedure.%0d%0aThe+Neogen+Plasma+device+delivers+high-energy+plasma+pulses+directly+to+the+scar+tissue%2c+stimulating+collagen+production+and+improving+skin+texture.%0d%0a%0d%0aActive+Ingredients%3a+no+specific+active+ingredients+are+applied+during+the+treatment+itself%2c+%0d%0aSkin+Type%3a+suitable+for+most+skin+types+and+is+ideal+for+individuals+with+large%2c+noticeable+scars.+%0d%0aFrequency%3a+every+3-4+weeks+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 3500.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "6ca94134-cf37-4133-93a4-b65aec5c131b",
+        "name": "Neogen Plasma Low Energy Neck",
+        "description": "Short+Description%3a++%0d%0aThe+Neogen+Plasma+Low+Energy+Neck+treatment+is+a+non-invasive+procedure+that+uses+low-energy+plasma+technology+to+rejuvenate+and+tighten+the+skin+on+the+neck.+This+treatment+helps+reduce+the+appearance+of+sagging%2c+wrinkles%2c+and+crepey+skin%2c+leaving+the+neck+area+looking+smoother%2c+firmer%2c+and+more+youthful.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aNeogen+Plasma+Low+Energy+for+the+neck+utilizes+controlled+plasma+pulses+to+stimulate+collagen+production+and+promote+skin+tightening.+The+treatment+improves+skin+elasticity+and+reduces+visible+signs+of+aging+such+as+sagging+skin%2c+fine+lines%2c+and+wrinkles+on+the+neck.+It+helps+to+smooth+out+texture+irregularities%2c+tighten+loose+skin%2c+and+reduce+the+appearance+of+%22%22turkey+neck.%22%22+This+procedure+provides+a+non-surgical+alternative+to+a+neck+lift%2c+offering+a+more+youthful+and+rejuvenated+neck+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a++%0d%0a+The+Neogen+Plasma+device+delivers+low-energy+plasma+pulses+to+the+skin+on+the+neck%2c+stimulating+collagen+production+and+tightening+the+skin.++%0d%0a%0d%0aActive+Ingredients%3a+%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+particularly+those+with+fine+lines%2c+wrinkles%2c+or+sagging+skin+on+the+neck.%0d%0aFrequency%3a+every+2-3+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 650.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "bc6cbe3e-cbaf-48da-893e-e2ded66d4120",
+        "name": "Signature Hydra facial",
+        "description": "What+It+Does+%26+Benefits%0d%0aHydrafacial+removes+dead+skin+cells%2c+extracts+impurities%2c+and+infuses+the+skin+with+nourishing+serums+like+hyaluronic+acid+and+antioxidants.+The+LED+dome+delivers+full-face+light+therapy+(red%2c+blue%2c+or+near-infrared)+to+reduce+inflammation%2c+improve+circulation%2c+and+stimulate+collagen+production.+The+result+is+hydrated%2c+radiant%2c+and+visibly+clearer+skin.%0d%0a%0d%0aInstructions%0d%0aCome+with+clean%2c+makeup-free+skin.+Avoid+retinoids%2c+acids%2c+or+exfoliants+for+48+hours+before+and+after.+After+treatment%2c+use+gentle+skincare+and+apply+SPF+daily.+Avoid+direct+sun+exposure+for+optimal+results.%0d%0a%0d%0aShort+(Active+Components)%0d%0aHyaluronic+acid+for+deep+hydration%2c+peptides+and+antioxidants+for+skin+nourishment%2c+and+LED+light+(red+for+anti-aging%2c+blue+for+acne%2c+infrared+for+healing)+to+target+your+skin%e2%80%99s+unique+needs.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+including+sensitive%2c+oily%2c+acne-prone%2c+and+mature+skin.+Not+recommended+for+open+wounds%2c+active+infections%2c+or+recent+sunburns.%0d%0a%0d%0aFrequency%3a+every+4+weeks+or+as+needed+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 350.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "f6069e91-686b-44b9-b9e6-f741e6903d76",
+        "name": "Skin Reset",
+        "description": "What+It+Does+%26+Benefits%0d%0aACNE+%e2%80%93++For+acne+and+oily+skin%2c+plasma+is+extremely+effective+in+destroying+P.+acne+bacteria%2c+quickly+reducing+skin+inflammation%2c+soothing+the+skin%2c+and+preventing+acne+reoccurrence+by+balancing+sebum+production.+%0d%0aPROBLEMATIC+%26+IRRITATED+SKIN+%e2%80%93It+has+an+antioxidant+impact+on+the+skin%e2%80%99s+immune+system.+It+reduces+the+damaging+effect+of+chronic+skin+diseases+%e2%80%93+such+as+atopic+dermatitis%2c+eczema%2c+rosacea%2c+psoriasis+and+seborrhoea.+%0d%0aSKIN+REGENERATION+%26+ANTI-AGEING+%e2%80%93+Cold+plasma+stimulate%e2%80%99+s+regeneration%2c+boosts+production+of+new+collagen%2c+stimulates+the+formation+of+new+blood+vessels+and+assist+in+healing+wounds.+It+also+strengthens+the+skin+immunity+and+the+skin%e2%80%99s+barrier+%0d%0aDEPIGMENTING+%e2%80%93+It+oxygenates+the+melanin+in+the+epidermis%2c+It%e2%80%99s+effective+in+lightening+epidermal+brown+spots+(whether+hormonal+pigmentation%2c+age+spots%2c+sun+damage+etc).+This+process+is+especially+effective+for+hyperpigmentation+under+which+an+inflammatory+process+takes+place%0d%0aBOOSTS+ABSORBTION+%e2%80%93+Plasma+increases+epidermal+permeability+in+the+first+12+hours+after+treatment+by+%7e24%25.+to+boost+results+and+improve+absorption+of+active+ingredients.%0d%0a%0d%0aInstructions%0d%0aArrive+with+clean%2c+makeup-free+skin.%0d%0aAvoid+exfoliating+treatments%2c+retinoids%2c+or+acids+for+at+least+48+hours+before+and+after+the+session.%0d%0aPost-treatment%2c+use+soothing+skincare%2c+stay+hydrated%2c+and+apply+SPF+daily.%0d%0a%0d%0aShort+(Active+Components)%0d%0aThis+treatment+uses+cold+plasma+energy+to+neutralize+harmful+free+radicals+and+accelerate+healing.%0d%0aOxygen+RF+introduces+oxygen+molecules+and+thermal+energy+to+stimulate+collagen+and+firm+the+skin.%0d%0aLED+therapy+utilizes+red+or+blue+light+wavelengths+to+reduce+inflammation%2c+boost+circulation%2c+and+enhance+skin+clarity.%0d%0a%0d%0aSkin+Type%3a+All+Skin+Type%0d%0aNot+recommended+for+individuals+with+open+wounds%2c+active+infections%2c+or+severe+rosacea+flare-ups.+%0d%0aFrequency%3a++every+2-4+Weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 488.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "585b02a7-d215-4ce3-aedb-7556ca2fbe4b",
+        "name": "UF Abdomen Tightening",
+        "description": "Short+Description%3a%0d%0aThe+Ultraformer+MPT+Abdomen+Tightening+treatment+uses+advanced+High-Intensity+Focused+Ultrasound+(HIFU)+technology+to+target+and+tighten+the+skin+on+the+abdomen.+This+non-invasive+procedure+stimulates+collagen+and+elastin+production+to+firm+and+tone+the+abdominal+area%2c+reducing+loose+or+sagging+skin%2c+and+providing+a+smoother%2c+more+contoured+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aThe+Ultraformer+MPT+Abdomen+Tightening+treatment+focuses+on+improving+the+firmness+and+elasticity+of+the+abdominal+skin.+Key+benefits+include%3a++%0d%0aTightens+Abdominal+Skin%3a+Targets+loose%2c+sagging+skin+on+the+abdomen%2c+improving+skin+tightness+and+creating+a+more+toned%2c+youthful+appearance.++%0d%0aStimulates+Collagen+Production%3a+Encourages+collagen+and+elastin+production+deep+within+the+skin%2c+enhancing+skin+elasticity+and+firmness+over+time.++++%0d%0aContours+and+Firms+the+Abdomen%3a+Refines+the+abdominal+area%2c+providing+a+smoother+and+more+sculpted+look.++%0d%0a%0d%0aInstructions%3a++%0d%0aThe+abdomen+area+is+cleansed+to+remove+oils%2c+dirt%2c+or+makeup.+A+numbing+cream+may+be+applied+to+ensure+comfort+during+the+treatment.++%0d%0aTreatment%3a+The+Ultraformer+MPT+device+delivers+high-intensity+focused+ultrasound+energy+to+the+deeper+layers+of+the+skin%2c+stimulating+collagen+and+tightening+the+skin+on+the+abdomen.%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU)**%3a+The+primary+technology+used+in+the+treatment%2c+which+delivers+focused+ultrasound+energy+deep+into+the+skin+layers+to+stimulate+collagen+production+and+tighten+the+skin.%0d%0a%0d%0aSkin+Type%3a%0d%0aThe+Ultraformer+MPT+Abdomen+Tightening+treatment+is+suitable+for+most+skin+types%2c+especially+individuals+with+mild+to+moderate+skin+laxity+or+loose+skin+on+the+abdomen.+It+is+ideal+for+those+seeking+a+non-invasive+solution+to+tighten+and+tone+the+abdominal+area+without+the+need+for+surgery.%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months%2c%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 2888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "c59610e6-aa35-4693-b963-eb1740d38b70",
+        "name": "UF Inner Thighs Contouring",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 988.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "2078859d-d2b7-4521-96f1-a548887fdc8f",
+        "name": "- Pigmentation Age Spots Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 197.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "bd402d93-120f-46be-b937-fa0a419c8848",
+        "name": "ALMA - Iris",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 699.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "e8ab69e2-0432-464a-aaff-85661d2d4dcd",
+        "name": "ALMA - Iris - Lower Back",
+        "description": "",
+        "category_name": "Body Treatments",
+        "subcategory_name": "Body Treatments",
+        "price": 1199.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "8e4fc457-521f-48bb-bb80-1c7e738f356e",
+        "name": "Collagen Recode",
+        "description": "What+It+Does+%26+Benefits%0d%0aRF+Microneedling+uses+tiny+needles+and+radiofrequency+energy+to+trigger+deep+collagen+remodeling%2c+tighten+the+skin%2c+and+improve+texture.+Rejuran+Booster%2c+rich+in+polynucleotides+(PN)%2c+enhances+healing%2c+boosts+skin+regeneration%2c+and+improves+hydration+and+elasticity.+The+result+is+firmer%2c+smoother%2c+and+healthier-looking+skin+with+long-term+benefits.%0d%0a%0d%0aInstructions%0d%0aDiscontinue+use+of+active+skincare+(retinoids%2c+acids%2c+exfoliants)+at+least+5+days+before+and+after+treatment.+Arrive+with+clean%2c+product-free+skin.+After+treatment%2c+use+only+gentle+moisturizers+and+SPF%2c+avoid+heat%2c+sun+exposure%2c+makeup%2c+and+exercise+for+48+hours.%0d%0a%0d%0aShort+(Active+Components)%0d%0aCombines+radiofrequency+energy+and+microneedling+to+stimulate+collagen+and+elastin+production.+Rejuran+Booster+delivers+polynucleotides+to+accelerate+cell+repair%2c+strengthen+the+skin+barrier%2c+and+improve+overall+skin+quality.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+most+skin+types%2c+especially+those+with+aging+concerns%2c+fine+lines%2c+acne+scars%2c+and+skin+laxity.+Not+recommended+for+clients+with+active+acne%2c+rosacea+flare-ups%2c+open+wounds%2c+or+during+pregnancy.+%0d%0aFrequency%3a+Every+6%e2%80%938+weeks%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 1198.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "7c023510-4eee-43b1-b687-0b4d2956e15b",
+        "name": "UF Neck",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Liftera Hifu",
+        "price": 1250.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "ecc947be-16ec-4fd4-b980-4a8678414c2a",
+        "name": "Letybo",
+        "description": "",
+        "category_name": "Cosmetic Injectables",
+        "subcategory_name": "Anti Wrinkle",
+        "price": 15.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "39f0b4e9-a38e-47c9-a313-137111b9b500",
+        "name": "NeoGen Plasma Boost",
+        "description": "What+It+Does+%26+Benefits%0d%0aLow-energy+NeoGen+EVO+plasma+promotes+cellular+regeneration+without+damaging+the+surface+of+the+skin.+It+supports+barrier+repair+by+reducing+inflammation%2c+enhancing+hydration+retention%2c+and+stimulating+the+skin%e2%80%99s+natural+healing+process.+Perfect+for+improving+skin+texture%2c+calming+redness%2c+and+preparing+the+skin+for+more+intensive+treatments+in+the+future.%0d%0a%0d%0aInstructions%0d%0aArrive+with+clean%2c+makeup-free+skin.+Avoid+exfoliating+products%2c+acids%2c+or+retinoids+for+48+hours+before+and+after+treatment.+Post-care+includes+using+barrier-supportive+skincare+and+daily+SPF.+Avoid+active+ingredients+for+at+least+2%e2%80%933+days+after.%0d%0aTreatment+recommended+every+2-4+weeks+%0d%0a%0d%0aShort+(Active+Components)%0d%0aNeoGen+EVO+uses+nitrogen+plasma+energy+to+gently+stimulate+fibroblasts+and+support+skin+renewal.+At+low+energy%2c+it+reinforces+the+skin+barrier%2c+reduces+trans+epidermal+water+loss+(TEWL)%2c+and+minimizes+inflammation+without+heat+damage.%0d%0a%0d%0aSkin+Type%0d%0aIdeal+for+sensitive%2c+dry%2c+or+compromised+skin+types%2c+including+those+with+rosacea%2c+post-laser+recovery%2c+or+over-exfoliated+skin.+Not+suitable+for+open+wounds+or+active+infections.+Consultation+advised+for+clients+undergoing+medical+skin+treatments+or+during+pregnancy.%0d%0a%0d%0aFrequency%3a+every+2-4+weeks+",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 488.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "658b768b-6379-4aec-92b3-447a62a09b74",
+        "name": "Restylane Refyne",
+        "description": "",
+        "category_name": "Cosmetic Injectables",
+        "subcategory_name": "Anti Wrinkle",
+        "price": 610.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "339906fd-f938-462f-89cb-f1036f87c3ea",
+        "name": "UF Nasal Fold",
+        "description": "Short+Description%3a%0d%0aUltra+Forma+Nasal+Fold+treatment+is+a+non-invasive+procedure+that+targets+deep+smile+lines+(nasolabial+folds)+using+high-intensity+focused+ultrasound+(HIFU).+It+lifts+and+tightens+the+skin%2c+reducing+the+appearance+of+deep+creases+around+the+mouth.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+treatment+stimulates+collagen+production+beneath+the+skin%e2%80%99s+surface+to+smooth+and+firm+the+area+around+the+nose+and+mouth.+It+helps+soften+deep+folds%2c+restore+facial+volume%2c+and+enhance+skin+elasticity+for+a+younger%2c+more+contoured+look%e2%80%94without+needles+or+downtime.%0d%0a%0d%0aInstructions%3a%0d%0aCleanse+the+treatment+area+thoroughly.+Apply+conductive+gel%2c+then+move+the+Ultra+Forma+device+slowly+along+the+nasal+fold+area+using+controlled%2c+upward+motions.+Avoid+direct+sun+exposure+and+apply+soothing+serums+after+treatment.%0d%0a%0d%0aShort+(Main+Active+Components)%3a%0d%0aUtilizes+HIFU+(high-intensity+focused+ultrasound)+to+penetrate+deep+layers+of+skin.+Often+complemented+by+post-care+ingredients+like+peptides%2c+hyaluronic+acid%2c+or+anti-inflammatory+agents.%0d%0a%0d%0aSkin+Type%3a%0d%0aSuitable+for+most+skin+types%2c+especially+mature+or+aging+skin+with+visible+nasolabial+folds.+Not+recommended+for+extremely+sensitive+skin%2c+active+skin+infections%2c+or+individuals+with+metal+implants+in+the+face.%0d%0aFrequency%3a+once+every+3+to+6+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 688.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "bf731b7c-76c8-4f3c-9ec0-874a42a39dc8",
+        "name": "UF Upper Arms Contour & Tighten",
+        "description": "Short+Description%3a%0d%0aThe+Ultraformer+MPT+Upper+Arms+Contour+%26+Tighten+treatment+uses+High-Intensity+Focused+Ultrasound+(HIFU)+technology+to+target+loose+or+sagging+skin+on+the+upper+arms.+This+non-invasive+procedure+stimulates+collagen+production%2c+tightening+and+firming+the+skin%2c+helping+to+contour+and+shape+the+upper+arms+for+a+smoother%2c+more+toned+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aThe+Ultraformer+MPT+Upper+Arms+treatment+is+designed+to+lift%2c+tighten%2c+and+contour+the+skin+on+the+upper+arms.+Key+benefits+include%3a++%0d%0aTightens+Loose+Skin%3a+Targets+sagging+skin+on+the+upper+arms%2c+improving+skin+elasticity+and+creating+a+more+youthful%2c+toned+look.++%0d%0aContours+the+Upper+Arms%3a+Refines+the+shape+of+the+upper+arms%2c+enhancing+their+contour+and+smoothness.++%0d%0aStimulates+Collagen+Production%3a+Deep+ultrasound+energy+stimulates+collagen+production%2c+tightening+the+skin+over+time.++%0d%0aImproves+Skin+Firmness+%26+Texture%3a+Helps+reduce+the+appearance+of+flabby+or+crepey+skin%2c+making+the+skin+firmer+and+more+even+in+texture.++%0d%0a%0d%0aTreatment%3a+The+Ultraformer+MPT+device+delivers+high-intensity+focused+ultrasound+energy+to+the+deeper+layers+of+the+skin%2c+stimulating+collagen+production+and+tightening+the+skin.++%0d%0a%0d%0aActive+Ingredients%3a+%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU)%3a+The+core+technology+used+in+this+treatment%2c+delivering+focused+ultrasound+energy+deep+into+the+skin+layers+to+stimulate+collagen+production+and+tighten+the+skin.%0d%0a%0d%0aSkin+Type%3a%0d%0aThe+Ultraformer+MPT+Upper+Arms+Contour+%26+Tighten+treatment+is+suitable+for+most+skin+types%2c+especially+individuals+with+mild+to+moderate+skin+laxity+or+sagging+in+the+upper+arms.+It%27s+ideal+for+those+who+want+to+tighten%2c+tone%2c+and+contour+the+skin+on+their+arms+without+resorting+to+surgery.%0d%0a%0d%0aFrequency%3a+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 1888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "36dd52d9-38cb-4625-8ce2-ef123303a84b",
+        "name": "24K Cleopatra Regime facial Treatment",
+        "description": "Short+description%3a+a+professional+treatment+designed+improve+fine+lines+and+bright+skin+pigment++%0d%0aWhat+It+Does+%26+Benefits%0d%0aThe+use+of+nanotechnology+allows+silk+essence+and+24+K+gold%0d%0aRemoves+impurities%3a+The+treatment+cleanses+and+exfoliates+the+skin%2c+removing+dead+skin+cells%2c+dirt%2c+and+excess+oils.%0d%0aStimulates+collagen+production%3a+24K+gold+encourages+collagen+synthesis%2c+improving+skin+elasticity+%0d%0aImproves+skin+texture%3a+Provides+smoother%2c+softer%2c+and+more+even+skin+tone.%0d%0aHydrates+and+nourishes%3a+Deeply+hydrates+the+skin%2c+leaving+it+plump%2c+moisturized%0d%0aBrightens+and+evens+complexion%3a+The+treatment+works+to+enhance+skin+radiance+and+promote+a+more+even+skin+tone.%0d%0aAnti-inflammatory+effects%3a+Gold+particles+in+the+treatment+have+anti-inflammatory+properties%2c+soothing+irritated+skin.%0d%0aInstructions%0d%0aCleanse%3a+Begin+with+a+deep+cleanse+to+remove+makeup%2c+dirt%2c+and+impurities+from+the+skin.%0d%0aExfoliate%3a+Apply+an+exfoliating+scrub+or+mask+to+slough+off+dead+skin+cells+and+prepare+the+skin+for+better+absorption+of+the+active+ingredients.%0d%0aApply+24K+Gold+Serum%3a+Gently+massage+a+serum+infused+with+24K+gold+into+the+skin+to+stimulate+collagen+production+and+increase+skin+elasticity.%0d%0aFacial+Massage%3a+Use+upward+strokes+to+massage+the+product+into+the+skin%2c+promoting+relaxation%2c+circulation%2c+and+better+product+absorption.%0d%0aHydrating+Mask%3a+Apply+a+hydrating+mask+to+nourish+and+lock+in+moisture.+Leave+on+for+10-15+minutes.%0d%0aFinishing+Serum+and+Moisturizer%3a+Follow+up+with+a+finishing+serum+and+moisturizer+to+seal+in+hydration+and+provide+long-lasting+results.%0d%0a%0d%0aActive+Ingredients%3a+24K+Gold%0d%0aCollagen%0d%0aHyaluronic+Acid%0d%0aVitamin+C%0d%0aPeptides%0d%0aAmino+Acids%0d%0aArgan+Oil%0d%0aRose+Extract%0d%0a%0d%0aSkin+type%3a+Suitable+for+all+type+of+skin%2c+especially+mature%2c+dry%2c+and+sensitive+skin.+%0d%0a%0d%0aFrequency%3a++every+4-6+weeks+for+optimal+results.+Can+be+more+frequent+for+individuals+looking+for+intensive+anti-aging+or+rejuvenation.%0d%0a",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 980.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "9a83e3c8-df97-4510-994b-580c5aa65917",
+        "name": "30 min Cleanse, Serum, Hydrate & LED",
+        "description": "",
+        "category_name": "Database Relaunch Facials",
+        "subcategory_name": "Database Relaunch Facials",
+        "price": 0.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "69a6d4ab-de6d-421e-9ed7-cfa2de7c50e4",
+        "name": "ALMA - Clear lift -Superficial Pigmentation",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 899.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "b0ac49ef-8855-48d7-a6e2-59589a5002ac",
+        "name": "Bespoke Treatment",
+        "description": "",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Bespoke Facials",
+        "price": 0.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "26080bca-fce3-4082-ab5e-47f92167ff49",
+        "name": "Cold Plasma Package Treatment",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 490.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "f6e3885a-cc49-4044-9cd4-22da222463b2",
+        "name": "Glow Therapy",
+        "description": "This+advanced+rejuvenation+treatment+combines+microneedling+with+a+Rejuran+HA+booster+to+improve+skin+texture%2c+boost+hydration%2c+and+stimulate+collagen+production.+It%27s+ideal+for+targeting+fine+lines%2c+enlarged+pores%2c+acne+scars%2c+and+dull+or+aging+skin.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aMicroneedling+creates+controlled+micro-injuries+that+trigger+the+skin%e2%80%99s+natural+repair+process+and+boost+collagen.+Rejuran+HA%2c+a+combination+of+polynucleotides+(PN)+and+hyaluronic+acid%2c+accelerates+healing%2c+deeply+hydrates%2c+and+enhances+elasticity%e2%80%94resulting+in+smoother%2c+firmer%2c+and+more+radiant+skin.%0d%0a%0d%0aInstructions%0d%0aAvoid+exfoliants%2c+retinoids%2c+and+acids+for+3%e2%80%935+days+before+and+after+treatment.+Arrive+with+clean%2c+product-free+skin.+Post-treatment%2c+use+only+gentle+moisturizers%2c+avoid+makeup+for+24%e2%80%9348+hours%2c+and+apply+SPF+daily.%0d%0a%0d%0aShort+(Active+Components)%0d%0aMicroneedling+activates+collagen+synthesis+and+increases+serum+absorption.+Rejuran+HA+contains+polynucleotides+for+cellular+repair+and+hyaluronic+acid+for+intense+hydration+and+plumping.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+most+skin+types%2c+especially+those+concerned+with+aging%2c+acne+scars%2c+or+texture.+Not+recommended+for+active+acne%2c+rosacea%2c+open+wounds%2c+or+during+pregnancy.+A+consultation+is+required+prior+to+treatment.%0d%0aFrequency%3a+every+4+weeks%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 588.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "38427736-c989-45f4-9f71-706c13818c36",
+        "name": "Neogen Plasma Low Energy Upper Lip",
+        "description": "Short+Description%3a++%0d%0aThe+Neogen+Plasma+Low+Energy+Upper+Lip+treatment+is+a+non-invasive+procedure+that+utilizes+low-energy+plasma+technology+to+rejuvenate+and+tighten+the+skin+around+the+upper+lip.+This+treatment+effectively+reduces+fine+lines%2c+wrinkles%2c+and+skin+laxity%2c+helping+to+smooth+and+restore+a+more+youthful%2c+refreshed+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aNeogen+Plasma+Low+Energy+for+the+upper+lip+targets+fine+lines%2c+often+referred+to+as+%22%22smoker%e2%80%99s+lines%22%22+or+%22%22lipstick+lines%2c%22%22+by+stimulating+collagen+production+and+tightening+the+skin.+The+treatment+helps+to+improve+skin+texture+and+elasticity%2c+smooth+out+wrinkles%2c+and+enhance+overall+skin+tone+around+the+lip+area.+It+offers+a+non-surgical+solution+for+rejuvenating+the+upper+lip%2c+providing+a+refreshed+and+youthful+look+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a%0d%0a+The+Neogen+Plasma+device+delivers+low-energy+plasma+pulses+to+the+skin+around+the+upper+lip%2c+stimulating+collagen+production+and+tightening+the+skin.++%0d%0aAfter+the+procedure%2c+soothing+serums+or+moisturizers+are+applied+to+calm+and+hydrate+the+skin.%0d%0a%0d%0aActive+Ingredients%3a%0d%0a-No+specific+active+ingredients+are+applied+during+the+treatment+itself**%2c+but+post-treatment+serums+may+contain%3a++%0d%0a++%0d%0aSkin+Type%3a%0d%0aThe+Neogen+Plasma+Low+Energy+Upper+Lip+treatment+is+suitable+for+most+skin+types%2c+This+treatment+is+safe+for+sensitive+skin%2c+but+a+consultation+is+recommended+for+individuals+with+active+skin+conditions+or+particularly+delicate+skin+to+ensure+suitability.%0d%0a%0d%0aFrequency%3a+every+2-3+weeks+%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 300.0,
+        "duration": 45,
+        "recovery_time": 15
+      },
+      {
+        "id": "21246f24-084b-481d-94fb-4df139e62c07",
+        "name": "Neogen Platunum",
+        "description": "Short+Description%0d%0aNeoGen+Plasma+is+a+non-invasive+skin+regeneration+treatment+that+uses+nitrogen+plasma+energy+to+treat+the+full+face.+It+safely+delivers+heat+deep+into+the+skin+to+trigger+controlled+thermal+damage%2c+stimulating+collagen+and+elastin+production+for+dramatic+improvements+in+texture%2c+tone%2c+and+tightness.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aNeoGen+Plasma+resurfaces+and+rejuvenates+the+skin+by+creating+a+controlled+thermal+effect+without+damaging+the+skin+barrier.+It+reduces+wrinkles%2c+improves+skin+laxity%2c+softens+acne+scars%2c+and+fades+pigmentation+while+tightening+and+lifting+the+skin.+A+high-energy+full-face+treatment+offers+deeper+penetration+and+longer-lasting+results.%0d%0a%0d%0aInstructions%0d%0aPlasma+energy+is+delivered+evenly+across+the+full+face+using+a+handheld+device.%0d%0aPost-treatment%2c+redness+and+flaking+may+occur+for+several+days.+Avoid+sun+exposure%2c+active+ingredients%2c+and+intense+heat+during+healing.+Follow+all+aftercare+instructions+carefully.%0d%0a%0d%0aShort+(Main+Active+Components)%0d%0aNitrogen+Plasma+Energy%3a+Converts+nitrogen+gas+into+plasma%2c+delivering+uniform+thermal+energy+to+stimulate+regeneration.%0d%0aControlled+Thermal+Injury%3a+Triggers+deep+dermal+remodeling+while+preserving+the+skin%e2%80%99s+surface+integrity.%0d%0aCollagen+and+Elastin+Activation%3a+Encourages+long-term+skin+tightening+and+improved+structure.%0d%0a%0d%0aSkin+Type%3a%0d%0aMost+skin+types+(Fitzpatrick+I%e2%80%93IV)%0d%0aIdeal+for+aging%2c+sun-damaged%2c+textured%2c+acne-scarred%2c+and+sagging+skin%0d%0aNot+suitable+for%3a%0d%0aActive+infections%2c+open+wounds%2c+or+inflammatory+skin+conditions%0d%0aRecent+use+of+isotretinoin+(Accutane)%0d%0aVery+dark+skin+tones+(Fitzpatrick+V%e2%80%93VI)+may+require+caution+due+to+risk+of+post-inflammatory+hyperpigmentation%0d%0a%0d%0aFrequency%3a+every+6-12+MONTHS",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Bespoke Pigmentation Treatments",
+        "price": 7498.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "0d7bebb1-cf99-43dc-a381-319dd1273aff",
+        "name": "UF Forehead",
+        "description": "Short+Description%3a%0d%0aThe+UF+Forehead+treatment+uses+high-intensity+focused+ultrasound+(HIFU)+technology+to+target+the+forehead+area%2c+lifting%2c+tightening%2c+and+smoothing+the+skin.+This+non-invasive+treatment+stimulates+collagen+production%2c+reducing+the+appearance+of+forehead+lines%2c+wrinkles%2c+and+sagging.+The+result+is+a+more+youthful%2c+smoother+forehead+with+improved+skin+elasticity+and+texture.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aThe+UF+Forehead+treatment+is+designed+to+address+sagging+skin%2c+fine+lines%2c+and+wrinkles+on+the+forehead.+The+benefits+include%3a++%0d%0a-+Reduces+Forehead+Wrinkles%3a+Smooths+out+fine+lines+and+deeper+wrinkles+across+the+forehead%2c+offering+a+more+youthful+appearance.++%0d%0a-Tightens+%26+Lifts+Skin%3a+Stimulates+collagen+production+in+the+forehead+area%2c+lifting+and+tightening+the+skin+for+a+firmer%2c+more+refreshed+look.++%0d%0a-+Improves+Skin+Elasticity%3a+Helps+to+restore+the+skin%27s+natural+elasticity%2c+making+the+forehead+area+appear+smoother+and+more+toned.++%0d%0a%0d%0aInstructions%3a%0d%0aTreatment%3a+The+UF+Forehead+device+is+used+to+deliver+focused+ultrasound+energy+to+the+targeted+layers+of+the+forehead+skin.+The+ultrasound+waves+stimulate+collagen+production%2c+resulting+in+skin+tightening+and+smoothening.+%0d%0a%0d%0aActive+Ingredients%3a++%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU)+The+primary+technology+used+in+the+treatment%2c+which+delivers+precise+ultrasound+energy+to+deeper+skin+layers%2c+stimulating+collagen+production+and+tightening+the+skin+in+the+forehead+area.%0d%0a%0d%0aSkin+Type%3a++suitable+for+most+skin+types%2c+particularly+those+with+mild+to+moderate+signs+of+aging%2c+such+as+fine+lines+and+sagging+skin+on+the+forehead.+It+is+ideal+for+individuals+seeking+a+non-invasive+solution+to+improve+forehead+wrinkles+and+skin+firmness.%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 888.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "c2a835e7-559b-4982-9d84-e0922f36e72a",
+        "name": "UF Hollywood Full face",
+        "description": "Short+Description%3a%0d%0aThe+UF+Hollywood+Full+Face+treatment+uses+advanced+high-intensity+focused+ultrasound+(HIFU)+technology+to+provide+a+complete%2c+non-invasive+facial+lift%2c+inspired+by+the+youthful%2c.+This+treatment+superficial+layers+of+the+skin%2c+stimulating+collagen+production+to+tighten+and+lift+the+face+straight+after+the+treatment+with+visible+result.+The+result+is+a+sculpted%2c+radiant%2c+and+rejuvenated+look+just+perfect+before+an+event.+%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aThe+UF+Hollywood+Full+Face+treatment+is+designed+to+give+a+dramatic+yet+natural+lift+to+the+face.+Key+benefits+include%3a++%0d%0aFacial+Lifting+%26+Tightening%3a+Targets+sagging+skin%2c+particularly+around+the+jawline%2c+cheeks%2c+and+brow%2c+lifting+and+tightening+the+face+for+a+youthful%2c+sculpted+appearance.++%0d%0a-Smooths+Fine+Lines+%26+Wrinkles%3a+Reduces+the+appearance+of+fine+lines+and+wrinkles+by+stimulating+collagen+production%2c+leaving+the+skin+smoother+and+more+even.++%0d%0aImproves+Skin+Texture+%26+Tone%3a+Enhances+skin+texture+and+tone%2c+providing+a+smoother%2c+more+radiant+complexion.++%0d%0a-Enhanced+Facial+Contouring%3a+Targets+key+areas+for+natural+facial+contouring%2c+giving+you+a+lifted%2c+refreshed%2c+and+more+defined+appearance.++%0d%0a%0d%0aInstructions%3a%0d%0aTreatment%3a+The+UF+Hollywood+Full+Face+device+delivers+focused+ultrasound+energy+to+the+deeper+layers+of+the+skin.+This+energy+stimulates+collagen+production%2c+tightens+the+skin%2c+and+improves+skin+texture+across+the+entire+face.+T%0d%0a%0d%0aActive+Ingredients%3a+%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU).+The+core+technology+used+in+this+treatment%2c+which+delivers+ultrasound+energy+deep+into+the+skin+layers.+This+stimulates+collagen+and+elastin+production%2c+tightening+and+rejuvenating+the+skin+for+a+lifted%2c+youthful+appearance.%0d%0aSkin+Type%3a+suitable+for+most+skin+types%0d%0a%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 1888.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "08b2371e-4319-4429-bf89-1f34bfeb703c",
+        "name": "Venus Cellulite Reduction  Lifting",
+        "description": "Short+Description%3a%0d%0aThe+Venus+Cellulite+Reduction+%26+Lifting+treatment+utilizes+advanced+radiofrequency+(RF)+technology+to+target+and+reduce+the+appearance+of+cellulite+while+lifting+and+firming+the+skin.+This+non-invasive+procedure+works+to+smooth+the+skin%27s+surface%2c+stimulate+collagen+production%2c+and+improve+overall+skin+texture%2c+providing+a+more+toned+and+youthful+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+Venus+Cellulite+Reduction+%26+Lifting+treatment+is+designed+to+improve+the+appearance+of+dimpled+skin+caused+by+cellulite+and+to+lift+sagging+skin.+Key+benefits+include%3a++%0d%0aReduces+Cellulite%3a+Targets+stubborn+cellulite+by+improving+circulation+and+breaking+down+fat+cells%2c+leading+to+smoother%2c+more+even+skin.++%0d%0aLifts+and+Firms%3a+Tightens+loose+skin%2c+providing+a+lifting+effect+that+enhances+body+contours.++%0d%0aStimulates+Collagen+Production%3a+The+treatment+stimulates+the+production+of+collagen+and+elastin%2c+which+helps+restore+skin+firmness+and+elasticity.++%0d%0aImproves+Skin+Texture%3a+Smoothens+the+skin+surface+and+reduces+the+appearance+of+lumps+and+dimples%2c+giving+the+skin+a+more+even+and+toned+texture.++%0d%0a%0d%0aActive+Ingredients%3a+%0d%0a-Radiofrequency+(RF)+Energy+The+primary+technology+used+in+this+treatment%2c+RF+energy+heats+the+dermal+layers+to+stimulate+collagen+and+elastin+production+while+also+improving+circulation+and+targeting+fat+cells.++%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+particularly+individuals+with+moderate+cellulite+or+skin+laxity.+%0d%0aFrequency%3a+once+a+week",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Venus Legacy RF",
+        "price": 850.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "1fa49d4f-3462-4961-a72b-a246ebb5bdcd",
+        "name": "- ALASTIN Hifu Jawline | HydraFacial | LED Offer",
+        "description": "",
+        "category_name": "Add On",
+        "subcategory_name": "Devices",
+        "price": 288.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "d261d039-18e8-4de2-95e7-6f1ac793ad77",
+        "name": "ALMA - Iris - Arms",
+        "description": "",
+        "category_name": "Body Treatments",
+        "subcategory_name": "Body Treatments",
+        "price": 1199.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "47c41bfd-f006-4fde-97c8-3a8e35bdcef5",
+        "name": "Cosmelan",
+        "description": "",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Bespoke Pigmentation Treatments",
+        "price": 1850.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "71b571ee-3651-483b-8f4c-1814d7557b3a",
+        "name": "LED Treatment",
+        "description": "Short+Description%3a%0d%0aLED+(Light+Emitting+Diode)+Treatment+is+a+non-invasive+facial+therapy+that+uses+different+wavelengths+of+light+to+treat+various+skin+concerns.+It+helps+reduce+inflammation%2c+promote+collagen+production%2c+and+improve+skin+tone+and+texture%2c+providing+a+glowing%2c+rejuvenated+complexion.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aLED+Treatment+uses+different+colors+of+light+(such+as+red%2c+blue%2c+or+yellow)+to+target+specific+skin+issues%3a%0d%0a%0d%0aRed+light+stimulates+collagen+production%2c+reducing+fine+lines+and+wrinkles.%0d%0aBlue+light+kills+acne-causing+bacteria%2c+helping+to+clear+up+breakouts.%0d%0aYellow+light+reduces+inflammation+and+improves+skin+texture.+The+treatment+promotes+healing%2c+improves+skin+tone%2c+reduces+redness%2c+and+provides+an+overall+more+youthful+and+glowing+appearance+with+minimal+to+no+downtime.%0d%0a%0d%0aActive+Ingredients%3aNo+specific+ingredients+are+used+during+the+LED+procedure+itself%0d%0aSkin+Type%3a+suitable+for+all+skin+types+and+can+address+a+variety+of+concerns%2c+including+acne%2c+aging%2c+and+pigmentation.+%0d%0aFrequency%3a+typically+recommended+2+to+3+times+per+week+for+the+first+4+to+6+weeks",
+        "category_name": "LED Treatment",
+        "subcategory_name": "Bespoke LED facial",
+        "price": 190.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "5b4a87f0-9617-4ce8-9e57-53f380eff6be",
+        "name": "Profhilo 2ml",
+        "description": "",
+        "category_name": "Cosmetic Injectables",
+        "subcategory_name": "Bioremodellers",
+        "price": 900.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "345b923d-3b1e-4eec-a261-7eec579d7a40",
+        "name": "RF Microneedling - Neck",
+        "description": "Short+Description%3a++%0d%0aRF+Microneedling+for+the+neck+combines+microneedling+with+radiofrequency+(RF)+energy+to+tighten%2c+smooth%2c+and+rejuvenate+the+skin.+This+treatment+is+ideal+for+reducing+sagging%2c+wrinkles%2c+and+fine+lines+on+the+neck%2c+improving+overall+skin+texture+and+elasticity+for+a+more+youthful%2c+refreshed+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aRF+Microneedling+for+the+neck+utilizes+fine+needles+to+create+micro-channels+in+the+skin+while+simultaneously+delivering+RF+energy+to+stimulate+collagen+and+elastin+production+in+the+deeper+layers+of+the+skin.+The+treatment+provides+the+following+benefits%3a++%0d%0aReduces+Wrinkles+%26+Fine+Lines%3a+Smooths+out+wrinkles+and+fine+lines+around+the+neck%2c+often+referred+to+as+%22%22necklace+lines%22%22+or+%22%22tech+neck.%22%22++%0d%0aTightens+Skin%2c+Improves+Skin+Texture+%26+Tone%2c+Stimulates+Collagen+Production%2c+Encourages+the+skin+to+naturally+regenerate%2c+making+it+firmer+and+more+resilient+over+time.++%0d%0a%0d%0aInstructions%3a++%0d%0aPre-Treatment%3a+The+neck+area+is+thoroughly+cleansed+to+remove+makeup%2c+oils%2c+and+impurities.+A+numbing+cream+is+applied+to+ensure+comfort+during+the+procedure.++%0d%0a2.+Treatment%3a+Tiny+microneedles+are+used+to+create+micro-channels+in+the+skin%2c+followed+by+the+delivery+of+RF+energy.+This+combination+tightens+the+skin+and+stimulates+collagen+production.%0d%0a%0d%0aSkin+Type%3a++suitable+for+most+skin+types+%0d%0aFrequency%3a+once+every+4+to+6+weeks%2c",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Venus Legacy RF",
+        "price": 950.0,
+        "duration": 75,
+        "recovery_time": 0
+      },
+      {
+        "id": "bd6075a7-527f-4123-aed2-a871df498648",
+        "name": "UF Double Chin",
+        "description": "Short+Description%3a+%0d%0aThe+UF+Double+Chin+treatment+uses+advanced+high-intensity+focused+ultrasound+(HIFU)+technology+to+target+and+reduce+fat+in+the+chin+area%2c+helping+to+sculpt+and+tighten+the+skin.+This+non-invasive+procedure+stimulates+collagen+production%2c+improves+skin+elasticity%2c+and+addresses+the+appearance+of+a+double+chin%2c+resulting+in+a+more+defined+jawline+and+a+youthful%2c+contoured+profile.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+UF+Double+Chin+treatment+focuses+ultrasound+energy+on+the+fat+cells+under+the+chin+to+promote+fat+reduction+and+skin+tightening.+The+benefits+include%3a++%0d%0aFat+Reduction%3a+Targets+and+reduces+excess+fat+in+the+chin+area+for+a+slimmer%2c+more+defined+jawline.++%0d%0aSkin+Tightening+%26+Lifting%3a+Stimulates+collagen+and+elastin+production%2c+tightening+the+skin+and+reducing+sagging+in+the+neck+and+chin+area.++%0d%0a%0d%0aInstructions%3a++%0d%0aThe+treatment+area+is+cleansed+to+remove+oils%2c+dirt%2c+and+makeup.+A+topical+numbing+cream+may+be+applied+to+ensure+comfort+during+the+procedure.++%0d%0aTreatment%3a+The+UF+Double+Chin+device+is+used+to+deliver+focused+ultrasound+energy+to+the+subcutaneous+fat+layers+beneath+the+chin.+The+ultrasound+waves+target+fat+cells%2c+causing+them+to+break+down+and+be+naturally+eliminated+by+the+body.+%0d%0a%0d%0aActive+Ingredients%3a%0d%0aDelivers+precise+ultrasound+energy+that+targets+fat+cells+and+stimulates+collagen+production%2c+leading+to+skin+tightening+and+fat+reduction.%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+especially+those+with+mild+to+moderate+skin+laxity+and+a+double+chin.%0d%0aFrequency%3a+typically+recommended+once+every+6+to+12+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 488.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "5fc52461-a663-4d37-bf2a-666abec583ef",
+        "name": "UF Jawline Definition",
+        "description": "Short+Description%3a++%0d%0aThe+UF+Jawline+Definition+treatment+utilizes+high-intensity+focused+ultrasound+(HIFU)+technology+to+contour+and+define+the+jawline.+This+non-invasive+procedure+targets+deep+layers+of+the+skin%2c+stimulating+collagen+production+to+tighten+and+lift+the+jaw+area%2c+reduce+the+appearance+of+a+double+chin%2c+and+enhance+overall+facial+symmetry.+The+result+is+a+sharper%2c+more+sculpted+jawline+with+a+youthful%2c+rejuvenated+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+UF+Jawline+Definition+treatment+is+specifically+designed+to+address+sagging+skin+and+enhance+the+definition+of+the+jawline.+Key+benefits+include%3a++%0d%0aJawline+Contouring%3a+Targets+the+jawline+area+to+lift+and+define+the+contours%2c+giving+the+face+a+more+sculpted+and+structured+appearance.++%0d%0a-+Reduces+Double+Chin%3a+Helps+to+tighten+the+skin+and+reduce+the+appearance+of+a+double+chin+or+sagging+under+the+chin.++%0d%0a-Improves+Skin+Firmness%3a+Stimulates+collagen+production+in+the+jaw+and+neck+areas%2c+improving+skin+elasticity+and+firmness+for+a+more+youthful+look.++%0d%0a%0d%0aActive+Ingredients%3a++n%2fa%0d%0aHigh-Intensity+Focused+Ultrasound+(HIFU)%3a+The+primary+technology+used+in+the+treatment%2c+delivering+targeted+ultrasound+energy+to+deeper+skin+layers%2c+which+stimulates+collagen+and+elastin+production+to+tighten+and+contour+the+skin.%0d%0a%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+especially+those+experiencing+sagging+skin%2c+a+loss+of+definition%2c+or+mild+to+moderate+signs+of+aging+in+the+jawline+and+neck+area.%0d%0a%0d%0aFrequency%3a+once+every+3+to+6+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 3888.0,
+        "duration": 60,
+        "recovery_time": 0
+      },
+      {
+        "id": "8f951881-e05f-4628-833a-b6f371b2ab90",
+        "name": "ALMA - Iris - Legs",
+        "description": "",
+        "category_name": "Body Treatments",
+        "subcategory_name": "Body Treatments",
+        "price": 1199.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "b712353b-24d7-4121-b1f1-10e3482c68d7",
+        "name": "- Facial Bespoke Offer",
+        "description": "",
+        "category_name": "Introductory Offer",
+        "subcategory_name": "Facials",
+        "price": 148.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "96b1fba7-d2e4-42a9-b419-cc7d86e37c86",
+        "name": "Contour RF Lift",
+        "description": "Short+Description%0d%0a%0d%0aRF+Microneedling+with+Rejuran+Booster+combines+fractional+radio+frequency+with+microneedling+to+stimulate+collagen+production+and+deliver+regenerative+Polynucleotides+(PN)+into+the+skin.+This+dual+approach+targets+fine+lines%2c+acne+scars%2c+enlarged+pores%2c+and+dullness+for+visibly+smoother%2c+firmer%2c+and+more+radiant+skin.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+treatment+boosts+collagen+and+elastin+by+delivering+controlled+heat+through+RF+energy+and+creating+micro-injuries+with+fine+needles%2c+which+accelerates+skin+repair.+Rejuran+Booster%2c+rich+in+salmon-derived+polynucleotides+(PN)%2c+enhances+cellular+regeneration%2c+improves+hydration%2c+reduces+inflammation%2c+and+strengthens+the+skin+barrier.+%0d%0a%0d%0aInstructions%0d%0aMicroneedling+with+RF+is+performed%2c+followed+by+the+infusion+of+Rejuran+Booster+into+the+microchannels.%0d%0aPost-care+includes+avoiding+sun%2c+heat%2c+and+active+ingredients+(retinol%2c+acids)+for+a+few+days.+Sunscreen+and+soothing+moisturizers+are+essential.%0d%0a%0d%0aShort+(Main+Active+Components)%0d%0aPolynucleotides+(PN)%3a+Extracted+from+salmon+DNA%2c+support+tissue+repair%2c+reduce+inflammation%2c+and+promote+collagen+synthesis.%0d%0aRadio+Frequency+(RF)%3a+Delivers+thermal+energy+to+stimulate+deep+collagen+remodeling.%0d%0aMicroneedles%3a+Create+controlled+micro-channels+for+enhanced+absorption+and+skin+renewal.%0d%0a%0d%0aSkin+Type%0d%0aAll+skin+types+including+sensitive+and+mature+skin%0d%0aNot+suitable+for%3a%0d%0aActive+acne+breakouts+or+infections+in+the+treatment+area%0d%0aSkin+with+open+wounds%2c+eczema%2c+or+psoriasis%0d%0aIndividuals+on+blood+thinners%2c+with+pacemakers%2c+or+severe+skin+sensitivity%0d%0aFrequency%3a+Every+6%e2%80%938+weeks%0d%0a",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Face Treatment ",
+        "price": 1198.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "94c4bf4e-f561-4a3f-a61d-169866c46829",
+        "name": "Microneedling + NCTF",
+        "description": "",
+        "category_name": "Signature Facial Treatments",
+        "subcategory_name": "Introductory Offers",
+        "price": 499.0,
+        "duration": 45,
+        "recovery_time": 0
+      },
+      {
+        "id": "830eed71-6913-49e1-a1b7-992d4b9003c9",
+        "name": "Neogen Plasma High Energy Neck",
+        "description": "Short+Description%3a+%0d%0aThe+Neogen+Plasma+High+Energy+Neck+treatment+is+a+non-invasive+procedure+that+uses+plasma+technology+to+tighten%2c+lift%2c+and+rejuvenate+the+skin+on+the+neck.+It+effectively+reduces+the+appearance+of+sagging%2c+fine+lines%2c+and+wrinkles%2c+helping+to+restore+a+firmer%2c+smoother%2c+and+more+youthful+neck+contour.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a+%0d%0aNeogen+Plasma+High+Energy+for+the+neck+uses+targeted+plasma+pulses+to+stimulate+collagen+and+elastin+production+deep+within+the+skin.+This+results+in+the+tightening+and+lifting+of+the+skin%2c+reducing+sagging+and+improving+overall+skin+texture.+It+addresses+common+signs+of+aging+on+the+neck%2c+such+as+wrinkles%2c+crepiness%2c+and+loss+of+elasticity.+The+treatment+offers+a+non-surgical+solution+to+restore+a+youthful%2c+firm%2c+and+smooth+appearance+to+the+neck+with+minimal+downtime.%0d%0a%0d%0aInstructions%3a++%0d%0a+The+Neogen+Plasma+device+is+used+to+deliver+high-energy+plasma+pulses+to+the+skin%2c+stimulating+collagen+production+and+tightening+the+neck+area.++%0d%0a+After+the+procedure%2c+soothing+serums+or+moisturizers+are+often+applied+to+hydrate+and+calm+the+skin.%0d%0a%0d%0aActive+Ingredients%3a%0d%0aNo+specific+active+ingredients+are+applied+during+the+treatment+itself.%0d%0aSkin+Type%3a++suitable+for+all+skin+types%2c+especially+those+experiencing+sagging%2c+fine+lines%2c+and+wrinkles+on+the+neck.%0d%0aFrequency%3a+every+3-4+weeks",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Neogen Plasma",
+        "price": 3000.0,
+        "duration": 75,
+        "recovery_time": 15
+      },
+      {
+        "id": "d848fe17-9ba6-480e-adb9-77e443454c17",
+        "name": "UF Eyes Peri- Oral",
+        "description": "Short+Description%3a%0d%0aUltra+Forma+Perioral+Wrinkles+treatment+targets+fine+lines+and+wrinkles+around+the+mouth+using+non-invasive+high-intensity+focused+ultrasound+(HIFU)+technology.+It+tightens+the+skin+and+stimulates+collagen+production+to+smooth+the+lip+and+chin+area.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThe+treatment+works+by+delivering+focused+ultrasound+energy+deep+into+the+dermis+to+firm+and+rejuvenate+the+skin.+It+helps+reduce+fine+lines%2c+improves+skin+texture%2c+and+restores+youthful+definition+around+the+lips%e2%80%94all+with+no+downtime+or+needles.%0d%0a%0d%0aInstructions%3a%0d%0aBegin+with+clean%2c+dry+skin.+Apply+a+layer+of+conductive+gel%2c+then+move+the+Ultra+Forma+device+gently+around+the+mouth+in+small%2c+circular+or+upward+strokes.+After+treatment%2c+apply+a+calming+serum+and+avoid+excessive+heat+or+exfoliation+for+24%e2%80%9348+hours.%0d%0a%0d%0aShort+(Main+Active+Components)%3a%0d%0aPowered+by+HIFU+technology+to+stimulate+collagen+and+elastin.+Post-care+may+include+soothing+ingredients+like+hyaluronic+acid%2c+centella+asiatica%2c+or+vitamin+B5+to+hydrate+and+calm+the+skin.%0d%0a%0d%0aSkin+Type%3a%0d%0aIdeal+for+normal+to+aging+skin+types+experiencing+fine+lines+or+mild+sagging+around+the+mouth.+Not+recommended+for+overly+sensitive+or+damaged+skin%2c+or+individuals+with+metal+implants+in+the+jaw+area.%0d%0a%0d%0aFrequency%3a+once+every+3+to+6+months",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Ultraformer MPT",
+        "price": 588.0,
+        "duration": 30,
+        "recovery_time": 0
+      },
+      {
+        "id": "46d441a7-2391-43bf-a84a-ed7d5b993753",
+        "name": "Venus Legacy Body Tightening  Firming",
+        "description": "Short+Description%3a%0d%0aThe+Venus+Legacy+Body+Tightening+%26+Firming+treatment+uses+advanced+radiofrequency+(RF)+and+magnetic+pulse+technology+to+tighten+and+firm+the+skin+on+the+body.+This+non-invasive+procedure+enhances+collagen+production%2c+improves+skin+elasticity%2c+and+reduces+the+appearance+of+sagging+skin%2c+resulting+in+a+more+toned%2c+smooth%2c+and+youthful+body+contour.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a++%0d%0aThe+Venus+Legacy+Body+Tightening+%26+Firming+treatment+is+designed+to+address+loose%2c+sagging+skin+and+improve+overall+skin+texture.+Key+benefits+include%3a++%0d%0aTightens+%26+Firms%3a+Targets+areas+of+loose+or+sagging+skin+on+the+body%2c+promoting+a+firmer%2c+more+lifted+appearance.++%0d%0a-+Reduces+Cellulite%3a+Helps+improve+the+appearance+of+cellulite+by+stimulating+circulation+and+breaking+down+fat+cells%2c+leading+to+smoother+skin.++%0d%0aStimulates+Collagen+Production%3a+RF+and+magnetic+pulse+energy+stimulate+collagen+and+elastin+production%2c+which+helps+restore+skin+firmness+and+elasticity.++%0d%0a-+Enhances+Body+Contours%3a+Improves+skin+texture%2c+tone%2c+and+smoothness%2c+giving+the+body+a+more+sculpted+and+defined+look.++%0d%0a%0d%0aActive+Ingredients%3a++n%2fa+%0d%0a-+Radiofrequency+(RF)+Energy%3a+The+primary+technology+used+in+this+treatment%2c+RF+energy+heats+the+deeper+skin+layers+to+stimulate+collagen+production+and+tighten+the+skin.%0d%0a++%0d%0aSkin+Type%3a+suitable+for+most+skin+types%2c+especially+those+with+mild+to+moderate+skin+laxity%2c+cellulite%2c+or+body+areas+that+need+a+firmer%2c+more+toned+appearance.+%0d%0a%0d%0aFrequency%3a+once+a+week",
+        "category_name": "Medical Grade Treatments",
+        "subcategory_name": "Venus Legacy RF",
+        "price": 680.0,
+        "duration": 45,
+        "recovery_time": 15
+      }
+    ]
+  }
+}
