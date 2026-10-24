@@ -9,14 +9,9 @@ from services.llm import LLMModel, Message
 
 
 class AgentService:
-    """Service that executes the agent_graph without HTTP."""
+    """The AgentService is a high-level interface for running agent_graphs."""
 
-    def __init__(
-            self,
-            llm: LLMModel,
-            tools: ToolRegistry,
-            policy: AgentPolicy | None = None,
-    ) -> None:
+    def __init__(self, llm: LLMModel, tools: ToolRegistry, policy: AgentPolicy | None = None) -> None:
         self._llm = llm
         self._tools = tools
         self._policy = policy or AgentPolicy()

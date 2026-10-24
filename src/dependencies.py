@@ -11,9 +11,8 @@ from core.config import settings
 from core.logger import setup_logging
 from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
-from services.llm import AzureOpenAIModel, LLMModel
-from services.search_index.azure_search_index_manager import AzureSearchIndexManager
-from services.search_index.products_search_index import ProductsSearchIndex
+from services.llm import AzureOpenAIModel
+from services.search_index import AzureSearchIndexManager, ProductsSearchIndex
 from services.text_normalization.text_normalizer import TextNormalizer
 from use_cases import AgentService, IndexService
 
@@ -29,8 +28,6 @@ def get_logger() -> logging.Logger:
 class PipelineDependencies:
     agent_service: AgentService
     azure_embedder: AzureOpenAIEmbedder
-    azure_model: LLMModel
-    azure_search_credential: AzureKeyCredential
     azure_search_index_client: SearchIndexClient
     azure_search_index_manager: AzureSearchIndexManager
     index_service: IndexService
@@ -72,6 +69,7 @@ class PipelineDependencies:
 
             azure_search_index_manager = AzureSearchIndexManager(search_index_client=azure_search_index_client)
 
+            # TODO: Create products and services search index for both centers
             products_index = ProductsSearchIndex(
                 index_name='products_test',
                 azure_search_index_manager=azure_search_index_manager,
@@ -85,8 +83,6 @@ class PipelineDependencies:
             return cls(
                 agent_service=agent_service,
                 azure_embedder=azure_embedder,
-                azure_model=azure_model,
-                azure_search_credential=search_credential,
                 azure_search_index_client=azure_search_index_client,
                 azure_search_index_manager=azure_search_index_manager,
                 index_service=index_service,

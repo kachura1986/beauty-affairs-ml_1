@@ -1,15 +1,9 @@
-import asyncio
-
-from azure.search.documents.aio import SearchClient
-
 from services.embedding import AzureOpenAIEmbedder
-from services.search_index.azure_search_index_manager import AzureSearchIndexManager
-from services.search_index.products_search_index import ProductsSearchIndex
-from services.search_index.services_search_index import ServicesSearchIndex
+from services.search_index import AzureSearchIndexManager, ProductsSearchIndex, ServicesSearchIndex
 
 
 class IndexService:
-    """Performs search_index queries for products and services."""
+    """Management of search_index indexes for products and services."""
 
     def __init__(self, search_index_manager: AzureSearchIndexManager, embedder: AzureOpenAIEmbedder) -> None:
         self._search_index_manager = search_index_manager
@@ -252,34 +246,3 @@ class IndexService:
     #     )
     #
     #     return list(product_results), list(service_results)
-    #
-    #
-    # async def create_indexes(self, products: dict[str, list[dict]], services: dict[str, list[dict]]) -> None:
-    #     """
-    #     Creates or updates search_index indexes based on provided products and services.
-    #
-    #     Args:
-    #         products (dict): Product documents to be indexed.
-    #         services (dict): Service documents to be indexed.
-    #     """
-    #     # Index names
-    #     product_indexes = set(products.keys())
-    #     service_indexes = set(services.keys())
-    #
-    #     # Delete existing indexes
-    #     existing_indexes = await self.list_index_names()
-    #     new_indexes = product_indexes | service_indexes
-    #     indexes_to_delete = existing_indexes & new_indexes
-    #
-    #     if indexes_to_delete:
-    #         await self._delete_indexes(list(indexes_to_delete))
-    #
-    #     # Create new indexes
-    #     indexes_to_create = {
-    #         'products': list(product_indexes),
-    #         'services': list(service_indexes),
-    #     }
-    #     await self._create_indexes(indexes_to_create)
-    #
-    #     # Update documents
-    #     await self._update_documents({'products': products, 'services': services})
