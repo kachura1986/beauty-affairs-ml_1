@@ -3,7 +3,8 @@ import logging
 from fastapi import APIRouter, Depends
 
 from core.retry_strategy import retry_strategy
-from dependencies import get_logger
+from dependencies import get_logger, get_index_service
+from use_cases.index_service import IndexService
 from ..schemas.products_and_services import RequestProductsAndServicesSchema
 
 router = APIRouter()
@@ -14,6 +15,7 @@ router = APIRouter()
 async def update(
         data: RequestProductsAndServicesSchema,
         logger: logging.Logger = Depends(get_logger),
+        index_service: IndexService = Depends(get_index_service),
 ) -> str:
     """
     Update products and services in the search index.
@@ -23,6 +25,7 @@ async def update(
             - **products** (dict): Dictionary of products to update.
             - **services** (dict): Dictionary of services to update.
         logger (logging.Logger): Logger used for reporting request errors.
+        index_service (IndexService): Index service used for updating products and services.
 
     Returns:
         str: A response message.
@@ -35,6 +38,8 @@ async def update(
 
     logger.info('Products: %s', products)
     logger.info('Services: %s', services)
+
+    await index_service.upsert_documents(products, services)
 
     return 'Products and services have been updated in the search index'
 

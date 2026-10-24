@@ -15,7 +15,7 @@ from services.llm import AzureOpenAIModel, LLMModel
 from services.search_index.azure_search_index_manager import AzureSearchIndexManager
 from services.search_index.products_search_index import ProductsSearchIndex
 from services.text_normalization.text_normalizer import TextNormalizer
-from use_cases import AgentService
+from use_cases import AgentService, IndexService
 
 
 # Logger
@@ -27,13 +27,14 @@ def get_logger() -> logging.Logger:
 # DI container
 @dataclass
 class PipelineDependencies:
-    openai_client: AsyncAzureOpenAI
-    azure_model: LLMModel
-    azure_embedder: AzureOpenAIEmbedder
     agent_service: AgentService
+    azure_embedder: AzureOpenAIEmbedder
+    azure_model: LLMModel
     azure_search_credential: AzureKeyCredential
     azure_search_index_client: SearchIndexClient
     azure_search_index_manager: AzureSearchIndexManager
+    index_service: IndexService
+    openai_client: AsyncAzureOpenAI
 
     @classmethod
     async def create(cls) -> "PipelineDependencies":
@@ -76,16 +77,20 @@ class PipelineDependencies:
                 azure_search_index_manager=azure_search_index_manager,
                 embedder=azure_embedder
             )
+
+            # Use cases
             agent_service = AgentService(llm=azure_model, tools=create_product_tools(products_index))
+            index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 
             return cls(
-                openai_client=openai_client,
-                azure_model=azure_model,
-                azure_embedder=azure_embedder,
                 agent_service=agent_service,
+                azure_embedder=azure_embedder,
+                azure_model=azure_model,
                 azure_search_credential=search_credential,
                 azure_search_index_client=azure_search_index_client,
                 azure_search_index_manager=azure_search_index_manager,
+                index_service=index_service,
+                openai_client=openai_client,
             )
 
         except BaseException:
@@ -118,11 +123,17 @@ class PipelineDependencies:
                 logger.exception("Failed to close %s", name)
 
 
-# Dependency providers
+# DI container
 def get_pipeline_dependencies(request: Request) -> PipelineDependencies:
     return request.app.state.dependencies
 
 
+# Dependency providers
 # Agent
 def get_agent_service(request: Request) -> AgentService:
     return get_pipeline_dependencies(request).agent_service
+
+
+# Index
+def get_index_service(request: Request) -> IndexService:
+    return get_pipeline_dependencies(request).index_service
