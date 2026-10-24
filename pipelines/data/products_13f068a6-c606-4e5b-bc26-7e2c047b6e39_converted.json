@@ -1,6 +1,6 @@
 {
   "data": {
-    "a1035583-2fe1-40f9-b4ae-3bb4722f3fe1": [
+    "13f068a6-c606-4e5b-bc26-7e2c047b6e39": [
       {
         "id": "4a9e7570-7e35-4a10-89ba-94056d0c8610",
         "name": "24K Cleopatra Nano Regimen",
@@ -41,7 +41,7 @@
         "category_name": "Orogold cosmetics",
         "subcategory_name": "Vitamin C",
         "brand_name": "Orogold",
-        "price": 378.0,
+        "price": 338.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -228,7 +228,18 @@
         "category_name": "Medik8",
         "subcategory_name": "Medik8",
         "brand_name": "Medik8",
-        "price": 135.0,
+        "price": 121.8,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "8f83f8ac-0e62-4336-86f5-50b3d4a5ccc6",
+        "name": "Medik8 Total Moisture Daily Facial Cream",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 89.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -277,6 +288,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "2cf7df2e-ad5d-40bd-8b73-7cb1ef1ebe30",
+        "name": "Phyto Mask",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Pinot",
+        "brand_name": "Vine vera",
+        "price": 1000.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "e837d807-c297-4b70-a3b4-d85dd51abdae",
         "name": "Neck & Chest Mask",
         "description": "",
@@ -295,17 +317,6 @@
         "subcategory_name": "Jelessi",
         "brand_name": "",
         "price": 2628.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "2cf7df2e-ad5d-40bd-8b73-7cb1ef1ebe30",
-        "name": "Phyto Mask",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Pinot",
-        "brand_name": "Vine vera",
-        "price": 1000.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -541,6 +552,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "7ea67685-ca81-4e66-a39b-b887f4ddfc17",
+        "name": "Crystal Retinol Ceramide Eye Cream 6",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 99.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "9a41c426-0df4-481d-8f1e-394346b19782",
         "name": "Glyacolic peel",
         "description": "",
@@ -585,6 +607,17 @@
         "quantity_unit": "ml"
       },
       {
+        "id": "67bf5dcf-6ea0-472f-898b-2763dbbe0780",
+        "name": "Medik8 C-Tetra 30ml",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 86.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "a4fabd0e-f86d-4fa5-b833-92f9f0349f93",
         "name": "Medik8's Crystal Retinal Ceramide Eye",
         "description": "",
@@ -618,6 +651,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "97f4f161-7300-412f-9820-df99c533e3bc",
+        "name": "Vitamin C Facial Serum",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Vitamin C",
+        "brand_name": "Vine vera",
+        "price": 318.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "92c4512d-76b0-471c-a155-52e590b979e9",
         "name": "Serum 71",
         "description": "Short+Description%0d%0aCircadia%e2%80%99s+Serum+71+is+a+specialized+antioxidant+and+anti-aging+serum+formulated+to+combat+oxidative+stress%2c+protect+against+environmental+damage%2c+and+support+healthy%2c+resilient+skin.+It%e2%80%99s+especially+beneficial+for+mature+or+compromised+skin+in+need+of+rejuvenation.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+serum+delivers+potent+antioxidant+protection%2c+enhances+skin+elasticity%2c+and+reduces+the+appearance+of+fine+lines+and+wrinkles.+It+also+supports+barrier+repair+and+soothes+irritation%2c+making+it+ideal+for+post-procedure+care+or+skin+experiencing+chronic+inflammation.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+few+drops+to+clean+skin+once+or+twice+daily.+Gently+massage+into+the+face+and+neck+before+moisturizer.+Follow+with+SPF+during+the+day.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aAcetyl+Zingerone%3a+A+powerful+antioxidant+that+protects+from+free+radicals+and+inflammation.%0d%0a%0d%0aKinetin%3a+A+plant+growth+factor+that+helps+improve+skin+tone+and+texture.%0d%0a%0d%0aNiacinamide+(Vitamin+B3)%3a+Brightens+skin%2c+reduces+redness%2c+and+strengthens+the+barrier.%0d%0a%0d%0aPanthenol+(Vitamin+B5)%3a+Soothes+and+hydrates+the+skin.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Acetyl+Zingerone%2c+Kinetin%2c+Niacinamide%2c+Panthenol%2c+Glycerin%2c+Sodium+Hyaluronate%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Carbomer%2c+Sodium+Hydroxide.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+mature%2c+sensitive%2c+post-procedure%2c+or+inflamed+skin.+Ideal+for+those+needing+strong+antioxidant+protection%2c+anti-aging+benefits%2c+and+skin+barrier+recovery.",
@@ -640,17 +684,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "97f4f161-7300-412f-9820-df99c533e3bc",
-        "name": "Vitamin C Facial Serum",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Vitamin C",
-        "brand_name": "Vine vera",
-        "price": 318.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "59152660-62c9-4a49-9860-34f971e54a9d",
         "name": "The Mesoestetic Hydracream Fusion",
         "description": "",
@@ -658,6 +691,17 @@
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
         "price": 69.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "5e90cf98-63dd-45ba-add4-394700be8f2e",
+        "name": "Vida Glow Natural Marine Collagen 30x3g Sachets Blueberry",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Accessories",
+        "brand_name": "",
+        "price": 70.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -794,17 +838,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "fa094eb5-bdc4-4cb1-b7c4-4aa7bdfb3939",
-        "name": "Longevity Serum",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Pinot",
-        "brand_name": "Vine vera",
-        "price": 650.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "b6da8b39-9720-4ba1-9e80-e47c1cddc9df",
         "name": "Caviar Elastin Restoration",
         "description": "Short+Description%0d%0aThe+Orogold+24K+Caviar+Elastin+Restoration+is+a+luxurious+skincare+treatment+featuring+caviar+extract+and+24K+gold.+This+product+is+designed+to+enhance+skin+suppleness+and+radiance%2c+providing+a+rejuvenated+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+treatment+aims+to+reduce+the+appearance+of+fine+lines+and+wrinkles%2c+particularly+around+the+eyes%2c+forehead%2c+and+lips.+Regular+use+promotes+a+dewy%2c+smooth+complexion%2c+leaving+the+skin+looking+revitalized+and+youthful.+%0d%0a%0d%0aInstructions%0d%0aApply+the+contents+of+one+capsule+to+cleansed+face+and+neck%2c+focusing+on+areas+prone+to+fine+lines.+Gently+massage+until+fully+absorbed.+For+optimal+results%2c+use+daily+as+part+of+your+skincare+routine.%0d%0a%0d%0aActive+Ingredients%0d%0aCaviar+Extract+24K+Gold+Spilanthes+Acmella+Flower+Extract+Sodium+Hyaluronate%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aCyclopentasiloxane%2c+Dimethicone%2c+Caviar+Extract%2c+Spilanthes+Acmella+Flower+Extract%2c+Sodium+Hyaluronate%2c+Gold%2c+Fragrance%2c+Phenoxyethanol%2c+Ethylhexylglycerin.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types.+Individuals+with+sensitive+skin+should+perform+a+patch+test+prior+to+use+to+ensure+compatibility.+Discontinue+use+if+irritation+occurs.",
@@ -827,6 +860,17 @@
         "quantity_unit": "ml"
       },
       {
+        "id": "fa094eb5-bdc4-4cb1-b7c4-4aa7bdfb3939",
+        "name": "Longevity Serum",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Pinot",
+        "brand_name": "Vine vera",
+        "price": 650.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "6fe6e07f-64c3-48b2-94ca-9017ec81360e",
         "name": "Express Postage",
         "description": "",
@@ -834,6 +878,17 @@
         "subcategory_name": "POSTAGE METHOD",
         "brand_name": "",
         "price": 20.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "0b00829a-e9eb-44a8-b438-6228a83ab7a2",
+        "name": "K18 Molecular Repair Oil 30ml",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Accessories",
+        "brand_name": "",
+        "price": 95.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -847,6 +902,17 @@
         "price": 438.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
+      },
+      {
+        "id": "0f06a44f-a0a0-493f-829d-cf23c5021ffa",
+        "name": "Mesoestetic Age Element Balm",
+        "description": "",
+        "category_name": "Mesoestetic",
+        "subcategory_name": "Mesoestetic",
+        "brand_name": "Mesoestetic",
+        "price": 175.0,
+        "quantity_value": 200.0,
+        "quantity_unit": "gms"
       },
       {
         "id": "0ca413bc-6dc8-4869-84b5-3c81531ea38b",
@@ -904,6 +970,17 @@
         "quantity_unit": "ml"
       },
       {
+        "id": "632f703e-995b-48fd-b0fa-38b4d58fd412",
+        "name": "Nourishing Night Cream",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Merlot",
+        "brand_name": "Vine vera",
+        "price": 188.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "7de3c2c0-fd6d-49d4-b51b-2b41f274a743",
         "name": "Nano Night Recovery Serum",
         "description": "Short+Description%0d%0a24K+Nano+Day+Recovery+is+a+lightweight%2c+gel-like+cream+designed+for+daily+use.+It+provides+intense+hydration+and+helps+to+minimize+the+appearance+of+fine+lines%2c+leaving+the+skin+feeling+soft+and+rejuvenated.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+moisturizer+delivers+deep+hydration%2c+enhancing+skin+elasticity+and+promoting+a+smoother%2c+more+radiant+complexion.+It+helps+to+reduce+the+visible+signs+of+aging%2c+including+fine+lines+and+uneven+skin+tone.%0d%0a%0d%0aInstructions%0d%0aApply+a+generous+amount+to+cleansed+face+and+neck+every+morning.+Gently+massage+until+fully+absorbed.+For+optimal+results%2c+use+in+conjunction+with+the+24K+Nano+Night+Recovery.%0d%0a%0d%0aActive+Ingredients%0d%0aSodium+Hyaluronate%2c+Vitamin+A+(Retinyl+Palmitate)%2c+Seaweed+Extract%2c+Peptides%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+Glycerin%2c+Cetearyl+Alcohol%2c+Dimethicone%2c+Caprylic%2fCapric+Triglyceride%2c+Glyceryl+Stearate%2c+PEG-100+Stearate%2c+Butyrospermum+Parkii+(Shea)+Butter%2c+Stearic+Acid%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Sodium+Hyaluronate%2c+Retinyl+Palmitate%2c+Tocopheryl+Acetate+(Vitamin+E)%2c+Camellia+Sinensis+(Green+Tea)+Leaf+Extract%2c+Ascophyllum+Nodosum+(Seaweed)+Extract%2c+Xanthan+Gum%2c+Disodium+EDTA%2c+Sodium+Citrate%2c+Citric+Acid%2c+Sodium+Hydroxide%2c+Gold%0d%0a%0d%0aSkin+type%0d%0aSuitable+for+all+skin+types%2c+including+sensitive+and+mature+skin.+Not+recommended+for+individuals+with+known+allergies+to+any+listed+ingredients.",
@@ -935,17 +1012,6 @@
         "price": 85.0,
         "quantity_value": 200.0,
         "quantity_unit": "ml"
-      },
-      {
-        "id": "632f703e-995b-48fd-b0fa-38b4d58fd412",
-        "name": "Nourishing Night Cream",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Merlot",
-        "brand_name": "Vine vera",
-        "price": 188.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
       },
       {
         "id": "33b1ba8a-9a5a-4bd0-ade6-51442d983d94",
@@ -1069,17 +1135,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "d5c0ce2a-45c1-4f00-8a02-a6e645384902",
-        "name": "Cabernet Serum",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Cabernet",
-        "brand_name": "Vine vera",
-        "price": 500.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "0bcb3a81-aa1f-42bb-98c6-a8c1453e334c",
         "name": "24K Cryogenic Contour Eye Firming",
         "description": "Short+Description%0d%0aThe+Orogold+24K+Cryogenic+Contour+Eye+Firming+is+a+luxurious+eye+cream+designed+to+rejuvenate+the+delicate+skin+around+the+eyes.+Infused+with+caffeine+and+green+tea%2c+it+aims+to+reduce+puffiness%2c+fine+lines%2c+and+wrinkles%2c+leaving+the+eye+area+feeling+smooth+and+firm.+%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+eye+cream+delivers+intensive+firming+for+a+more+youthful-looking+eye+contour.+The+superior+blend+of+caffeine+and+green+tea+helps+minimize+the+appearance+of+puffiness%2c+fine+lines%2c+and+wrinkles.+%0d%0a%0d%0aInstructions%0d%0aApply+a+small+amount+to+the+under-eye+area+and+gently+massage+in+circular+motions+until+fully+absorbed.+Use+daily+for+optimal+results.%0d%0a%0d%0aActive+Ingredients%0d%0aCaffeine%0d%0aGreen+Tea+Extract%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+C12-15+Alkyl+Benzoate%2c+Caprylic%2fCapric+Triglyceride%2c+Spilanthes+Acmella+Flower+Extract%2c+Glycerin%2c+Butylene+Glycol%2c+Cetyl+Alcohol%2c+Glyceryl+Stearate%2c+Ceteareth-20%2c+PEG-100+Stearate%2c+Cetearyl+Alcohol%2c+Sodium+Hyaluronate%2c+Soluble+Collagen%2c+Olea+Europaea+Fruit+Oil%2c+Glycine+Soja+Oil%2c+Triethanolamine%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Carbomer%2c+Acrylates%2fC10-30+Alkyl+Acrylate+Crosspolymer%2c+Tocopheryl+Acetate%2c+Retinyl+Palmitate%2c+Ascorbyl+Palmitate%2c+Salvia+officinalis+Leaf+Extract%2c+Melissa+officinalis+Leaf+Extract%2c+Cucumis+Melon+Extract%2c+Chondrus+Crispus+Extract%2c+Fragrance%2c+Citrus+Limon+Fruit+Extract%2c+Saccharum+officinarum+Extract%2c+Gold%2c+Citrus+Aurantium+Dulcis+Fruit+Extract%2c+Acer+Saccharum+Extract%2c+Malic+Acid%2c+Lactic+Acid%2c+Disodium+EDTA%2c+Dimethicone.+%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types.+Individuals+with+sensitive+skin+should+perform+a+patch+test+prior+to+use+to+ensure+compatibility.+",
@@ -1146,6 +1201,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "d5c0ce2a-45c1-4f00-8a02-a6e645384902",
+        "name": "Cabernet Serum",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Cabernet",
+        "brand_name": "Vine vera",
+        "price": 500.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "4e8b940e-0083-4c76-a87d-24604e2c69d1",
         "name": "Amandola Cleanser Travel",
         "description": "Short+Description%0d%0aThe+Amandola+Milk+Cleanser+(Travel+Size)+by+Circadia+is+a+gentle%2c+nourishing+cleanser+formulated+to+brighten+and+hydrate+the+skin+while+providing+mild+exfoliation.+Ideal+for+sensitive+or+dull+skin%2c+this+creamy+formula+removes+impurities+without+stripping+essential+moisture.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+cleanser+softens+and+smooths+the+skin+while+promoting+a+more+radiant%2c+even+complexion.+With+natural+brightening+agents+and+soothing+botanicals%2c+it+gently+exfoliates+using+lactic+and+mandelic+acids%2c+making+it+ideal+for+reducing+pigmentation+and+improving+texture.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+small+amount+to+damp+skin+and+massage+gently+in+circular+motions.+Rinse+thoroughly+with+lukewarm+water.+Use+morning+and+night+as+the+first+step+in+your+skincare+routine.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aMandelic+Acid%3a+A+gentle+alpha+hydroxy+acid+that+exfoliates+and+helps+fade+hyperpigmentation.%0d%0a%0d%0aLactic+Acid%3a+Improves+hydration+and+skin+tone+while+supporting+exfoliation.%0d%0a%0d%0aSweet+Almond+Oil%3a+Moisturizes+and+softens+the+skin.%0d%0a%0d%0aVanilla+and+Oat+Extracts%3a+Help+soothe+irritation+and+provide+antioxidant+benefits.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Cetearyl+Ethylhexanoate%2c+Caprylic%2fCapric+Triglyceride%2c+Triisononanoin%2c+Ammonium+Acryloyldimethyltaurate%2fCarboxyethyl+Acrylate+Crosspolymer%2c+Pentylene+Glycol%2c+Cetearyl+Alcohol%2c+Glyceryl+Stearate%2c+Glyceryl+Distearate%2c+Avena+Sativa+(Oat)+Kernel+Protein%2c+Panthenol%2c+Lactic+Acid%2c+Mandelic+Acid%2c+1%2c2-Hexanediol%2c+Caprylyl+Glycol%2c+Isopropyl+Myristate%2c+Ceteareth-20%2c+Xanthan+Gum%2c+Tetrasodium+EDTA%2c+Prunus+Amygdalus+Dulcis+(Sweet+Almond)+Oil%2c+Polyglyceryl-3+Diisostearate%2c+Glycerin%2c+Lecithin%2c+Glyceryl+Caprylate%2c+Levulinic+Acid%2c+Potassium+Sorbate%2c+Tocopherol%2c+Cinnamic+Acid%2c+Sodium+Levulinate%2c+Sodium+Phytate%2c+Prunus+Amygdalus+Dulcis+(Sweet+Almond)+Fruit+Water%2c+Vanilla+Planifolia+Fruit+Extract%2c+Sodium+Hydroxide.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+normal%2c+dry%2c+sensitive%2c+and+mature+skin+types.+Especially+beneficial+for+skin+with+uneven+tone%2c+sun+damage%2c+or+mild+pigmentation+concerns.+Not+recommended+for+oily+or+acne-prone+skin+unless+advised+by+a+professional%2c+due+to+its+creamy%2c+emollient+base.",
@@ -1201,6 +1267,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "8a3979b5-9b4a-46bc-94be-4cf254bfda20",
+        "name": "LumiCell Collection",
+        "description": "",
+        "category_name": "introstem",
+        "subcategory_name": "Lumi-Cell Collection ",
+        "brand_name": "",
+        "price": 4500.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "37c3d465-e4c7-48df-9897-fdaebf2dba77",
         "name": "Collagen Lip Balm",
         "description": "",
@@ -1245,28 +1322,6 @@
         "quantity_unit": "ml"
       },
       {
-        "id": "8a3979b5-9b4a-46bc-94be-4cf254bfda20",
-        "name": "LumiCell Collection",
-        "description": "",
-        "category_name": "introstem",
-        "subcategory_name": "Lumi-Cell Collection ",
-        "brand_name": "",
-        "price": 4500.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "f0b16b18-c25f-41a1-8c78-d243eed0943d",
-        "name": "medik8 calmwise soothing cleanser",
-        "description": "Short Description\nMedik8 Calmwise Soothing Cleanser is a gentle, foaming cleanser formulated to soothe and calm redness-prone skin. It effectively removes impurities and makeup without stripping the skin's natural oils, leaving it feeling comfortable and hydrated. The cleanser is enriched with calming, strengthening, and conditioning actives to improve overall skin health.\n\nWhat It Does & Benefits\nThis cleanser is specifically designed for redness-prone skin, offering fast relief for red, irritated skin. It helps to control the appearance of redness at its root cause, providing instant, calming relief. The foaming cleanser improves the skin’s barrier function and maintains hydration, leaving the skin comfortable, hydrated, and detoxified.\n\nInstructions\nEvery morning and evening, pump a small amount of the Calmwise Soothing Cleanser into the palm of the hand and massage into a moistened face and neck. Gently remove foam by rinsing with water and pat the face dry. Follow with Calmwise Serum and Calmwise Colour Correct Moisturiser.\n\nActive Ingredients\nTeprenone  Chlorophyll  Vitamin K2  Organic Sweet Orange Oil\n\nFull List of Ingredients (INCI)\nAqua (Water), Cocamidopropyl Betaine, Glycerin, Disodium Cocoamphodiacetate, Sodium Cocoamphoacetate, Coco-Glucoside, Decyl Glucoside, Brassica Oleracea Capitata (Cabbage) Leaf Extract, Menaquinone-4, Phenoxyethanol, Citrus Aurantium Dulcis (Orange) Peel Oil, Citric Acid, Ethylhexylglycerin, Sodium Benzoate, Benzyl Alcohol, Dehydroacetic Acid, Curcuma Longa (Turmeric) Root Extract, Sodium Bicarbonate, Caprylic/Capric Triglyceride, Yucca Vera Extract, Teprenone, Maltodextrin, Limonene, Citral, Linalool, CI 75810 (Chlorophyllin-Copper Complex).\n\nSkin Type\nMedik8 Calmwise Soothing Cleanser is suitable for redness-prone, sensitised, and post-medical procedure skin. It is formulated to provide instant, calming relief and support the skin's natural barrier.",
-        "category_name": "Default",
-        "subcategory_name": "Default",
-        "brand_name": "",
-        "price": 52.0,
-        "quantity_value": 30.0,
-        "quantity_unit": "ml"
-      },
-      {
         "id": "fae25878-2fcc-4829-8b0c-5f3cf249acca",
         "name": "Medik8's Advanced Night Eye Cream",
         "description": "",
@@ -1278,17 +1333,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "3e7cf811-613a-43bd-a49b-7fd61e2d88e0",
-        "name": "Mesoestetic's Pure Renewing Mask",
-        "description": "",
-        "category_name": "Mesoestetic",
-        "subcategory_name": "Mesoestetic",
-        "brand_name": "Mesoestetic",
-        "price": 110.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "496b38f0-55fb-49bc-b4da-ddb76fbc5d46",
         "name": "Mesoestetic's Brightening Peel Booster",
         "description": "",
@@ -1296,6 +1340,17 @@
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
         "price": 129.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "3e7cf811-613a-43bd-a49b-7fd61e2d88e0",
+        "name": "Mesoestetic's Pure Renewing Mask",
+        "description": "",
+        "category_name": "Mesoestetic",
+        "subcategory_name": "Mesoestetic",
+        "brand_name": "Mesoestetic",
+        "price": 110.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -1322,17 +1377,6 @@
         "quantity_unit": "ml"
       },
       {
-        "id": "3616da09-116d-47d8-ba53-03408f2c7f14",
-        "name": "Sir Eye Balm",
-        "description": "24K+Sir+Eye+Balm%0d%0a%0d%0aShort+Description%0d%0aA+luxurious+gel-like+eye+treatment+designed+to+reduce+puffiness+and+fine+lines+around+the+eyes.+Formulated+with+advanced+peptides%2c+it+revitalizes+the+under-eye+area%2c+leaving+the+skin+looking+refreshed+and+youthful.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+balm+targets+common+eye+area+concerns+such+as+puffiness%2c+dark+circles%2c+and+fine+lines.+Its+lightweight%2c+non-greasy+formula+absorbs+quickly%2c+providing+a+smooth+and+hydrated+under-eye+area.+Regular+use+promotes+a+more+alert+and+rejuvenated+appearance.%0d%0a%0d%0aInstructions%0d%0aApply+a+small+amount+to+the+under-eye+area+using+your+ring+finger.+Gently+massage+in+upward+motions+until+fully+absorbed.+Use+daily%2c+morning+and+night%2c+for+optimal+results.%0d%0a%0d%0aActive+Ingredients%0d%0aPalmitoyl+Tetrapeptide-7%2c+Palmitoyl+Oligopeptide%2c+24K+Gold%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+Glycerin%2c+Palmitoyl+Tetrapeptide-7%2c+Palmitoyl+Oligopeptide%2c+Gold%2c+Dimethicone%2c+Sodium+Hyaluronate%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Citric+Acid%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+those+concerned+with+signs+of+aging+around+the+eyes.+Ideal+for+daily+use.",
-        "category_name": "Orogold cosmetics",
-        "subcategory_name": "Sir",
-        "brand_name": "Orogold",
-        "price": 378.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "c202bd26-9001-491c-83d1-df7460318aed",
         "name": "Stratacel 50gr",
         "description": "",
@@ -1342,6 +1386,17 @@
         "price": 210.0,
         "quantity_value": 50.0,
         "quantity_unit": "gms"
+      },
+      {
+        "id": "3616da09-116d-47d8-ba53-03408f2c7f14",
+        "name": "Sir Eye Balm",
+        "description": "24K+Sir+Eye+Balm%0d%0a%0d%0aShort+Description%0d%0aA+luxurious+gel-like+eye+treatment+designed+to+reduce+puffiness+and+fine+lines+around+the+eyes.+Formulated+with+advanced+peptides%2c+it+revitalizes+the+under-eye+area%2c+leaving+the+skin+looking+refreshed+and+youthful.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+balm+targets+common+eye+area+concerns+such+as+puffiness%2c+dark+circles%2c+and+fine+lines.+Its+lightweight%2c+non-greasy+formula+absorbs+quickly%2c+providing+a+smooth+and+hydrated+under-eye+area.+Regular+use+promotes+a+more+alert+and+rejuvenated+appearance.%0d%0a%0d%0aInstructions%0d%0aApply+a+small+amount+to+the+under-eye+area+using+your+ring+finger.+Gently+massage+in+upward+motions+until+fully+absorbed.+Use+daily%2c+morning+and+night%2c+for+optimal+results.%0d%0a%0d%0aActive+Ingredients%0d%0aPalmitoyl+Tetrapeptide-7%2c+Palmitoyl+Oligopeptide%2c+24K+Gold%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+Glycerin%2c+Palmitoyl+Tetrapeptide-7%2c+Palmitoyl+Oligopeptide%2c+Gold%2c+Dimethicone%2c+Sodium+Hyaluronate%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Citric+Acid%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+those+concerned+with+signs+of+aging+around+the+eyes.+Ideal+for+daily+use.",
+        "category_name": "Orogold cosmetics",
+        "subcategory_name": "Sir",
+        "brand_name": "Orogold",
+        "price": 378.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
       },
       {
         "id": "416e2165-fede-41b0-af38-1e35cd2210d4",
@@ -1498,17 +1553,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "66fe89ed-d7b3-4eb8-89b4-abacab409e36",
-        "name": "derma 4in roller",
-        "description": "",
-        "category_name": "Default",
-        "subcategory_name": "Default",
-        "brand_name": "",
-        "price": 250.0,
-        "quantity_value": 10.0,
-        "quantity_unit": "gms"
-      },
-      {
         "id": "076ff5da-6748-4aa9-a99b-dd7823f6ecf0",
         "name": "DMAE Mask",
         "description": "Short+Description%0d%0aThe+Orogold+24K+DMAE+Mask+is+a+rejuvenating+facial+treatment+designed+to+tighten%2c+firm%2c+and+lift+the+skin%2c+leaving+it+smoother+and+more+youthful.+Formulated+with+DMAE+and+other+active+ingredients%2c+it+helps+to+reduce+the+appearance+of+fine+lines+and+wrinkles+while+providing+deep+hydration.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aFirming+and+Tightening%3a+DMAE+helps+to+visibly+lift+and+firm+the+skin+for+a+more+youthful+appearance.%0d%0aHydration%3a+Provides+deep+hydration+to+leave+skin+feeling+soft%2c+smooth%2c+and+revitalized.%0d%0aAnti-Aging%3a+Reduces+the+appearance+of+fine+lines+and+wrinkles%2c+promoting+a+smoother+complexion.%0d%0a%0d%0aInstructions%0d%0aApply+a+generous+layer+to+clean+skin%2c+avoiding+the+eye+area.%0d%0aLeave+the+mask+on+for+10-15+minutes+to+allow+it+to+work.%0d%0aRinse+thoroughly+with+warm+water+and+follow+with+your+regular+skincare+routine.%0d%0a%0d%0aActive+Ingredients%0d%0aDMAE+(Dimethylaminoethanol)%2c+Hyaluronic+Acid%2c+Vitamin+E.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+Cetearyl+Alcohol%2c+Glycerin%2c+Dimethylaminoethanol+(DMAE)%2c+Ceteareth-20%2c+Dimethicone%2c+Hyaluronic+Acid%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Carbomer%2c+Triethanolamine%2c+Disodium+EDTA%2c+Tocopheryl+Acetate%2c+Fragrance.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+particularly+beneficial+for+those+with+mature+or+aging+skin.",
@@ -1553,13 +1597,24 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "4b03976b-aa96-42cf-b639-8b016ed12476",
+        "name": "H.E.O Overnight Mask 2 x 50ml",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 119.0,
+        "quantity_value": 100.0,
+        "quantity_unit": "ml"
+      },
+      {
         "id": "4f728fba-ff50-44c7-b6de-e5a6327bc964",
         "name": "Medik8 copper peptideserum",
         "description": "",
         "category_name": "Medik8",
         "subcategory_name": "Medik8",
         "brand_name": "Medik8",
-        "price": 158.0,
+        "price": 143.62,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -1571,28 +1626,6 @@
         "subcategory_name": "Mens",
         "brand_name": "",
         "price": 128.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "8621d991-d607-463c-beeb-d8ebbf6088ed",
-        "name": "Nefertiti System",
-        "description": "Short+Description%3a%0d%0aThe+Nefertiti+System+is+a+high-performance+skincare+product+designed+to+sculpt%2c+lift%2c+and+firm+the+jawline+and+neck+area.+Inspired+by+the+elegance+of+Queen+Nefertiti%c3%a2%e2%82%ac%e2%84%a2s+profile%2c+this+advanced+formula+visibly+improves+skin+tone+and+elasticity+with+consistent+use.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThis+product+targets+sagging+skin+and+loss+of+definition+in+the+lower+face+and+neck+by+boosting+collagen+production+and+enhancing+skin+hydration.+It+smooths+fine+lines%2c+firms+the+skin%2c+and+promotes+a+contoured%2c+youthful+appearance+without+invasive+procedures.%0d%0a%0d%0aInstructions+for+Use%3a%0d%0aApply+a+small+amount+to+cleansed+skin+along+the+jawline+and+neck+area.+Massage+gently+in+upward+strokes+until+fully+absorbed.+Use+twice+daily%2c+morning+and+evening%2c+for+best+results.%0d%0a%0d%0aActive+Ingredients%3a%0d%0a%0d%0aPeptides+%c3%a2%e2%82%ac%e2%80%9c+Stimulate+collagen+and+elastin+production+for+firmer+skin%0d%0aHyaluronic+Acid+%c3%a2%e2%82%ac%e2%80%9c+Deeply+hydrates+and+plumps+the+skin%0d%0aCaffeine+%c3%a2%e2%82%ac%e2%80%9c+Helps+reduce+puffiness+and+improves+skin+tone%0d%0aNiacinamide+(Vitamin+B3)+%c3%a2%e2%82%ac%e2%80%9c+Brightens+skin+and+strengthens+the+skin+barrier%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%3a%0d%0aAqua+(Water)%2c+Glycerin%2c+Butylene+Glycol%2c+Niacinamide%2c+Acetyl+Hexapeptide-8%2c+Palmitoyl+Tripeptide-5%2c+Sodium+Hyaluronate%2c+Caffeine%2c+Panthenol%2c+Carbomer%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Sodium+Hydroxide%2c+Disodium+EDTA%2c+Parfum+(Fragrance).%0d%0a%0d%0aSkin+Type%3a%0d%0aSuitable+for+all+skin+types%2c+including+normal%2c+dry%2c+combination%2c+and+mature+skin.+Not+recommended+for+highly+sensitive+or+reactive+skin+due+to+active+peptides+and+caffeine+content.%0d%0a",
-        "category_name": "Orogold",
-        "subcategory_name": "Orogold",
-        "brand_name": "Orogold",
-        "price": 18000.0,
-        "quantity_value": 30.0,
-        "quantity_unit": "ml"
-      },
-      {
-        "id": "7c2128bc-50ab-4c6e-bb26-935ac30c3b71",
-        "name": "Orogold 24K 60Second Eye Solution",
-        "description": "Short+Description%0d%0aA+revolutionary+solution+to+specifically+target+the+appearance+of+puffy+and+tired-looking+eyes%2c+the+24K+60-Second+Eye+Solution+is+formulated+with+gold%2c+acetyl+hexapeptide-8%2c+and+sodium+hyaluronate.+This+unique+blend+helps+minimize+the+appearance+of+crow%e2%80%99s+feet%2c+under-eye+bags%2c+and+dark+circles.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+eye+serum+provides+an+instant+tightening+effect%2c+reducing+puffiness+and+smoothing+fine+lines+around+the+eyes.+It+enhances+skin+elasticity+and+promotes+a+refreshed%2c+youthful+appearance.%0d%0a%0d%0aInstructions%0d%0aOn+clean+skin%2c+apply+a+small+amount+of+solution+by+gently+pressing+on+the+applicator.+Once+the+product+is+dispensed%2c+spread+it+evenly+across+your+under-eye+area+by+sweeping+the+applicator+across+the+skin.+Gently+pat+the+product+to+aid+absorption.+After+use%2c+remove+any+residue+with+a+clean+tissue.%0d%0a%0d%0aActive+Ingredients%0d%0aGold%2c+Acetyl+Hexapeptide-8%2c+Sodium+Hyaluronate%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aWater%2c+Magnesium+Aluminum+Silicate%2c+Sodium+Silicate%2c+Acetyl+Hexapeptide-8%2c+Sodium+Hyaluronate%2c+Iron+Oxides%2c+Quartz%2c+Mica%2c+Xanthan+Gum%2c+Ethylhexylglycerin%2c+Phenoxyethanol%2c+Titanium+Dioxide+(CI+77891)%2c+Gold%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+including+sensitive+skin.",
-        "category_name": "Orogold cosmetics",
-        "subcategory_name": "Eye Series Exclusive",
-        "brand_name": "Orogold",
-        "price": 1198.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -1615,6 +1648,28 @@
         "subcategory_name": "Accessories",
         "brand_name": "",
         "price": 0.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "8621d991-d607-463c-beeb-d8ebbf6088ed",
+        "name": "Nefertiti System",
+        "description": "Short+Description%3a%0d%0aThe+Nefertiti+System+is+a+high-performance+skincare+product+designed+to+sculpt%2c+lift%2c+and+firm+the+jawline+and+neck+area.+Inspired+by+the+elegance+of+Queen+Nefertiti%c3%a2%e2%82%ac%e2%84%a2s+profile%2c+this+advanced+formula+visibly+improves+skin+tone+and+elasticity+with+consistent+use.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%3a%0d%0aThis+product+targets+sagging+skin+and+loss+of+definition+in+the+lower+face+and+neck+by+boosting+collagen+production+and+enhancing+skin+hydration.+It+smooths+fine+lines%2c+firms+the+skin%2c+and+promotes+a+contoured%2c+youthful+appearance+without+invasive+procedures.%0d%0a%0d%0aInstructions+for+Use%3a%0d%0aApply+a+small+amount+to+cleansed+skin+along+the+jawline+and+neck+area.+Massage+gently+in+upward+strokes+until+fully+absorbed.+Use+twice+daily%2c+morning+and+evening%2c+for+best+results.%0d%0a%0d%0aActive+Ingredients%3a%0d%0a%0d%0aPeptides+%c3%a2%e2%82%ac%e2%80%9c+Stimulate+collagen+and+elastin+production+for+firmer+skin%0d%0aHyaluronic+Acid+%c3%a2%e2%82%ac%e2%80%9c+Deeply+hydrates+and+plumps+the+skin%0d%0aCaffeine+%c3%a2%e2%82%ac%e2%80%9c+Helps+reduce+puffiness+and+improves+skin+tone%0d%0aNiacinamide+(Vitamin+B3)+%c3%a2%e2%82%ac%e2%80%9c+Brightens+skin+and+strengthens+the+skin+barrier%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%3a%0d%0aAqua+(Water)%2c+Glycerin%2c+Butylene+Glycol%2c+Niacinamide%2c+Acetyl+Hexapeptide-8%2c+Palmitoyl+Tripeptide-5%2c+Sodium+Hyaluronate%2c+Caffeine%2c+Panthenol%2c+Carbomer%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Sodium+Hydroxide%2c+Disodium+EDTA%2c+Parfum+(Fragrance).%0d%0a%0d%0aSkin+Type%3a%0d%0aSuitable+for+all+skin+types%2c+including+normal%2c+dry%2c+combination%2c+and+mature+skin.+Not+recommended+for+highly+sensitive+or+reactive+skin+due+to+active+peptides+and+caffeine+content.%0d%0a",
+        "category_name": "Orogold",
+        "subcategory_name": "Orogold",
+        "brand_name": "Orogold",
+        "price": 18000.0,
+        "quantity_value": 30.0,
+        "quantity_unit": "ml"
+      },
+      {
+        "id": "7c2128bc-50ab-4c6e-bb26-935ac30c3b71",
+        "name": "Orogold 24K 60Second Eye Solution",
+        "description": "Short+Description%0d%0aA+revolutionary+solution+to+specifically+target+the+appearance+of+puffy+and+tired-looking+eyes%2c+the+24K+60-Second+Eye+Solution+is+formulated+with+gold%2c+acetyl+hexapeptide-8%2c+and+sodium+hyaluronate.+This+unique+blend+helps+minimize+the+appearance+of+crow%e2%80%99s+feet%2c+under-eye+bags%2c+and+dark+circles.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+eye+serum+provides+an+instant+tightening+effect%2c+reducing+puffiness+and+smoothing+fine+lines+around+the+eyes.+It+enhances+skin+elasticity+and+promotes+a+refreshed%2c+youthful+appearance.%0d%0a%0d%0aInstructions%0d%0aOn+clean+skin%2c+apply+a+small+amount+of+solution+by+gently+pressing+on+the+applicator.+Once+the+product+is+dispensed%2c+spread+it+evenly+across+your+under-eye+area+by+sweeping+the+applicator+across+the+skin.+Gently+pat+the+product+to+aid+absorption.+After+use%2c+remove+any+residue+with+a+clean+tissue.%0d%0a%0d%0aActive+Ingredients%0d%0aGold%2c+Acetyl+Hexapeptide-8%2c+Sodium+Hyaluronate%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aWater%2c+Magnesium+Aluminum+Silicate%2c+Sodium+Silicate%2c+Acetyl+Hexapeptide-8%2c+Sodium+Hyaluronate%2c+Iron+Oxides%2c+Quartz%2c+Mica%2c+Xanthan+Gum%2c+Ethylhexylglycerin%2c+Phenoxyethanol%2c+Titanium+Dioxide+(CI+77891)%2c+Gold%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+including+sensitive+skin.",
+        "category_name": "Orogold cosmetics",
+        "subcategory_name": "Eye Series Exclusive",
+        "brand_name": "Orogold",
+        "price": 1198.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -1740,17 +1795,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "4834670b-6363-4194-9ccb-e8e5171d74f4",
-        "name": "Cabernet Night Serum",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Cabernet",
-        "brand_name": "Vine vera",
-        "price": 3000.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "eabaf9f9-5caa-45cb-9506-3a1491250072",
         "name": "24K MultiVitamin Day",
         "description": "Short+Description%0d%0aThe+24K+Multi-Vitamin+Day+Moisturizer+is+a+luxurious%2c+non-greasy+formula+designed+to+hydrate+and+nourish+the+skin.+Infused+with+a+potent+blend+of+vitamins+and+amino+acids%2c+it+helps+reduce+the+appearance+of+fine+lines+and+wrinkles%2c+promoting+a+youthful+and+radiant+complexion.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+moisturizer+delivers+essential+nutrients+to+the+skin%2c+enhancing+elasticity+and+firmness.+It+provides+long-lasting+hydration%2c+leaving+the+skin+feeling+soft+and+rejuvenated+throughout+the+day.%0d%0a%0d%0aInstructions%0d%0aApply+a+generous+amount+to+cleansed+skin+every+morning.+Gently+massage+into+the+face+and+neck+until+fully+absorbed.+For+best+results%2c+use+in+conjunction+with+the+24K+Multi-Vitamin+Deep+Peeling+%2b+Mandelic+Acid.%0d%0a%0d%0aActive+Ingredients%0d%0aAmino+Acids%2c+White+Tea+Extract%2c+Organic+Chamomile+Extract%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+Glycerin%2c+Cetearyl+Alcohol%2c+Dimethicone%2c+Caprylic%2fCapric+Triglyceride%2c+Glyceryl+Stearate%2c+PEG-100+Stearate%2c+Butyrospermum+Parkii+(Shea)+Butter%2c+Stearic+Acid%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Sodium+Hyaluronate%2c+Ascorbic+Acid+(Vitamin+C)%2c+Retinyl+Palmitate+(Vitamin+A)%2c+Tocopheryl+Acetate+(Vitamin+E)%2c+Camellia+Sinensis+(White+Tea)+Leaf+Extract%2c+Chamomilla+Recutita+(Chamomile)+Flower+Extract%2c+Allantoin%2c+Xanthan+Gum%2c+Disodium+EDTA%2c+Sodium+Citrate%2c+Citric+Acid%2c+Sodium+Hydroxide%2c+Gold%0d%0a%0d%0aSkin+type%0d%0aSuitable+for+all+skin+types%2c+including+sensitive+and+mature+skin.+Not+recommended+for+individuals+with+known+allergies+to+any+listed+ingredients.",
@@ -1806,6 +1850,17 @@
         "quantity_unit": "ml"
       },
       {
+        "id": "4834670b-6363-4194-9ccb-e8e5171d74f4",
+        "name": "Cabernet Night Serum",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Cabernet",
+        "brand_name": "Vine vera",
+        "price": 3000.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "0d32830d-24d9-40e6-b01e-1c629aa4c7a6",
         "name": "Blueberry & White Tea Mist",
         "description": "Short+Description%0d%0aCircadia%c3%a2%e2%82%ac%e2%84%a2s+Blueberry+%26+White+Tea+Hydrating+Mist+is+an+antioxidant-rich+facial+spray+designed+to+refresh%2c+hydrate%2c+and+protect+the+skin.+With+a+blend+of+soothing+botanicals+and+vitamins%2c+it+revitalizes+tired+or+stressed+skin+while+delivering+a+light+veil+of+moisture.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+mist+delivers+immediate+hydration+and+antioxidant+protection+to+combat+environmental+damage+and+oxidative+stress.+Blueberry+and+white+tea+extracts+help+reduce+inflammation%2c+support+skin+healing%2c+and+defend+against+premature+aging%2c+making+it+ideal+for+daily+use+or+post-treatment+refreshment.%0d%0a%0d%0aHow+to+Apply%0d%0aSpray+evenly+over+the+face+and+neck+after+cleansing%2c+or+anytime+throughout+the+day+to+hydrate+and+refresh.+Can+be+used+under+or+over+makeup%2c+or+as+a+post-treatment+calming+step.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aBlueberry+Extract%3a+Rich+in+antioxidants+that+help+protect+skin+from+environmental+damage.%0d%0a%0d%0aWhite+Tea+Extract%3a+Calms+and+soothes+the+skin+while+offering+anti-aging+benefits.%0d%0a%0d%0aVitamin+B5+(Panthenol)%3a+Hydrates%2c+soothes%2c+and+supports+skin+healing.%0d%0a%0d%0aNiacinamide+(Vitamin+B3)%3a+Brightens%2c+balances+oil%2c+and+strengthens+the+skin+barrier.%0d%0a%0d%0aSodium+PCA%3a+A+natural+humectant+that+helps+retain+moisture.%0d%0a%0d%0aAllantoin%3a+Calms+irritation+and+promotes+skin+recovery.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Glycerin%2c+Vaccinium+Angustifolium+(Blueberry)+Fruit+Extract%2c+Camellia+Sinensis+(White+Tea)+Leaf+Extract%2c+Niacinamide%2c+Panthenol%2c+Allantoin%2c+Sodium+PCA%2c+Caprylyl+Glycol%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Citric+Acid%2c+Sodium+Hydroxide.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+including+sensitive%2c+dehydrated%2c+and+environmentally+stressed+skin.+Safe+for+acne-prone+and+oily+skin+due+to+its+lightweight%2c+non-comedogenic+formula.+Ideal+for+those+needing+hydration+and+antioxidant+support+without+heaviness.",
@@ -1825,17 +1880,6 @@
         "brand_name": "Orogold",
         "price": 2328.0,
         "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "ee3ef871-cb90-413b-ae5a-46592edb583a",
-        "name": "Cartridage 4.5mm",
-        "description": "",
-        "category_name": "CIRCADIA",
-        "subcategory_name": "Circadia",
-        "brand_name": "PARAGON Cartridges",
-        "price": 0.0,
-        "quantity_value": 20000.0,
         "quantity_unit": "unts"
       },
       {
@@ -1867,7 +1911,7 @@
         "category_name": "CIRCADIA",
         "subcategory_name": "Circadia",
         "brand_name": "Circadia",
-        "price": 472.0,
+        "price": 236.0,
         "quantity_value": 5.0,
         "quantity_unit": "unts"
       },
@@ -1922,7 +1966,29 @@
         "category_name": "Medik8",
         "subcategory_name": "Medik8",
         "brand_name": "Medik8",
-        "price": 115.0,
+        "price": 98.17,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "09c4fd04-fa1f-4cf4-88df-e06a03cda645",
+        "name": "Medik8 Bakuchiol Peptides 30ml",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Accessories",
+        "brand_name": "",
+        "price": 96.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "9cfa850a-4cb8-4423-bc13-d63e67f47ce5",
+        "name": "Medik8 Copper PCA Peptides 30ml",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 158.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -1936,6 +2002,17 @@
         "price": 195.3,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
+      },
+      {
+        "id": "28c2b447-1e34-4878-8ec3-093af76ebc01",
+        "name": "Melan Recovery",
+        "description": "",
+        "category_name": "Default",
+        "subcategory_name": "Default",
+        "brand_name": "Mesoestetic",
+        "price": 139.0,
+        "quantity_value": 50.0,
+        "quantity_unit": "ml"
       },
       {
         "id": "73f5d952-901b-499a-8bff-7dbf1a31ff3e",
@@ -2092,6 +2169,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "71968811-d058-40e3-8b6e-a2e52f2f3c10",
+        "name": "Medik8 Micellar Mousse",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 55.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "6bd40a92-6900-4d0f-99e3-64f3880fbede",
         "name": "Chin Tightening Solution",
         "description": "Short+Description%0d%0a24K+Chin+Tightening+Solution+is+a+targeted+treatment+designed+to+firm+and+sculpt+the+chin+and+jawline+area.+It+helps+improve+skin+elasticity+and+reduce+the+appearance+of+sagging+for+a+more+defined+contour.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+solution+works+to+tighten+and+tone+the+skin+while+delivering+deep+hydration+and+nourishment.+Its+advanced+formula+supports+collagen+production+and+enhances+skin+firmness+for+a+lifted%2c+youthful+look.%0d%0a%0d%0aInstructions%0d%0aApply+a+small+amount+to+the+chin+and+jawline+area%2c+gently+massage+until+fully+absorbed%2c+use+morning+and+evening.%0d%0a%0d%0aActive+Ingredients%0d%0aNiacinamide%2c+Beta+Glucan%2c+Saccharomyces+Cerevisiae+Extract%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aWater%2c+Glycerin%2c+Urea%2c+Saccharomyces+Cerevisiae+Extract%2c+Niacinamide%2c+Phenoxyethanol%2c+Sodium+Benzoate%2c+Potassium+Sorbate%2c+Beta+Glucan%2c+1%2c2-Hexanediol%2c+Caprylyl+Glycol%2c+Chamomilla+Recutita+(Matricaria)+Flower+Extract%2c+Hippophae+Rhamnoides+Fruit+Extract%2c+Citric+Acid%2c+Xanthan+Gum%2c+Sodium+Hydroxide%0d%0a%0d%0aSkin+type%0d%0aSuitable+for+normal%2c+dry%2c+and+mature+skin%2c+not+recommended+for+oily+or+acne-prone+skin.",
@@ -2147,6 +2235,28 @@
         "quantity_unit": "gms"
       },
       {
+        "id": "b506f861-7839-48fd-9b49-e83b625909d0",
+        "name": "Medik8 Cream Cleanse 175ml",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Accessories",
+        "brand_name": "Medik8",
+        "price": 51.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "b4f90302-6cbf-4e58-940d-28392b77c1ef",
+        "name": "Medik8 CSA Eye Kit",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 121.0,
+        "quantity_value": 0.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "c327f0b3-7a97-4852-a83b-5e1b55677c49",
         "name": "Mens Hydrating Moisturizer",
         "description": "",
@@ -2158,35 +2268,13 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "c1e8f9e5-6596-4474-ac8f-08c25cfc63b6",
-        "name": "Mesoestetic's Purifying Mousse",
-        "description": "",
-        "category_name": "Mesoestetic",
-        "subcategory_name": "Mesoestetic",
-        "brand_name": "Mesoestetic",
-        "price": 89.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "2534a2f0-254b-40b0-9f53-b8c97bf20241",
-        "name": "Meso mineral matt fluid 50 plus",
-        "description": "",
-        "category_name": "Mesoestetic",
-        "subcategory_name": "Mesoestetic",
-        "brand_name": "Mesoestetic",
-        "price": 102.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "f5ef3ca3-c484-44e1-87f8-1c1d6aa99329",
         "name": "Mesoestetic cosmelan2 30 grams",
         "description": "",
         "category_name": "Mesoestetic",
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
-        "price": 529.0,
+        "price": 379.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2213,6 +2301,28 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "2534a2f0-254b-40b0-9f53-b8c97bf20241",
+        "name": "Meso mineral matt fluid 50 plus",
+        "description": "",
+        "category_name": "Mesoestetic",
+        "subcategory_name": "Mesoestetic",
+        "brand_name": "Mesoestetic",
+        "price": 102.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "c1e8f9e5-6596-4474-ac8f-08c25cfc63b6",
+        "name": "Mesoestetic's Purifying Mousse",
+        "description": "",
+        "category_name": "Mesoestetic",
+        "subcategory_name": "Mesoestetic",
+        "brand_name": "Mesoestetic",
+        "price": 89.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "56fda7a5-6654-4adb-b32a-37f8255685fa",
         "name": "Mesoprotech melan 130 pigment control",
         "description": "",
@@ -2222,6 +2332,17 @@
         "price": 87.26,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
+      },
+      {
+        "id": "d5ba1fc2-5fa8-4469-b075-f0d2f36d5e9a",
+        "name": "Myo-Cyte Plus Serum",
+        "description": "Short+Description%0d%0aCircadia%e2%80%99s+Myo-Cyte+Plus+Serum+is+a+powerful+anti-aging+serum+formulated+to+target+fine+lines%2c+wrinkles%2c+and+loss+of+firmness.+It+combines+peptides+and+growth+factors+to+promote+skin+regeneration+and+improve+elasticity+for+a+youthful%2c+lifted+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+serum+supports+collagen+and+elastin+production%2c+reduces+the+appearance+of+wrinkles%2c+and+enhances+skin+texture.+It+helps+strengthen+the+skin%e2%80%99s+structure+while+providing+hydration+and+antioxidant+protection%2c+resulting+in+smoother%2c+firmer+skin.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+few+drops+to+clean+skin+morning+and+evening.+Follow+with+moisturizer+and+sunscreen+during+the+day.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aPeptides%3a+Stimulate+collagen+synthesis+and+improve+skin+firmness.%0d%0a%0d%0aGrowth+Factors%3a+Promote+skin+cell+regeneration+and+repair.%0d%0a%0d%0aHyaluronic+Acid%3a+Provides+deep+hydration+and+plumps+the+skin.%0d%0a%0d%0aAntioxidants%3a+Protect+skin+from+environmental+damage.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Palmitoyl+Tripeptide-38%2c+Acetyl+Hexapeptide-8%2c+Sodium+Hyaluronate%2c+Glycerin%2c+Butylene+Glycol%2c+Panthenol%2c+Phenoxyethanol%2c+Ethylhexylglycerin.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+mature%2c+aging%2c+or+sun-damaged+skin.+Ideal+for+those+looking+to+improve+skin+firmness%2c+reduce+wrinkles%2c+and+enhance+overall+skin+vitality.",
+        "category_name": "CIRCADIA",
+        "subcategory_name": "Circadia",
+        "brand_name": "Circadia",
+        "price": 260.0,
+        "quantity_value": 15.0,
+        "quantity_unit": "ml"
       },
       {
         "id": "6d280a04-d96b-42ea-a48a-ba8ae813e689",
@@ -2244,17 +2365,6 @@
         "price": 0.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
-      },
-      {
-        "id": "d5ba1fc2-5fa8-4469-b075-f0d2f36d5e9a",
-        "name": "Myo-Cyte Plus Serum",
-        "description": "Short+Description%0d%0aCircadia%e2%80%99s+Myo-Cyte+Plus+Serum+is+a+powerful+anti-aging+serum+formulated+to+target+fine+lines%2c+wrinkles%2c+and+loss+of+firmness.+It+combines+peptides+and+growth+factors+to+promote+skin+regeneration+and+improve+elasticity+for+a+youthful%2c+lifted+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+serum+supports+collagen+and+elastin+production%2c+reduces+the+appearance+of+wrinkles%2c+and+enhances+skin+texture.+It+helps+strengthen+the+skin%e2%80%99s+structure+while+providing+hydration+and+antioxidant+protection%2c+resulting+in+smoother%2c+firmer+skin.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+few+drops+to+clean+skin+morning+and+evening.+Follow+with+moisturizer+and+sunscreen+during+the+day.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aPeptides%3a+Stimulate+collagen+synthesis+and+improve+skin+firmness.%0d%0a%0d%0aGrowth+Factors%3a+Promote+skin+cell+regeneration+and+repair.%0d%0a%0d%0aHyaluronic+Acid%3a+Provides+deep+hydration+and+plumps+the+skin.%0d%0a%0d%0aAntioxidants%3a+Protect+skin+from+environmental+damage.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Palmitoyl+Tripeptide-38%2c+Acetyl+Hexapeptide-8%2c+Sodium+Hyaluronate%2c+Glycerin%2c+Butylene+Glycol%2c+Panthenol%2c+Phenoxyethanol%2c+Ethylhexylglycerin.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+mature%2c+aging%2c+or+sun-damaged+skin.+Ideal+for+those+looking+to+improve+skin+firmness%2c+reduce+wrinkles%2c+and+enhance+overall+skin+vitality.",
-        "category_name": "CIRCADIA",
-        "subcategory_name": "Circadia",
-        "brand_name": "Circadia",
-        "price": 260.0,
-        "quantity_value": 15.0,
-        "quantity_unit": "ml"
       },
       {
         "id": "727188f2-8727-4f9f-a33b-d95359cd9989",
@@ -2285,7 +2395,7 @@
         "category_name": "Renue",
         "subcategory_name": "Renue",
         "brand_name": "",
-        "price": 198.0,
+        "price": 179.98,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2301,17 +2411,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "a66d06ff-6220-4380-979d-4c81448be0af",
-        "name": "Skin Cleanser",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Moscato",
-        "brand_name": "Vine vera",
-        "price": 158.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "558b7e56-1ac3-4fe9-8401-54f649d22705",
         "name": "Skin Eye Serum",
         "description": "",
@@ -2319,6 +2418,17 @@
         "subcategory_name": "Moscato",
         "brand_name": "",
         "price": 448.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "a66d06ff-6220-4380-979d-4c81448be0af",
+        "name": "Skin Cleanser",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Moscato",
+        "brand_name": "Vine vera",
+        "price": 158.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2352,17 +2462,6 @@
         "subcategory_name": "Vitamin C",
         "brand_name": "Vine vera",
         "price": 178.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "63543c59-63c5-499d-bde2-825e1cde69be",
-        "name": "Cabernet Powder",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Cabernet",
-        "brand_name": "",
-        "price": 3250.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2409,6 +2508,17 @@
         "price": 90.0,
         "quantity_value": 10.0,
         "quantity_unit": "ml"
+      },
+      {
+        "id": "63543c59-63c5-499d-bde2-825e1cde69be",
+        "name": "Cabernet Powder",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Cabernet",
+        "brand_name": "",
+        "price": 3250.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
       },
       {
         "id": "480e2173-003b-453a-9baa-fbc37432b9dc",
@@ -2510,6 +2620,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "2a0ead7e-2e47-42a2-8938-ed6b28c28e98",
+        "name": "Medik8 Daily Radiance Vitamin C",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 118.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "d8ec7abc-92b0-4d7d-b35c-7f8735bb7ebc",
         "name": "Melting PreMask",
         "description": "",
@@ -2521,17 +2642,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "a86a02c4-af01-4519-8c9c-24c2fce3c5f2",
-        "name": "mesomelan130 pigment control",
-        "description": "",
-        "category_name": "Mesoestetic",
-        "subcategory_name": "Mesoestetic",
-        "brand_name": "Mesoestetic",
-        "price": 98.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "8d11eab6-14ac-463b-b622-cf6033877109",
         "name": "Mesoestetic Brightening Peel Booster",
         "description": "",
@@ -2539,6 +2649,17 @@
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
         "price": 375.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "a86a02c4-af01-4519-8c9c-24c2fce3c5f2",
+        "name": "mesomelan130 pigment control",
+        "description": "",
+        "category_name": "Mesoestetic",
+        "subcategory_name": "Mesoestetic",
+        "brand_name": "Mesoestetic",
+        "price": 98.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2675,17 +2796,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "fa6d58db-af02-483a-89ee-34d28686cc3e",
-        "name": "Lipid Replacing Cleanser Travel",
-        "description": "",
-        "category_name": "CIRCADIA",
-        "subcategory_name": "Circadia",
-        "brand_name": "Circadia",
-        "price": 36.0,
-        "quantity_value": 60.0,
-        "quantity_unit": "ml"
-      },
-      {
         "id": "6cba7b94-5e8a-4c78-b72e-ef7ad50f9841",
         "name": "Circadia Age Management",
         "description": "Short+Description%0d%0aThe+Circadia+Age+Management+Bundle+is+a+targeted+skincare+kit+designed+to+address+the+visible+signs+of+aging.+It+includes+a+gentle+exfoliating+cleanser%2c+a+brightening+and+barrier-repair+serum%2c+a+cell-communication+boosting+serum%2c+and+a+peptide-rich+treatment+cream+to+restore+skin+firmness+and+vitality.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+bundle+helps+improve+skin+texture%2c+reduce+the+appearance+of+fine+lines+and+wrinkles%2c+and+support+collagen+production.+Formulated+with+advanced+actives+like+peptides%2c+vitamin+C%2c+and+botanical+stem+cells%2c+it+works+to+enhance+firmness%2c+hydration%2c+and+overall+radiance.%0d%0a%0d%0aHow+to+Apply%0d%0aUse+the+Amandola+Milk+Cleanser+morning+and+night+to+gently+cleanse+the+skin.+In+the+evening%2c+apply+Serum+71+to+clean+skin+to+exfoliate+and+brighten.+Follow+with+Cyto-Comm+to+support+cell+communication+and+repair.+Finish+with+Revita-Cyte+Complex+to+firm%2c+moisturize%2c+and+protect+the+skin+barrier.%0d%0a%0d%0aActive+Ingredients%0d%0aMandelic+Acid+offers+gentle+exfoliation+to+smooth+and+clarify+the+skin.+Tranexamic%2c+Azelaic%2c+and+Mandelic+Acids+in+Serum+71+brighten+and+even+out+skin+tone.+Neodermyl%2c+a+next-generation+copper+peptide%2c+supports+collagen+and+elastin+synthesis.+Vitamin+C+derivative+(Aminopropyl+Ascorbyl+Phosphate)+offers+antioxidant+and+brightening+benefits.+Plant+stem+cells%2c+peptides%2c+panthenol%2c+and+beta-glucan+in+Revita-Cyte+help+firm%2c+soothe%2c+and+protect+aging+skin.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAmandola+Milk+Cleanser%3a+Aqua+(Water)%2c+Cetearyl+Ethylhexanoate%2c+Caprylic%2fCapric+Triglyceride%2c+Triisononanoin%2c+Ammonium+Acryloyl+Dimethyltaurate%2fCarboxyethyl+Acrylate+Crosspolymer%2c+Pentylene+Glycol%2c+Cetearyl+Alcohol%2c+Glyceryl+Stearate%2c+Glyceryl+Distearate%2c+Avena+Sativa+Kernel+Protein%2c+Panthenol%2c+Lactic+Acid%2c+Mandelic+Acid%2c+1%2c2-Hexanediol%2c+Caprylyl+Glycol%2c+Isopropyl+Myristate%2c+Ceteareth-20%2c+Xanthan+Gum%2c+Tetrasodium+EDTA%2c+Prunus+Amygdalus+Dulcis+(Sweet+Almond)+Oil%2c+Polyglyceryl-3+Diisostearate%2c+Glycerin%2c+Lecithin%2c+Glyceryl+Caprylate%2c+Levulinic+Acid%2c+Potassium+Sorbate%2c+Tocopherol%2c+Cinnamic+Acid%2c+Sodium+Levulinate%2c+Sodium+Phytate%2c+Prunus+Amygdalus+Dulcis+(Sweet+Almond)+Fruit+Water%2c+Vanilla+Planifolia+Fruit+Extract%2c+Sodium+Hydroxide.%0d%0aSerum+71%3a+Aqua+(Water)%2c+Propanediol%2c+Mandelic+Acid%2c+Butylene+Glycol%2c+Tranexamic+Acid%2c+Phenoxyethanol%2c+Sodium+PCA%2c+Hydroxyethylcellulose%2c+Sodium+Hydroxide%2c+Azelaic+Acid%2c+Glycerin%2c+Magnesium+Carboxymethyl+Beta-Glucan%2c+Methylglucoside+Phosphate%2c+Copper+Lysinate%2fProlinate%2c+Alcohol.%0d%0aCyto-Comm%3a+Aqua+(Water)%2c+Aminopropyl+Ascorbyl+Phosphate%2c+Pentylene+Glycol%2c+Sodium+Hyaluronate%2c+Acacia+Senegal+Gum%2c+Glycerin%2c+Osmanthus+Fragrans+Flower+Extract%2c+Caprylyl+Glycol%2c+Tetrasodium+Diacetate+Glutamate%2c+Phenoxyethanol%2c+Trifluoroacetyl+Tripeptide-2%2c+Dextran%2c+Valine%2c+Proline%2c+Glycine%2c+Alanine%2c+Lysine+Hydrochloride%2c+Crocus+Chrysanthus+Bulb+Extract%2c+Sodium+Hydroxide%2c+Hexylene+Glycol%2c+Propanediol%2c+Sodium+Metabisulfite.%0d%0aRevita-Cyte+Complex%3a+Aqua+(Water)%2c+PPG-15+Stearyl+Ether%2c+Polysilicone-11%2c+Glycerin%2c+Squalane%2c+Carbomer%2c+Polysorbate+20%2c+Butylene+Glycol%2c+Panthenol%2c+Allantoin%2c+Tocopheryl+Acetate%2c+Hydroxyethylpiperazine+Ethane+Sulfonic+Acid%2c+Bis-PEG%2fPPG-16%2f16+PEG%2fPPG-16%2f16+Dimethicone%2c+Leontopodium+Alpinum+Meristem+Cell+Culture%2c+Caprylyl+Glycol%2c+1%2c2-Hexanediol%2c+Caprylic%2fCapric+Triglyceride%2c+Vibrio+Alginolyticus+Ferment+Filtrate%2c+Bisabolol%2c+Phenoxyethanol%2c+Laureth-12%2c+Palmitoyl+Tripeptide-38%2c+Algae+Extract%2c+Acetyl+Tetrapeptide-2%2c+Glutamic+Acid%2c+Glycoproteins%2c+Dextran%2c+Dimethylmethoxy+Chromanol%2c+Ethylbisiminomethylguaiacol+Manganese+Chloride%2c+Hydroxypropyl+Cyclodextrin%2c+Cananga+Odorata+Flower+Extract%2c+Ethylhexylglycerin%2c+Sodium+Benzoate%2c+Potassium+Sorbate%2c+Avena+Sativa+Kernel+Extract%2c+Valine%2c+Threonine%2c+Xanthan+Gum%2c+Tetrasodium+EDTA%2c+Beta-Glucan%2c+Glutamylamidoethyl+Imidazole%2c+Sodium+Metabisulfite%2c+Sorbic+Acid%2c+Linalool.%0d%0a%0d%0aSkin+Type%0d%0aThis+bundle+is+formulated+for+aging%2c+mature%2c+and+sun-damaged+skin+types.+It+is+suitable+for+normal%2c+dry%2c+and+combination+skin.+It+is+not+recommended+for+very+sensitive+or+reactive+skin+types+due+to+the+inclusion+of+exfoliating+acids+and+active+peptides+unless+under+professional+guidance.",
@@ -2697,14 +2807,14 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "40323cbc-e888-42da-9d49-c181199e8ae5",
-        "name": "crystal fiber mask pack professional use",
+        "id": "fa6d58db-af02-483a-89ee-34d28686cc3e",
+        "name": "Lipid Replacing Cleanser Travel",
         "description": "",
-        "category_name": "Default",
-        "subcategory_name": "Default",
-        "brand_name": "",
-        "price": 250.0,
-        "quantity_value": 125.0,
+        "category_name": "CIRCADIA",
+        "subcategory_name": "Circadia",
+        "brand_name": "Circadia",
+        "price": 36.0,
+        "quantity_value": 60.0,
         "quantity_unit": "ml"
       },
       {
@@ -2736,7 +2846,7 @@
         "category_name": "Mesoestetic",
         "subcategory_name": "Mesoestetic",
         "brand_name": "",
-        "price": 199.0,
+        "price": 180.89,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2747,7 +2857,7 @@
         "category_name": "Medik8",
         "subcategory_name": "Medik8",
         "brand_name": "Medik8",
-        "price": 115.0,
+        "price": 108.0,
         "quantity_value": 50.0,
         "quantity_unit": "ml"
       },
@@ -2780,7 +2890,7 @@
         "category_name": "Mesoestetic",
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
-        "price": 129.0,
+        "price": 141.9,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2792,6 +2902,17 @@
         "subcategory_name": "Renue",
         "brand_name": "",
         "price": 150.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "f8c1dce0-3818-4444-b502-67681ef9d031",
+        "name": "Vitamin C Lip Balm",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Vitamin C",
+        "brand_name": "",
+        "price": 128.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2825,17 +2946,6 @@
         "subcategory_name": "Termica",
         "brand_name": "Orogold",
         "price": 608.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "f8c1dce0-3818-4444-b502-67681ef9d031",
-        "name": "Vitamin C Lip Balm",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Vitamin C",
-        "brand_name": "",
-        "price": 128.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2880,17 +2990,6 @@
         "subcategory_name": "Default",
         "brand_name": "",
         "price": 0.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "40ffa2b7-91ab-4310-a9ae-e0b52023561e",
-        "name": "Cabernet Toner",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Cabernet",
-        "brand_name": "Vine vera",
-        "price": 210.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -2950,6 +3049,28 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "4ad73cf9-246c-4782-96f6-518278ac6b9a",
+        "name": "Cabernet Eye Firming",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Cabernet",
+        "brand_name": "Vine vera",
+        "price": 368.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "40ffa2b7-91ab-4310-a9ae-e0b52023561e",
+        "name": "Cabernet Toner",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Cabernet",
+        "brand_name": "Vine vera",
+        "price": 210.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "481348ea-4118-4b56-80e9-bfd902ba2597",
         "name": "Cabernet Day Cream",
         "description": "",
@@ -2961,14 +3082,14 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "4ad73cf9-246c-4782-96f6-518278ac6b9a",
-        "name": "Cabernet Eye Firming",
+        "id": "a46d5472-61b9-41ce-9d7a-d1fe909f2dc6",
+        "name": "Circadia Age Prevention Bundle",
         "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Cabernet",
-        "brand_name": "Vine vera",
-        "price": 368.0,
-        "quantity_value": 1.0,
+        "category_name": "CIRCADIA",
+        "subcategory_name": "Circadia",
+        "brand_name": "Circadia",
+        "price": 486.0,
+        "quantity_value": 5.0,
         "quantity_unit": "unts"
       },
       {
@@ -2983,6 +3104,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "86a625e2-6ec4-4262-bffa-5cc92dac606c",
+        "name": "LumiCell Overnight Mask",
+        "description": "",
+        "category_name": "introstem",
+        "subcategory_name": "Lumi-Cell Collection ",
+        "brand_name": "",
+        "price": 1500.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "a5396b7b-9ba1-47dc-ad8c-492d595cd3c8",
         "name": "Magnetic Mask",
         "description": "",
@@ -2991,17 +3123,6 @@
         "brand_name": "Vine vera",
         "price": 4990.0,
         "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "a46d5472-61b9-41ce-9d7a-d1fe909f2dc6",
-        "name": "Circadia Age Prevention Bundle",
-        "description": "",
-        "category_name": "CIRCADIA",
-        "subcategory_name": "Circadia",
-        "brand_name": "Circadia",
-        "price": 486.0,
-        "quantity_value": 5.0,
         "quantity_unit": "unts"
       },
       {
@@ -3049,17 +3170,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "86a625e2-6ec4-4262-bffa-5cc92dac606c",
-        "name": "LumiCell Overnight Mask",
-        "description": "",
-        "category_name": "introstem",
-        "subcategory_name": "Lumi-Cell Collection ",
-        "brand_name": "",
-        "price": 1500.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "ac4951d7-6e4a-45c2-a068-b78d720552f4",
         "name": "Lip Renewing Hydrator",
         "description": "Short+Description%0d%0aCircadia%c3%a2%e2%82%ac%e2%84%a2s+Lip+Renewing+Hydrator+is+a+nourishing+treatment+designed+to+hydrate%2c+soften%2c+and+repair+dry%2c+chapped+lips.+It+provides+deep+moisture+while+improving+lip+texture+and+smoothness+for+a+healthier%2c+plumper+appearance.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+lip+hydrator+soothes+and+protects+the+delicate+lip+skin%2c+reducing+dryness+and+flaking.+It+helps+restore+natural+moisture+balance+and+supports+lip+barrier+repair%2c+leaving+lips+feeling+comfortable+and+revitalized.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+generous+layer+to+clean+lips+as+needed+throughout+the+day+or+before+bedtime.+Can+be+used+alone+or+under+lip+color+for+added+hydration.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aHyaluronic+Acid%3a+Attracts+and+retains+moisture+to+plump+and+hydrate+lips.%0d%0a%0d%0aShea+Butter%3a+Nourishes+and+softens+dry%2c+cracked+skin.%0d%0a%0d%0aVitamin+E%3a+Provides+antioxidant+protection+and+supports+healing.%0d%0a%0d%0aPanthenol+(Vitamin+B5)%3a+Soothes+and+repairs+lip+skin.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Hydrogenated+Polyisobutene%2c+Shea+Butter+(Butyrospermum+Parkii)%2c+Glycerin%2c+Sodium+Hyaluronate%2c+Tocopherol+(Vitamin+E)%2c+Panthenol%2c+Caprylic%2fCapric+Triglyceride%2c+Candelilla+Cera+(Candelilla+Wax)%2c+Phenoxyethanol%2c+Ethylhexylglycerin.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+dry%2c+chapped%2c+or+sensitive+lips.+Safe+for+daily+use+and+gentle+enough+for+even+the+most+delicate+lip+skin.",
@@ -3077,7 +3187,7 @@
         "category_name": "Mesoestetic",
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
-        "price": 129.0,
+        "price": 105.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -3154,7 +3264,7 @@
         "category_name": "Renue",
         "subcategory_name": "Renue",
         "brand_name": "",
-        "price": 289.0,
+        "price": 285.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -3170,15 +3280,15 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "8e3e78a1-4a5d-4efa-bff2-239123798bda",
-        "name": "Serum 71 -",
-        "description": "Short+Description%0d%0aCircadia%e2%80%99s+Serum+71+is+a+specialized+antioxidant+and+anti-aging+serum+formulated+to+combat+oxidative+stress%2c+protect+against+environmental+damage%2c+and+support+healthy%2c+resilient+skin.+It%e2%80%99s+especially+beneficial+for+mature+or+compromised+skin+in+need+of+rejuvenation.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+serum+delivers+potent+antioxidant+protection%2c+enhances+skin+elasticity%2c+and+reduces+the+appearance+of+fine+lines+and+wrinkles.+It+also+supports+barrier+repair+and+soothes+irritation%2c+making+it+ideal+for+post-procedure+care+or+skin+experiencing+chronic+inflammation.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+few+drops+to+clean+skin+once+or+twice+daily.+Gently+massage+into+the+face+and+neck+before+moisturizer.+Follow+with+SPF+during+the+day.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aAcetyl+Zingerone%3a+A+powerful+antioxidant+that+protects+from+free+radicals+and+inflammation.%0d%0a%0d%0aKinetin%3a+A+plant+growth+factor+that+helps+improve+skin+tone+and+texture.%0d%0a%0d%0aNiacinamide+(Vitamin+B3)%3a+Brightens+skin%2c+reduces+redness%2c+and+strengthens+the+barrier.%0d%0a%0d%0aPanthenol+(Vitamin+B5)%3a+Soothes+and+hydrates+the+skin.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Acetyl+Zingerone%2c+Kinetin%2c+Niacinamide%2c+Panthenol%2c+Glycerin%2c+Sodium+Hyaluronate%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Carbomer%2c+Sodium+Hydroxide.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+mature%2c+sensitive%2c+post-procedure%2c+or+inflamed+skin.+Ideal+for+those+needing+strong+antioxidant+protection%2c+anti-aging+benefits%2c+and+skin+barrier+recovery.",
-        "category_name": "CIRCADIA",
-        "subcategory_name": "Circadia",
-        "brand_name": "Circadia",
-        "price": 224.0,
-        "quantity_value": 30.0,
-        "quantity_unit": "ml"
+        "id": "121835e6-6183-4d2b-924e-4cdb728f35a5",
+        "name": "Vitamin C Day Cream",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Vitamin C",
+        "brand_name": "Vine vera",
+        "price": 228.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
       },
       {
         "id": "3c088eaf-4a8e-4b97-82d0-300232892864",
@@ -3192,6 +3302,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "8e3e78a1-4a5d-4efa-bff2-239123798bda",
+        "name": "Serum 71 -",
+        "description": "Short+Description%0d%0aCircadia%e2%80%99s+Serum+71+is+a+specialized+antioxidant+and+anti-aging+serum+formulated+to+combat+oxidative+stress%2c+protect+against+environmental+damage%2c+and+support+healthy%2c+resilient+skin.+It%e2%80%99s+especially+beneficial+for+mature+or+compromised+skin+in+need+of+rejuvenation.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+serum+delivers+potent+antioxidant+protection%2c+enhances+skin+elasticity%2c+and+reduces+the+appearance+of+fine+lines+and+wrinkles.+It+also+supports+barrier+repair+and+soothes+irritation%2c+making+it+ideal+for+post-procedure+care+or+skin+experiencing+chronic+inflammation.%0d%0a%0d%0aHow+to+Apply%0d%0aApply+a+few+drops+to+clean+skin+once+or+twice+daily.+Gently+massage+into+the+face+and+neck+before+moisturizer.+Follow+with+SPF+during+the+day.%0d%0a%0d%0aActive+Ingredients%0d%0a%0d%0aAcetyl+Zingerone%3a+A+powerful+antioxidant+that+protects+from+free+radicals+and+inflammation.%0d%0a%0d%0aKinetin%3a+A+plant+growth+factor+that+helps+improve+skin+tone+and+texture.%0d%0a%0d%0aNiacinamide+(Vitamin+B3)%3a+Brightens+skin%2c+reduces+redness%2c+and+strengthens+the+barrier.%0d%0a%0d%0aPanthenol+(Vitamin+B5)%3a+Soothes+and+hydrates+the+skin.%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua+(Water)%2c+Acetyl+Zingerone%2c+Kinetin%2c+Niacinamide%2c+Panthenol%2c+Glycerin%2c+Sodium+Hyaluronate%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Carbomer%2c+Sodium+Hydroxide.%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+all+skin+types%2c+especially+mature%2c+sensitive%2c+post-procedure%2c+or+inflamed+skin.+Ideal+for+those+needing+strong+antioxidant+protection%2c+anti-aging+benefits%2c+and+skin+barrier+recovery.",
+        "category_name": "CIRCADIA",
+        "subcategory_name": "Circadia",
+        "brand_name": "Circadia",
+        "price": 224.0,
+        "quantity_value": 30.0,
+        "quantity_unit": "ml"
+      },
+      {
         "id": "7a2cec3d-ae3f-4547-83af-d8e00c59960f",
         "name": "Stem Cell Exfoliating Scrub",
         "description": "",
@@ -3199,17 +3320,6 @@
         "subcategory_name": "Body Contouring Treatment",
         "brand_name": "",
         "price": 100.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "121835e6-6183-4d2b-924e-4cdb728f35a5",
-        "name": "Vitamin C Day Cream",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Vitamin C",
-        "brand_name": "Vine vera",
-        "price": 228.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -3379,6 +3489,39 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "89e98321-0a73-4310-98fa-b12cf8bd585a",
+        "name": "Medik8 Physical Sunscreen SPF50+ 60ml",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 75.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "b2ee8277-6689-443b-a513-eac917e83bba",
+        "name": "Medik8 Pore Refining Scrub",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 66.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "3ff5e61a-241a-4e66-941e-5e9206e21aa8",
+        "name": "Medik8 Press & Glow",
+        "description": "",
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 60.0,
+        "quantity_value": 200.0,
+        "quantity_unit": "ml"
+      },
+      {
         "id": "cc1fb18e-4bc2-4081-aae4-34c76ae6c742",
         "name": "Mesoprotech LW Veil 50+",
         "description": "",
@@ -3387,28 +3530,6 @@
         "brand_name": "Mesoestetic",
         "price": 96.0,
         "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "5b2a7400-0647-4869-8411-c10342cf9a10",
-        "name": "Orogold Box",
-        "description": "",
-        "category_name": "Orogold cosmetics",
-        "subcategory_name": "White Gold",
-        "brand_name": "",
-        "price": 83.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "9f4e59f3-436f-454a-bcc5-90f893bde1fd",
-        "name": "Paragon Cartridges",
-        "description": "",
-        "category_name": "Skin",
-        "subcategory_name": "SKIN Refining",
-        "brand_name": "PARAGON Cartridges",
-        "price": 0.0,
-        "quantity_value": 20000.0,
         "quantity_unit": "unts"
       },
       {
@@ -3432,6 +3553,28 @@
         "price": 150.0,
         "quantity_value": 59.0,
         "quantity_unit": "ml"
+      },
+      {
+        "id": "5b2a7400-0647-4869-8411-c10342cf9a10",
+        "name": "Orogold Box",
+        "description": "",
+        "category_name": "Orogold cosmetics",
+        "subcategory_name": "White Gold",
+        "brand_name": "",
+        "price": 83.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
+        "id": "9f4e59f3-436f-454a-bcc5-90f893bde1fd",
+        "name": "Paragon Cartridges",
+        "description": "",
+        "category_name": "Skin",
+        "subcategory_name": "SKIN Refining",
+        "brand_name": "PARAGON Cartridges",
+        "price": 3.0,
+        "quantity_value": 20000.0,
+        "quantity_unit": "unts"
       },
       {
         "id": "0c590d8d-5218-46d4-90fe-66bb2ce60c82",
@@ -3489,6 +3632,17 @@
         "quantity_unit": "ml"
       },
       {
+        "id": "592db09f-6d47-4adc-a1ef-f71df4e76c7e",
+        "name": "Stem Cell Vitamin C Serum ",
+        "description": "",
+        "category_name": "introstem",
+        "subcategory_name": "Intro Collection ",
+        "brand_name": "",
+        "price": 400.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "1dbfd41c-a8da-4418-819f-0569edaa0c95",
         "name": "Stem Cell Facial Toner",
         "description": "",
@@ -3511,17 +3665,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "592db09f-6d47-4adc-a1ef-f71df4e76c7e",
-        "name": "Stem Cell Vitamin C Serum ",
-        "description": "",
-        "category_name": "introstem",
-        "subcategory_name": "Intro Collection ",
-        "brand_name": "",
-        "price": 400.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
         "id": "9b35207c-bfc9-4fc9-875f-31c622c5162a",
         "name": "Termica Night Repair",
         "description": "Short+Description%0d%0aA+rich%2c+restorative+night+cream+designed+to+nourish+and+repair+skin+while+you+sleep.+It+enhances+skin%e2%80%99s+natural+renewal+process+for+a+smoother%2c+firmer%2c+and+more+radiant+complexion.%0d%0a%0d%0aWhat+It+Does+%26+Benefits%0d%0aThis+night+repair+cream+deeply+hydrates+and+supports+collagen+production%2c+reducing+the+appearance+of+fine+lines+and+wrinkles.+Its+soothing+formula+promotes+skin+elasticity+and+overnight+rejuvenation.%0d%0a%0d%0aInstructions%0d%0aApply+evenly+to+cleansed+face+and+neck+before+bedtime.+Massage+gently+until+fully+absorbed.+Use+nightly+for+best+results.%0d%0a%0d%0aActive+Ingredients%0d%0aPeptides%2c+Shea+Butter%2c+Vitamin+E%0d%0a%0d%0aFull+List+of+Ingredients+(INCI)%0d%0aAqua%2c+Butyrospermum+Parkii+(Shea)+Butter%2c+Glycerin%2c+Palmitoyl+Tripeptide-1%2c+Palmitoyl+Tetrapeptide-7%2c+Tocopherol%2c+Caprylic%2fCapric+Triglyceride%2c+Cetyl+Alcohol%2c+Phenoxyethanol%2c+Ethylhexylglycerin%2c+Carbomer%2c+Sodium+Hydroxide%0d%0a%0d%0aSkin+Type%0d%0aSuitable+for+normal%2c+dry%2c+and+mature+skin+types.+Not+recommended+for+very+sensitive+or+acne-prone+skin.",
@@ -3539,7 +3682,7 @@
         "category_name": "Mesoestetic",
         "subcategory_name": "Mesoestetic",
         "brand_name": "Mesoestetic",
-        "price": 78.0,
+        "price": 70.9,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -3731,15 +3874,15 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "9ed82961-5962-4fa3-a998-694ae0e0425c",
-        "name": "Botox",
+        "id": "3d0d7a36-91c2-43a2-b0d7-766da75d3c5e",
+        "name": "Liquid Peptides 50ml",
         "description": "",
-        "category_name": "Default",
-        "subcategory_name": "Default",
-        "brand_name": "",
-        "price": 17.5,
-        "quantity_value": 17.5,
-        "quantity_unit": "unts"
+        "category_name": "Medik8",
+        "subcategory_name": "Medik8",
+        "brand_name": "Medik8",
+        "price": 110.0,
+        "quantity_value": 50.0,
+        "quantity_unit": "ml"
       },
       {
         "id": "d77685b8-8247-4ceb-b031-0aec7ec902ed",
@@ -3786,17 +3929,6 @@
         "quantity_unit": "unts"
       },
       {
-        "id": "d8e1fbf0-5d51-41ab-b7d7-1a2914689cac",
-        "name": "juverderm ultra plus",
-        "description": "",
-        "category_name": "Default",
-        "subcategory_name": "Default",
-        "brand_name": "",
-        "price": 650.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "ml"
-      },
-      {
         "id": "36c6e0bd-ff4b-4377-b72e-99a9c793c947",
         "name": "Medik8 Crystal Retinol 10",
         "description": "",
@@ -3805,17 +3937,6 @@
         "brand_name": "Medik8",
         "price": 176.0,
         "quantity_value": 50.0,
-        "quantity_unit": "ml"
-      },
-      {
-        "id": "e2b8473b-3b0a-446e-b929-a05b17c14f2b",
-        "name": "meso hair loss 230",
-        "description": "",
-        "category_name": "Default",
-        "subcategory_name": "Default",
-        "brand_name": "",
-        "price": 200.0,
-        "quantity_value": 20.0,
         "quantity_unit": "ml"
       },
       {
@@ -3841,6 +3962,17 @@
         "quantity_unit": "unts"
       },
       {
+        "id": "79fbb5f8-e3a8-48d5-bacd-1b8fa91a299a",
+        "name": "Pinot Noir PreMask",
+        "description": "",
+        "category_name": "vine vera",
+        "subcategory_name": "Pinot",
+        "brand_name": "Vine vera",
+        "price": 700.0,
+        "quantity_value": 1.0,
+        "quantity_unit": "unts"
+      },
+      {
         "id": "0137e498-06e6-4109-ad26-d59ea813aefa",
         "name": "Photonix2 Eye Wand",
         "description": "",
@@ -3859,17 +3991,6 @@
         "subcategory_name": "Jelessi",
         "brand_name": "",
         "price": 1900.0,
-        "quantity_value": 1.0,
-        "quantity_unit": "unts"
-      },
-      {
-        "id": "79fbb5f8-e3a8-48d5-bacd-1b8fa91a299a",
-        "name": "Pinot Noir PreMask",
-        "description": "",
-        "category_name": "vine vera",
-        "subcategory_name": "Pinot",
-        "brand_name": "Vine vera",
-        "price": 700.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
@@ -3913,7 +4034,7 @@
         "category_name": "Renue",
         "subcategory_name": "Renue",
         "brand_name": "",
-        "price": 125.0,
+        "price": 126.0,
         "quantity_value": 1.0,
         "quantity_unit": "unts"
       },
