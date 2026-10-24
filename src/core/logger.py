@@ -8,8 +8,7 @@ def setup_logging(log_filename: str = 'app.log') -> logging.Logger:
     Configures the logging system for the application.
 
     Logs are written to both a file and the console, with log rotation every midnight.
-    The "logs" directory is automatically created if it doesn't exist.
-    Older logs are kept for 7 days.
+    The "logs" directory is automatically created if it doesn't exist. Older logs are kept for 7 days.
 
     Args:
         log_filename (str, optional): Log file name (default: "app.log").

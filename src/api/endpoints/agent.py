@@ -6,7 +6,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from api.schemas.chat_request import ChatRequest
+from api.schemas.agent import ChatRequest
 from application import AgentService
 from dependencies import get_agent_service, get_logger
 from services.llm import UnknownRoleError
@@ -20,7 +20,8 @@ async def agent_chat_stream(
         agent_service: AgentService = Depends(get_agent_service),
         logger: logging.Logger = Depends(get_logger),
 ) -> StreamingResponse:
-    """Streams the agent response using server-sent events.
+    """
+    Streams the agent response using server-sent events.
 
     Args:
         request (ChatRequest): Chat request containing messages and model identifier.
@@ -34,7 +35,8 @@ async def agent_chat_stream(
     started = time.perf_counter()
 
     def sse_event(event_type: str, **payload: object) -> str:
-        """Builds a server-sent event payload.
+        """
+        Builds a server-sent event payload.
 
         Args:
             event_type (str): Type of the server-sent event.
@@ -49,7 +51,8 @@ async def agent_chat_stream(
         return serialized_event
 
     async def stream_generator() -> object:
-        """Generates server-sent events for the agent response.
+        """
+        Generates server-sent events for the agent response.
 
         Yields:
             str: Serialized server-sent event.

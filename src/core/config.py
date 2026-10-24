@@ -4,14 +4,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Configuration settings for the application.
-    """
+    """Configuration settings for the application."""
     model_config = SettingsConfigDict(extra='ignore')
 
     # Application settings
-    APP_TITLE: str = "Demo Backend API"
-    DESCRIPTION: str = "API for Demo Project."
+    APP_TITLE: str = "Beauty Affairs Agent API"
+    DESCRIPTION: str = (
+        "Provides personalized skincare recommendations based on user skin type, concerns, "
+        "and skincare goals."
+    )
     HOST: str = '127.0.0.1'
     PORT: int = 8000
 

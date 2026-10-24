@@ -9,17 +9,15 @@ from pydantic import ValidationError
 
 
 class ErrorHandler:
-    """
-    Centralized error handler for FastAPI that provides informative and consistent error responses.
-    """
+    """Centralized error handler for FastAPI that provides informative and consistent error responses."""
 
     def __init__(self, app: FastAPI, logger: logging.Logger) -> None:
         """
         Initializes the ErrorHandler and registers error handlers.
 
         Args:
-            app: FastAPI application instance.
-            logger: Logger instance used to record error details.
+            app (FastAPI): FastAPI application instance.
+            logger (logging.Logger): Logger instance used to record error details.
         """
         self._logger = logger
         self._register_error_handlers(app)
@@ -36,11 +34,11 @@ class ErrorHandler:
         Builds a standardized JSON error response.
 
         Args:
-            request: FastAPI request object.
-            error_type: Type of the error (e.g. "ValidationError").
-            message: Main error message.
-            http_status: HTTP status code.
-            details: Optional detailed error information.
+            request (Request): FastAPI request object.
+            error_type (str): Type of the error (e.g. "ValidationError").
+            message (str): Main error message.
+            http_status (str): HTTP status code.
+            details (dict | Sequence | None, optional): Optional detailed error information.
 
         Returns:
             JSONResponse: Formatted JSON response containing error details.
@@ -66,7 +64,7 @@ class ErrorHandler:
         Registers all custom error handlers for FastAPI.
 
         Args:
-            app: FastAPI application instance.
+            app (FastAPI): FastAPI application instance.
 
         Returns:
             None: This method modifies the app in place.
@@ -78,8 +76,8 @@ class ErrorHandler:
             Handles FastAPI HTTPException errors.
 
             Args:
-                request: FastAPI request object.
-                exc: Raised HTTPException.
+                request (Request): FastAPI request object.
+                exc (HTTPException): Raised HTTPException.
 
             Returns:
                 JSONResponse: JSON response describing the HTTP error.
@@ -102,8 +100,8 @@ class ErrorHandler:
             This occurs when the client sends malformed or incorrect data.
 
             Args:
-                request: FastAPI request object.
-                exc: Raised RequestValidationError from FastAPI.
+                request (Request): FastAPI request object.
+                exc (RequestValidationError): Raised RequestValidationError from FastAPI.
 
             Returns:
                 JSONResponse: JSON response describing the client-side validation error (422).
@@ -123,13 +121,12 @@ class ErrorHandler:
         @app.exception_handler(ValidationError)
         async def handle_pydantic_validation_error(request: Request, exc: ValidationError) -> JSONResponse:
             """
-            Handles internal Pydantic validation errors.
-            This occurs when internal server code tries to instantiate a Pydantic model with invalid data
-            (e.g., bad data from a database or external API like AWS Bedrock).
+            Handles internal Pydantic validation errors. This occurs when internal server code tries to instantiate
+            a Pydantic model with invalid data (e.g., bad data from a database or external API like AWS Bedrock).
 
             Args:
-                request: FastAPI request object.
-                exc: Raised ValidationError from Pydantic.
+                request (Request): FastAPI request object.
+                exc (ValidationError): Raised ValidationError from Pydantic.
 
             Returns:
                 JSONResponse: JSON response describing the internal server error (500).
@@ -151,8 +148,8 @@ class ErrorHandler:
             Handles Python ValueError exceptions.
 
             Args:
-                request: FastAPI request object.
-                exc: Raised ValueError.
+                request (Request): FastAPI request object.
+                exc (ValueError): Raised ValueError.
 
             Returns:
                 JSONResponse: JSON response describing the value error.
@@ -174,8 +171,8 @@ class ErrorHandler:
             Handles all unexpected exceptions.
 
             Args:
-                request: FastAPI request object.
-                exc: Raised Exception.
+                request (Request): FastAPI request object.
+                exc (Exception): Raised Exception.
 
             Returns:
                 JSONResponse: JSON response describing the internal server error.

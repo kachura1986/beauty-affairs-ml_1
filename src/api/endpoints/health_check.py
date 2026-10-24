@@ -11,7 +11,8 @@ router = APIRouter()
 
 @router.get('', response_model=HealthResponse)
 async def health_check(logger: logging.Logger = Depends(get_logger)) -> HealthResponse:
-    """Check that the API is running and ready to receive requests.
+    """
+    Check that the API is running and ready to receive requests.
 
     Args:
         logger (logging.Logger): Logger instance for logging messages.
