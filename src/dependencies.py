@@ -7,7 +7,6 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from fastapi import Request
 from openai import AsyncAzureOpenAI
 
-from application import AgentService
 from core.config import settings
 from core.logger import setup_logging
 from services.agent.tools import create_product_tools
@@ -16,6 +15,7 @@ from services.llm import AzureOpenAIModel, LLMModel
 from services.search_index.azure_search_index_manager import AzureSearchIndexManager
 from services.search_index.products_search_index import ProductsSearchIndex
 from services.text_normalization.text_normalizer import TextNormalizer
+from use_cases import AgentService
 
 
 # Logger

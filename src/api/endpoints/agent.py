@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from api.schemas.agent import ChatRequest
-from application import AgentService
 from dependencies import get_agent_service, get_logger
 from services.llm import UnknownRoleError
+from use_cases import AgentService
 
 router = APIRouter()
 
