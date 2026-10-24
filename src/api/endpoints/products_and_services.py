@@ -49,6 +49,7 @@ async def update(
 async def delete(
         data: RequestProductsAndServicesSchema,
         logger: logging.Logger = Depends(get_logger),
+        index_service: IndexService = Depends(get_index_service),
 ) -> str:
     """
     Delete products and services in search index.
@@ -58,6 +59,7 @@ async def delete(
             - **products** (dict): Dictionary of products to delete.
             - **services** (dict): Dictionary of services to delete.
         logger (logging.Logger): Logger used for reporting request errors.
+        index_service (IndexService): Index service used for updating products and services.
 
     Returns:
         str: A response message.
@@ -70,5 +72,7 @@ async def delete(
 
     logger.info('Products: %s', products)
     logger.info('Services: %s', services)
+
+    await index_service.delete_documents(products, services)
 
     return "Products and services have been deleted in the search index"

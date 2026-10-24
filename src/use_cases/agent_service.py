@@ -9,9 +9,7 @@ from services.llm import LLMModel, Message
 
 
 class AgentService:
-    """
-    Service that executes the agent_graph without HTTP.
-    """
+    """Service that executes the agent_graph without HTTP."""
 
     def __init__(
             self,
@@ -29,7 +27,6 @@ class AgentService:
 
         Args:
             messages (Sequence[Message]): Complete conversation history.
-            model_id (str): Identifier of the model to use.
 
         Returns:
             AgentResult: Stable result of the agent_graph execution.

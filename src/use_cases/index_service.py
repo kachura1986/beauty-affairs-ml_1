@@ -47,7 +47,8 @@ class IndexService:
         Updates or uploads product and service documents to their respective search_index indexes.
 
         Args:
-            all_documents (dict): A dictionary containing 'products' and 'services' documents.
+            all_documents (dict[str, dict[str, list[dict]]]): A dictionary containing 'products' and
+            'services' documents.
         """
         for index_type, documents in all_documents.items():
             index_class = self.index_classes.get(index_type)
@@ -71,8 +72,8 @@ class IndexService:
         Updates product and service documents in their respective search_index indexes.
 
         Args:
-            products (dict): Product documents to update.
-            services (dict): Service documents to update.
+            products dict[str, list[dict]]: Product documents to update.
+            services dict[str, list[dict]]: Service documents to update.
         """
         # Index names
         product_indexes = set(products.keys())
@@ -96,42 +97,48 @@ class IndexService:
         # Update documents
         await self._upsert_documents({'products': products, 'services': services})
 
-    # async def delete_documents(self, products: dict[str, list[dict]], services: dict[str, list[dict]]) -> None:
-    #     """
-    #     Deletes product and service documents from search_index indexes.
-    #
-    #     Args:
-    #         products (dict): Product documents to delete.
-    #         services (dict): Service documents to delete.
-    #     """
-    #     existing_indexes = await self.list_index_names()
-    #
-    #     for index_type, documents in {
-    #         'products': products,
-    #         'services': services,
-    #     }.items():
-    #         # Delete documents
-    #         for index_name, docs in documents.items():
-    #             # Skip if search_index does not exist
-    #             if index_name not in existing_indexes:
-    #                 continue
-    #
-    #             index_instance = self._get_index_instance(index_type, index_name)
-    #
-    #             if index_instance:
-    #                 await index_instance.delete_documents(docs)
-    #
-    #                 # Ensure search_index is empty before deletion
-    #                 for _ in range(3):
-    #                     if await index_instance._search_client.get_document_count() == 0:
-    #                         await self.search_index_client.delete_index(index_name)
-    #                         # Update set to avoid rechecking
-    #                         existing_indexes.discard(index_name)
-    #                         break
-    #                     await asyncio.sleep(1)
-    #
-    #
-    #
+    async def _delete_documents(self, all_documents: dict[str, dict[str, list[dict]]]) -> None:
+        """
+        Deletes product and service documents from their respective indexes.
+
+        Args:
+            all_documents ict[str, dict[str, list[dict]]]: A dictionary containing 'products' and 'services'
+            documents grouped by index name.
+        """
+        for index_type, documents in all_documents.items():
+            index_class = self.index_classes.get(index_type)
+            if index_class is None:
+                raise ValueError(f"Unsupported index type: {index_type}")
+
+            for index_name, docs in documents.items():
+                if not docs:
+                    continue
+
+                index_instance = index_class(
+                    index_name=index_name,
+                    azure_search_index_manager=self._search_index_manager,
+                    embedder=self._embedder,
+                )
+
+                await index_instance.delete_documents(docs)
+
+    async def delete_documents(self, products: dict[str, list[dict]], services: dict[str, list[dict]]) -> None:
+        """
+        Deletes product and service documents from search index indexes.
+
+        Args:
+            products dict[str, list[dict]]: Product documents grouped by index name.
+            services dict[str, list[dict]]: Service documents grouped by index name.
+        """
+        product_indexes = set(products.keys())
+        service_indexes = set(services.keys())
+
+        conflicting_indexes = product_indexes & service_indexes
+        if conflicting_indexes:
+            raise ValueError("Index names cannot be shared by products and services: {sorted(conflicting_indexes)}")
+
+        await self._delete_documents({'products': products, 'services': services})
+
     # def _get_search_client(self, index_name: str) -> SearchClient:
     #     """
     #     Retrieve a search_index client for a given search_index name.
