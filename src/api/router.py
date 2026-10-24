@@ -1,16 +1,19 @@
 from fastapi import APIRouter
 
-from api.endpoints import agent, health_check
+from api.endpoints import agent, health_check, products_and_services
 
 main_router = APIRouter(prefix='/api')
 
 # Define routers
 routers = [
     # Health
-    (health_check.router, '/health_check', 'Health'),
+    (health_check.router, '/health-check', 'Health'),
 
     # Generate
     (agent.router, '/agent', ['agent']),
+
+    # Products and services
+    (products_and_services.router, "/products-and-services", "Modify products and services in search index"),
 ]
 
 for current_router, prefix, tag in routers:
