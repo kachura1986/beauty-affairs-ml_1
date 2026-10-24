@@ -39,7 +39,10 @@ class AzureOpenAIEmbedder(BaseEmbedder):
         Returns:
             list[float]: The generated embedding vector.
         """
-        normalized_text = self._prepare_text(text)
+        # If the text is empty after normalization, use a placeholder
+        normalized_text = text if text else 'EMPTY_TEXT'
+
+        normalized_text = self._prepare_text(normalized_text)
 
         response = await self._client.embeddings.create(
             model=self._model_name,
@@ -65,12 +68,10 @@ class AzureOpenAIEmbedder(BaseEmbedder):
         """
         self._validate_chunk_size(chunk_size)
 
-        normalized_texts = []
+        # If any text is empty after normalization, use a placeholder
+        normalized_texts = [text if text else 'EMPTY_TEXT' for text in texts]
 
-        for text in texts:
-            normalized_text = self._prepare_text(text)
-
-            normalized_texts.append(normalized_text)
+        normalized_texts = [self._prepare_text(normalized_text) for normalized_text in normalized_texts]
 
         embeddings = []
 
