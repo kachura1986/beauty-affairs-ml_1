@@ -61,23 +61,25 @@ async def agent_chat_stream(
             result = await agent_service.run(request.messages)
 
             if result.answer:
-                yield sse_event("token", content=result.answer)
+                yield sse_event('token', content=result.answer)
 
             yield sse_event(
-                "done",
+                'done',
                 request_id=request_id,
                 latency_ms=round((time.perf_counter() - started) * 1000),
             )
         except UnknownRoleError as exc:
-            logger.warning("Invalid role, request_id=%s: %s", request_id, exc)
-            yield sse_event("error", request_id=request_id, message=str(exc))
+            logger.warning(f"Invalid role, request_id={request_id}: {exc}")
+            yield sse_event('error', request_id=request_id, message=str(exc))
+
         except ValueError as exc:
-            logger.warning("Invalid agent request, request_id=%s: %s", request_id, exc)
-            yield sse_event("error", request_id=request_id, message=str(exc))
+            logger.warning(f"Invalid agent request, request_id={request_id}: {exc}")
+            yield sse_event('error', request_id=request_id, message=str(exc))
+
         except Exception:
-            logger.exception("Agent streaming failed, request_id=%s", request_id)
+            logger.exception(f"Agent streaming failed, request_id={request_id}")
             yield sse_event(
-                "error",
+                'error',
                 request_id=request_id,
                 message="Ошибка генерации. Повторите запрос позже.",
             )
