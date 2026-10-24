@@ -112,7 +112,7 @@ class ErrorHandler:
                 request=request,
                 error_type='RequestValidationError',
                 message='Invalid input data in request',
-                http_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                http_status=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 details=exc.errors(),
             )
 
