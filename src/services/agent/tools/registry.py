@@ -1,6 +1,9 @@
 import hashlib
 import inspect
 import json
+import logging
+import math
+import traceback
 from collections.abc import Mapping
 from typing import Any, Iterable
 
@@ -9,6 +12,130 @@ from pydantic import ValidationError
 from .tool import Tool, ToolError, ToolErrorCode, ToolResult
 
 MAX_TOOL_OUTPUT = 4000
+
+logger = logging.getLogger(__name__)
+
+_TEMPORARY_EXCEPTION_NAMES = frozenset({
+    'TimeoutException',
+    'ConnectTimeout',
+    'ReadTimeout',
+    'WriteTimeout',
+    'PoolTimeout',
+    'ConnectError',
+    'NetworkError',
+    'TransportError',
+    'ClientConnectionError',
+    'ClientConnectorError',
+    'ServerDisconnectedError',
+    'ServiceRequestError',
+    'ServiceResponseError',
+})
+
+
+def _is_temporary_failure(exc: Exception) -> bool:
+    if isinstance(exc, (TimeoutError, ConnectionError)):
+        return True
+
+    return any(cls.__name__ in _TEMPORARY_EXCEPTION_NAMES for cls in type(exc).__mro__)
+
+
+def _retry_after_seconds(exc: Exception) -> float | None:
+    value = getattr(exc, 'retry_after', None)
+
+    if value is None:
+        response = getattr(exc, 'response', None)
+        headers = getattr(response, 'headers', None)
+
+        if headers is not None:
+            value = headers.get('Retry-After')
+            if value is None:
+                value = headers.get('retry-after')
+
+    if value is None:
+        return None
+
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+    if not math.isfinite(value):
+        return None
+
+    return max(0.0, value)
+
+
+def _log_exception(message: str, tool_name: str, exc: Exception) -> None:
+    logger.error(
+        message,
+        extra={
+            'tool_name': tool_name,
+            'exception_type': type(exc).__name__,
+            'stack': traceback.format_tb(exc.__traceback__),
+        },
+    )
+
+
+def _validation_hint(errors: list[dict[str, Any]]) -> str:
+    hints = []
+
+    for error in errors:
+        location = '.'.join(str(x) for x in error.get('loc', ()))
+        field = f"Поле '{location}'" if location else 'Аргументы'
+        error_type = error.get('type', '')
+        ctx = error.get('ctx') or {}
+
+        if error_type == 'missing':
+            hint = f"Укажи обязательное поле '{location}'."
+
+        elif error_type == 'extra_forbidden':
+            hint = f"Поле '{location}' не поддерживается схемой; удали его."
+
+        elif error_type == 'string_too_short':
+            limit = ctx.get('min_length')
+            hint = f"{field}: укажи строку длиной не менее {limit} символов."
+
+        elif error_type == 'string_too_long':
+            limit = ctx.get('max_length')
+            hint = f"{field}: сократи строку до {limit} символов."
+
+        elif error_type == 'greater_than_equal':
+            limit = ctx.get('ge')
+            hint = f"{field}: значение должно быть не меньше {limit}."
+
+        elif error_type == 'less_than_equal':
+            limit = ctx.get('le')
+            hint = f"{field}: значение должно быть не больше {limit}."
+
+        elif error_type == 'greater_than':
+            limit = ctx.get('gt')
+            hint = f"{field}: значение должно быть больше {limit}."
+
+        elif error_type == 'less_than':
+            limit = ctx.get('lt')
+            hint = f"{field}: значение должно быть меньше {limit}."
+
+        elif error_type in {'int_parsing', 'int_type', 'float_parsing', 'float_type'}:
+            hint = f"{field}: передай число правильного типа."
+
+        elif error_type == 'string_type':
+            hint = f"{field}: передай строку."
+
+        elif error_type == 'value_error':
+            message = str(error.get('msg', 'Некорректное значение.'))
+            message = message.removeprefix('Value error, ').rstrip('.')
+
+            if 'min_price must be less than or equal to max_price' in message:
+                hint = 'Укажи min_price не больше max_price.'
+            else:
+                hint = f"{field}: {message}."
+
+        else:
+            hint = f"{field}: значение не соответствует схеме аргументов."
+
+        hints.append(hint)
+
+    return '; '.join(hints) or 'Исправь аргументы согласно схеме инструмента.'
 
 
 class ToolRegistry:
@@ -79,10 +206,51 @@ class ToolRegistry:
             ),
         )
 
+    @staticmethod
+    def _execution_failed_result(tool_name: str) -> ToolResult:
+        return ToolResult(
+            status='error',
+            error=ToolError(
+                error_code=ToolErrorCode.EXECUTION_FAILED,
+                message=f"Инструмент '{tool_name}' завершился внутренней ошибкой.",
+                hint=(
+                    'Схема аргументов уже проверена. Не исправляй аргументы '
+                    f"наугад и не повторяй вызов '{tool_name}'; "
+                    'выбери другой доступный способ.'
+                ),
+                retryable=False,
+            ),
+        )
+
+    @staticmethod
+    def _temporary_failure_result(tool_name: str, retry_after: float | None) -> ToolResult:
+        if retry_after is None:
+            hint = (
+                f"Инструмент '{tool_name}' временно недоступен. "
+                'Не повторяй вызов немедленно; выбери другой способ или повтори позже.'
+            )
+        else:
+            hint = (
+                f"Инструмент '{tool_name}' временно недоступен. "
+                f'Не повторяй раньше чем через {retry_after:.1f} с; '
+                'если ожидание невозможно, выбери другой способ.'
+            )
+
+        return ToolResult(
+            status='error',
+            error=ToolError(
+                error_code=ToolErrorCode.TEMPORARY_FAILURE,
+                message=f"Инструмент '{tool_name}' временно недоступен.",
+                hint=hint,
+                retryable=True,
+                retry_after=retry_after,
+            ),
+        )
+
     async def invoke(self, call: Any) -> ToolResult:
         """Execute a tool call and convert failures into ToolResult errors.
 
-        This method does not propagate tool execution exceptions to the  caller. Expected input errors and
+        This method does not propagate tool execution exceptions to the caller. Expected input errors and
         unexpected internal failures are represented as structured ToolError instances instead.
 
         Args:
@@ -121,12 +289,18 @@ class ToolRegistry:
 
         # The model requested a tool that is not registered
         if tool is None:
+            available = ', '.join(sorted(self._tools))
+
             return ToolResult(
                 status='error',
                 error=ToolError(
                     error_code=ToolErrorCode.UNKNOWN_TOOL,
-                    message=f'Tool {name!r} is not registered.',
-                    hint='Use one of the available tools: ' + ', '.join(sorted(self._tools)),
+                    message=f"Инструмент '{name}' не зарегистрирован.",
+                    hint=(
+                        f'Выбери инструмент из списка: {available}.'
+                        if available
+                        else 'В текущем запросе нет зарегистрированных инструментов.'
+                    ),
                     retryable=True,
                 ),
             )
@@ -136,16 +310,7 @@ class ToolRegistry:
             validated = tool.args_model.model_validate(args)
             args = validated.model_dump()
         except ValidationError as exc:
-            errors = []
-
-            for error in exc.errors():
-                location = '.'.join(str(x) for x in error['loc'])
-                errors.append(f"{location}: {error['msg']}")
-
-            return self._validation_error(
-                'Invalid tool arguments.',
-                '; '.join(errors),
-            )
+            return self._validation_error('Invalid tool arguments.', _validation_hint(exc.errors()))
 
         try:
             out = tool.fn(**args)
@@ -155,43 +320,15 @@ class ToolRegistry:
 
             out = str(out)
 
-        # TypeError usually means that the provided arguments do not match the tool function signature
-        except TypeError:
-            return ToolResult(
-                status='error',
-                error=ToolError(
-                    error_code=ToolErrorCode.VALIDATION,
-                    message='Tool arguments have an invalid format.',
-                    hint='Check the argument types and values.',
-                    retryable=True,
-                ),
-            )
+        except Exception as exc:  # noqa: BLE001
+            if _is_temporary_failure(exc):
+                _log_exception('Temporary tool failure.', name, exc)
 
-        # ValueError is treated as a validation error raised by the tool
-        # itself when the provided values are semantically invalid
-        except ValueError as exc:
-            return ToolResult(
-                status='error',
-                error=ToolError(
-                    error_code=ToolErrorCode.VALIDATION,
-                    message=str(exc),
-                    hint='Fix the arguments according to the tool description.',
-                    retryable=True,
-                ),
-            )
+                return self._temporary_failure_result(name, _retry_after_seconds(exc))
 
-        # Any other exception is considered an internal tool failure
-        # Do not expose implementation details or tracebacks to the model
-        except Exception:
-            return ToolResult(
-                status='error',
-                error=ToolError(
-                    error_code=ToolErrorCode.INVARIANT_VIOLATED,
-                    message='The tool failed with an internal error.',
-                    hint='Do not repeat this call; choose another way to perform the action.',
-                    retryable=False,
-                ),
-            )
+            _log_exception('Tool execution failed.', name, exc)
+
+            return self._execution_failed_result(name)
 
         # Keep the model context bounded by limiting the tool output size
         truncated = len(out) > MAX_TOOL_OUTPUT

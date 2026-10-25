@@ -8,7 +8,8 @@ from pydantic import BaseModel
 class ToolErrorCode(StrEnum):
     VALIDATION = 'validation'
     UNKNOWN_TOOL = 'unknown_tool'
-    INVARIANT_VIOLATED = 'invariant_violated'
+    EXECUTION_FAILED = 'execution_failed'
+    TEMPORARY_FAILURE = 'temporary_failure'
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,10 @@ class ToolError:
     hint: str
     retryable: bool
     retry_after: float | None = None
+
+    def __post_init__(self) -> None:
+        if len(self.hint) > 200:
+            object.__setattr__(self, 'hint', self.hint[:197] + '...')
 
     def to_model(self) -> str:
         """
@@ -61,7 +66,6 @@ class ToolResult:
         Returns:
             str: Text formatted for LLM.
         """
-
         # Successful result: return the content and explicitly mark truncation
         if self.status == 'ok':
             tail = '\n[...output truncated...]' if self.truncated else ''
@@ -71,7 +75,7 @@ class ToolResult:
         # If it does not, the ToolResult violates its internal contract
         if self.error is None:
             error = ToolError(
-                error_code=ToolErrorCode.INVARIANT_VIOLATED,
+                error_code=ToolErrorCode.EXECUTION_FAILED,
                 message='The tool returned an error without details.',
                 hint='Choose another way to perform the action.',
                 retryable=False,

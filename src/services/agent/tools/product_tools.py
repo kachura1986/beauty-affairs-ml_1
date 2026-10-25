@@ -60,14 +60,14 @@ def _odata_escape(value: str) -> str:
     return value.replace("'", "''")
 
 
-def _build_product_filter(args: SearchProductsArgs) -> str | None:
+def _build_product_filter(min_price: float | None, max_price: float | None) -> str | None:
     conditions = []
 
-    if args.min_price is not None:
-        conditions.append(f"price ge {args.min_price}")
+    if min_price is not None:
+        conditions.append(f"price ge {min_price}")
 
-    if args.max_price is not None:
-        conditions.append(f"price le {args.max_price}")
+    if max_price is not None:
+        conditions.append(f"price le {max_price}")
 
     return " and ".join(conditions) if conditions else None
 
@@ -80,20 +80,9 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
             min_price: float | None = None,
             max_price: float | None = None,
     ) -> list[dict]:
-        args = SearchProductsArgs(
-            query=query,
-            top_k=top_k,
-            min_price=min_price,
-            max_price=max_price,
-        )
+        filters = _build_product_filter(min_price, max_price)
 
-        filters = _build_product_filter(args)
-
-        documents = await products_index.search_documents(
-            query_text=args.query,
-            top_k=args.top_k,
-            filters=filters,
-        )
+        documents = await products_index.search_documents(query_text=query, top_k=top_k, filters=filters)
 
         # Return only fields useful to the model
         fields = (
@@ -136,7 +125,8 @@ and skin compatibility.
 
 Only recommend products and prices supported by the search results. Never invent products or prices that 
 are not present in the results.
-""",       fn=search_products,
+""",
+            fn=search_products,
             args_model=SearchProductsArgs,
         ),
     ])

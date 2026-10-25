@@ -1,4 +1,6 @@
+import logging
 import time
+import traceback
 from typing import Any
 
 from langgraph.runtime import Runtime
@@ -9,6 +11,20 @@ from ..context import build_window, observation, tool_message
 from ..domain import AgentResult, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace
+
+logger = logging.getLogger(__name__)
+
+
+def _log_internal_exception(message: str, exc: Exception, step: int | None = None) -> None:
+    extra = {
+        'exception_type': type(exc).__name__,
+        'stack': traceback.format_tb(exc.__traceback__),
+    }
+
+    if step is not None:
+        extra['step'] = step
+
+    logger.error(message, extra=extra)
 
 
 def _check_budget(budget) -> TerminationReason | None:
@@ -75,11 +91,13 @@ async def _request_llm(
     except Exception as exc:  # noqa: BLE001
         latency_ms = int((time.monotonic() - t0) * 1000)
 
+        _log_internal_exception('LLM request failed.', exc, step=budget.steps)
+
         if budget.remaining_seconds() <= 0:
             trace.error(
                 step=budget.steps,
                 kind='llm_timeout',
-                message=str(exc),
+                message=type(exc).__name__,
                 latency_ms=latency_ms,
                 budget=budget,
             )
@@ -89,7 +107,7 @@ async def _request_llm(
         trace.error(
             step=budget.steps,
             kind='llm_error',
-            message=str(exc),
+            message=type(exc).__name__,
             latency_ms=latency_ms,
             budget=budget,
         )
@@ -240,8 +258,8 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
     Tool calls are still executed sequentially, exactly as in the original implementation.
 
     Args:
-        state (GraphState): The current state of the graph.
-        runtime (Runtime[AgentContext]): The runtime environment for the graph.
+        state (GraphState): The current graph state.
+        runtime (Runtime[AgentContext]): The runtime environment of the graph.
 
     Returns:
         dict[str, Any]: Result of the node.
@@ -366,11 +384,9 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
         ok, note = ctx.task.postcondition(answer)
 
     except Exception as exc:  # noqa: BLE001
+        _log_internal_exception('Postcondition verification failed.', exc)
         ok = False
-        note = (
-            'Postcondition verification raised '
-            f'an exception: {exc}'
-        )
+        note = 'Postcondition verification failed due to an internal error.'
 
     # ------------------------------------------------------------
     # Verification succeeded
@@ -401,10 +417,10 @@ def finish_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
 
     Args:
         state (GraphState): The current state of the agent_graph execution.
-        runtime (Runtime[AgentContext]): The runtime environment for the graph.
+        runtime (Runtime[AgentContext]): The runtime environment of the graph.
 
     Returns:
-        dict[str, Any]: The final result of the agent_graph execution.
+        dict[str, Any]: The result of the node.
     """
     reason = state.get('termination_reason')
     if reason is None:
