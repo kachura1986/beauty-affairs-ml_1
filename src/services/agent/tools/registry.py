@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import json
+from collections.abc import Mapping
 from typing import Any, Iterable
 
 from pydantic import ValidationError
@@ -66,7 +67,19 @@ class ToolRegistry:
 
         return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
-    async def invoke(self, call: dict[str, Any]) -> ToolResult:
+    @staticmethod
+    def _validation_error(message: str, hint: str) -> ToolResult:
+        return ToolResult(
+            status='error',
+            error=ToolError(
+                error_code=ToolErrorCode.VALIDATION,
+                message=message,
+                hint=hint,
+                retryable=True,
+            ),
+        )
+
+    async def invoke(self, call: Any) -> ToolResult:
         """Execute a tool call and convert failures into ToolResult errors.
 
         This method does not propagate tool execution exceptions to the  caller. Expected input errors and
@@ -78,8 +91,32 @@ class ToolRegistry:
         Returns:
             ToolResult: Result of the tool execution.
         """
-        name = call.get('name', '')
-        args = call.get('arguments', {}) or {}
+        if not isinstance(call, Mapping):
+            return self._validation_error(
+                "Invalid tool call structure.",
+                "Provide a mapping with 'name' and 'arguments' fields.",
+            )
+
+        name = call.get('name')
+        if not isinstance(name, str) or not name.strip():
+            return self._validation_error(
+                "Invalid tool name.",
+                "Provide a non-empty string in the 'name' field.",
+            )
+
+        if 'arguments' not in call:
+            return self._validation_error(
+                "Tool arguments are missing.",
+                "Provide 'arguments' as an object, even if it is empty.",
+            )
+
+        args = call['arguments']
+        if not isinstance(args, dict):
+            return self._validation_error(
+                "Invalid tool arguments structure.",
+                "The 'arguments' field must be an object with named fields.",
+            )
+
         tool = self._tools.get(name)
 
         # The model requested a tool that is not registered
@@ -95,44 +132,20 @@ class ToolRegistry:
             )
 
         # Validate arguments before calling the tool
-        if tool.args_model is not None:
-            try:
-                validated = tool.args_model.model_validate(args)
-                args = validated.model_dump()
-            except ValidationError as exc:
-                errors = []
+        try:
+            validated = tool.args_model.model_validate(args)
+            args = validated.model_dump()
+        except ValidationError as exc:
+            errors = []
 
-                for error in exc.errors():
-                    location = '.'.join(str(x) for x in error['loc'])
-                    errors.append(f"{location}: {error['msg']}")
+            for error in exc.errors():
+                location = '.'.join(str(x) for x in error['loc'])
+                errors.append(f"{location}: {error['msg']}")
 
-                return ToolResult(
-                    status='error',
-                    error=ToolError(
-                        error_code=ToolErrorCode.VALIDATION,
-                        message='Invalid tool arguments.',
-                        hint='; '.join(errors),
-                        retryable=True,
-                    ),
-                )
-        else:
-            # Check required arguments before calling the tool
-            missing = [
-                key
-                for key in tool.parameters.get('required', [])
-                if key not in args
-            ]
-
-            if missing:
-                return ToolResult(
-                    status='error',
-                    error=ToolError(
-                        error_code=ToolErrorCode.VALIDATION,
-                        message='Required arguments are missing.',
-                        hint=f"Provide the required fields: {', '.join(missing)}.",
-                        retryable=True,
-                    ),
-                )
+            return self._validation_error(
+                'Invalid tool arguments.',
+                '; '.join(errors),
+            )
 
         try:
             out = tool.fn(**args)

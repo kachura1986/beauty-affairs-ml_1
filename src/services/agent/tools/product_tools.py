@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .registry import ToolRegistry
 from .tool import Tool
@@ -6,6 +6,8 @@ from ...search_index.products_search_index import ProductsSearchIndex
 
 
 class SearchProductsArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     query: str = Field(
         min_length=1,
         max_length=500,
@@ -38,6 +40,17 @@ class SearchProductsArgs(BaseModel):
         ge=0,
         description="Maximum product price.",
     )
+
+    @model_validator(mode="after")
+    def validate_price_range(self) -> "SearchProductsArgs":
+        if (
+                self.min_price is not None
+                and self.max_price is not None
+                and self.min_price > self.max_price
+        ):
+            raise ValueError("min_price must be less than or equal to max_price")
+
+        return self
 
 
 def _odata_escape(value: str) -> str:
@@ -82,13 +95,6 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
             min_price=min_price,
             max_price=max_price,
         )
-
-        if (
-                args.min_price is not None
-                and args.max_price is not None
-                and args.min_price > args.max_price
-        ):
-            raise ValueError("min_price must be less than or equal to max_price")
 
         filters = _build_product_filter(args)
 
