@@ -12,11 +12,11 @@
 *.pyd
 
 # Ignore logs and temporary files
-tools_
-.nicegui
 .temp
 *.log
 *.tmp
+tools_
+runs
 
 # Exclude local configuration files
 .env
