@@ -6,39 +6,44 @@ from ...search_index.products_search_index import ProductsSearchIndex
 
 
 class SearchProductsArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra='forbid')
 
     query: str = Field(
         min_length=1,
         max_length=500,
-        description=(
-            "Search query describing the product. "
-            "Can include product name, brand, category, or desired characteristics."
-        ),
+        description="""
+Free-text search query describing the products to find. Can include product names, brand names, product features, 
+intended benefits, usage instructions, ingredients and desired characteristics to improve text and vector search relevance. 
+Structured price constraints must be provided through their dedicated fields;
+mentioning them in the query alone does not apply structured filters.
+""",
     )
     top_k: int = Field(
         default=10,
         ge=1,
         le=50,
-        description="Maximum number of products to return.",
-    )
-    brand_name: str | None = Field(
-        default=None,
-        description="Optional brand filter.",
-    )
-    category_name: str | None = Field(
-        default=None,
-        description="Optional product category filter.",
+        description="""
+Maximum number of products to return. Must be between 1 and 50.
+Defaults to 10.
+""",
     )
     min_price: float | None = Field(
         default=None,
         ge=0,
-        description="Minimum product price.",
+        description="""
+Optional inclusive minimum product price. When provided, adds the OData condition price ge <min_price>, 
+requiring the product price to be greater than or equal to this value. Must be non-negative. No minimum-price
+condition is applied when this field is omitted.
+""",
     )
     max_price: float | None = Field(
         default=None,
         ge=0,
-        description="Maximum product price.",
+        description="""
+Optional inclusive maximum product price. When provided, adds the OData condition price le <max_price>, 
+requiring the product price to be less than or equal to this value. Must be non-negative. No maximum-price condition is 
+applied when this field is omitted.
+""",
     )
 
     @model_validator(mode="after")
@@ -61,14 +66,6 @@ def _odata_escape(value: str) -> str:
 def _build_product_filter(args: SearchProductsArgs) -> str | None:
     conditions = []
 
-    if args.brand_name:
-        value = _odata_escape(args.brand_name)
-        conditions.append(f"brand_name eq '{value}'")
-
-    if args.category_name:
-        value = _odata_escape(args.category_name)
-        conditions.append(f"category_name eq '{value}'")
-
     if args.min_price is not None:
         conditions.append(f"price ge {args.min_price}")
 
@@ -83,15 +80,12 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
             query: str,
             top_k: int = 10,
             brand_name: str | None = None,
-            category_name: str | None = None,
             min_price: float | None = None,
             max_price: float | None = None,
     ) -> list[dict]:
         args = SearchProductsArgs(
             query=query,
             top_k=top_k,
-            brand_name=brand_name,
-            category_name=category_name,
             min_price=min_price,
             max_price=max_price,
         )
@@ -106,15 +100,15 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
 
         # Return only fields useful to the model
         fields = (
-            "id",
-            "name",
-            "description",
-            "brand_name",
-            "category_name",
-            "subcategory_name",
-            "price",
-            "quantity_value",
-            "quantity_unit",
+            'id',
+            'name',
+            'description',
+            'brand_name',
+            'category_name',
+            'subcategory_name',
+            'price',
+            'quantity_value',
+            'quantity_unit',
         )
 
         return [
@@ -124,14 +118,23 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
 
     return ToolRegistry([
         Tool(
-            name="Searching products",
-            description=(
-                "Search the product catalog using hybrid text and vector search. Use this tool when the user asks "
-                "to find, compare, or recommend products available in the catalog. Supports optional brand, "
-                "category, and price filters. Returns matching product details. Do not invent products "
-                "or prices that are not present in the results."
-            ),
-            fn=search_products,
+            name="search_products",
+            description="""
+Search the product catalog using hybrid text and vector search. Use this tool when the user asks to find,
+compare, or recommend products available in the catalog.
+
+Search uses product names, descriptions, categories and brand names for text relevance, 
+along with vector similarity based on product names and descriptions. Use query to describe the desired 
+products and their characteristics, and top_k to control the maximum number of products returned.
+
+Product descriptions contain structured sections such as Short Description, What It Does & Benefits, 
+Instructions, Active Ingredients, Full List of Ingredients (INCI), and Skin Type. These sections provide 
+information about product features, intended benefits, usage instructions, ingredients, and skin compatibility. 
+The available sections may vary between products.
+
+Only recommend products and prices supported by the search results. Never invent products or prices that 
+are not present in the results.
+""",       fn=search_products,
             args_model=SearchProductsArgs,
         ),
     ])
