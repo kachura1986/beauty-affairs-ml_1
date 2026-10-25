@@ -76,7 +76,6 @@ def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
     async def search_products(
             query: str,
             top_k: int = 10,
-            brand_name: str | None = None,
             min_price: float | None = None,
             max_price: float | None = None,
     ) -> list[dict]:
