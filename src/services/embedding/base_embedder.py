@@ -52,6 +52,8 @@ class BaseEmbedder(Embedder, ABC):
             str: Normalized and validated text.
         """
         normalized_text = self._normalize_text(text)
+        # If the text is empty after normalization, use a placeholder
+        normalized_text = normalized_text if normalized_text else 'EMPTY_TEXT'
         self._validate_text(normalized_text)
 
         return normalized_text
