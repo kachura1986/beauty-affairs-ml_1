@@ -103,12 +103,13 @@ def build_window(task: Task, history: list[dict], warning: str | None) -> list[d
 
 
 def observation(text: str) -> dict[str, str]:
-    return {'role': 'user', 'content': f'[наблюдение] {text}'}
+    return {'role': 'user', 'content': f'[observation] {text}'}
 
 
 def tool_message(call: dict, res: ToolResult) -> dict[str, Any]:
     return {
-        'role': 'tool', 'name': call['name'],
+        'role': 'tool',
+        'name': call['name'],
         'tool_call_id': call.get('id', call['name']),
         'content': res.to_model()
     }
