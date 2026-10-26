@@ -52,7 +52,7 @@ class Trace:
             'step': n,
             'tool': call['name'],
             'args': call.get('arguments', {}),
-            'status': res.status,
+            'status': res.status.value,
 
             'error_code': res.error.error_code.value if res.error else None,
             'message': res.error.message if res.error else None,

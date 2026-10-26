@@ -1,10 +1,9 @@
-
 import logging
 import math
 import traceback
 from typing import Any
 
-from .tool import ToolError, ToolErrorCode, ToolResult
+from .tool import ToolError, ToolErrorCode, ToolResult, ToolStatus
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +173,7 @@ def validation_error_result(message: str, hint: str) -> ToolResult:
         ToolResult: Structured validation error result.
     """
     return ToolResult(
-        status='error',
+        status=ToolStatus.ERROR,
         error=ToolError(
             error_code=ToolErrorCode.VALIDATION,
             message=message,
@@ -196,7 +195,7 @@ def unknown_tool_result(name: str, available: str) -> ToolResult:
         ToolResult: Structured unknown tool error result.
     """
     return ToolResult(
-        status='error',
+        status=ToolStatus.ERROR,
         error=ToolError(
             error_code=ToolErrorCode.UNKNOWN_TOOL,
             message=f"Tool '{name}' is not registered.",
@@ -221,7 +220,7 @@ def execution_failed_result(tool_name: str) -> ToolResult:
         ToolResult: Structured execution failure result.
     """
     return ToolResult(
-        status='error',
+        status=ToolStatus.ERROR,
         error=ToolError(
             error_code=ToolErrorCode.EXECUTION_FAILED,
             message=f"Tool '{tool_name}' failed due to an internal error.",
@@ -255,7 +254,7 @@ def temporary_failure_result(tool_name: str, retry_after: float | None) -> ToolR
         )
 
     return ToolResult(
-        status='error',
+        status=ToolStatus.ERROR,
         error=ToolError(
             error_code=ToolErrorCode.TEMPORARY_FAILURE,
             message=f"Tool '{tool_name}' is temporarily unavailable.",

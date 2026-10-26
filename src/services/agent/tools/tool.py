@@ -48,12 +48,27 @@ class ToolError:
         return text
 
 
-@dataclass
+class ToolStatus(StrEnum):
+    OK = 'ok'
+    ERROR = 'error'
+
+
+@dataclass(frozen=True)
 class ToolResult:
-    status: str  # "ok" | "error"
+    status: ToolStatus
     content: str = ''
     error: ToolError | None = None
     truncated: bool = False
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.status, ToolStatus):
+            raise TypeError("'status' must be a ToolStatus.")
+
+        if self.status is ToolStatus.OK and self.error is not None:
+            raise ValueError('Successful ToolResult must not contain an error.')
+
+        if self.status is ToolStatus.ERROR and self.error is None:
+            raise ValueError('Failed ToolResult must contain an error.')
 
     @property
     def retryable(self) -> bool:
@@ -67,21 +82,12 @@ class ToolResult:
             str: Text formatted for LLM.
         """
         # Successful result: return the content and explicitly mark truncation
-        if self.status == 'ok':
+        if self.status is ToolStatus.OK:
             tail = '\n[...output truncated...]' if self.truncated else ''
             return self.content + tail
 
         # An error result must contain a ToolError
         # If it does not, the ToolResult violates its internal contract
-        if self.error is None:
-            error = ToolError(
-                error_code=ToolErrorCode.EXECUTION_FAILED,
-                message='The tool returned an error without details.',
-                hint='Choose another way to perform the action.',
-                retryable=False,
-            )
-            return error.to_model()
-
         return self.error.to_model()
 
 

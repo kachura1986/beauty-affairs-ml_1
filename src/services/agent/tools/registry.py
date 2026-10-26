@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from pydantic import ValidationError
 
 from .errors import handle_execution_exception, unknown_tool_result, validation_error_result, validation_hint
-from .tool import Tool, ToolResult
+from .tool import Tool, ToolResult, ToolStatus
 
 MAX_TOOL_OUTPUT = 4000
 
@@ -139,7 +139,7 @@ class ToolRegistry:
         truncated = len(out) > MAX_TOOL_OUTPUT
 
         return ToolResult(
-            status='ok',
+            status=ToolStatus.OK,
             content=out[:MAX_TOOL_OUTPUT],
             truncated=truncated,
         )

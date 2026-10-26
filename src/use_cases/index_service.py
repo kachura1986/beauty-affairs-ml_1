@@ -129,7 +129,7 @@ class IndexService:
 
         conflicting_indexes = product_indexes & service_indexes
         if conflicting_indexes:
-            raise ValueError("Index names cannot be shared by products and services: {sorted(conflicting_indexes)}")
+            raise ValueError(f"Index names cannot be shared by products and services: {sorted(conflicting_indexes)}")
 
         await self._delete_documents({'products': products, 'services': services})
 

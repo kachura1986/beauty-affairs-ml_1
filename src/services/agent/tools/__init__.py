@@ -1,6 +1,6 @@
 from .product_tools import create_product_tools
 from .registry import ToolRegistry
-from .tool import Tool, ToolError, ToolErrorCode, ToolResult
+from .tool import Tool, ToolError, ToolErrorCode, ToolResult, ToolStatus
 
 __all__ = [
     'create_product_tools',
@@ -9,4 +9,5 @@ __all__ = [
     'ToolErrorCode',
     'ToolRegistry',
     'ToolResult',
+    'ToolStatus',
 ]

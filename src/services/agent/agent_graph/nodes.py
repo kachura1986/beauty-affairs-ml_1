@@ -9,7 +9,7 @@ from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
 from ..context import build_window, observation, tool_message
 from ..domain import AgentResult, TerminationReason
-from ..tools import ToolRegistry
+from ..tools import ToolRegistry, ToolStatus
 from ..trace import Trace
 
 logger = logging.getLogger(__name__)
@@ -318,7 +318,7 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
         # --------------------------------------------------------
         # Remember irrecoverable failures
         # --------------------------------------------------------
-        if res.status == 'error' and not res.retryable:
+        if res.status is ToolStatus.ERROR and not res.retryable:
             failed_set.add(fp)
 
             if fp not in failed_actions:
