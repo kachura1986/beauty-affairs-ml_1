@@ -26,7 +26,6 @@ class Settings(BaseSettings):
     AZURE_OPENAI_ENDPOINT: str
     AZURE_OPENAI_CHAT_MODEL: str
     AZURE_OPENAI_EMBEDDING_MODEL: str
-    OPENAI_API_VERSION: str
 
     # Searching
     SEARCH_API_KEY: str

@@ -3,7 +3,7 @@ import json
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 
 from .base_model import BaseLLMModel
 from .schemas import Message, Reply, UnknownRoleError
@@ -15,7 +15,7 @@ class AzureOpenAIModel(BaseLLMModel):
     def __init__(
             self,
             model_name: str,
-            azure_openai_client: AsyncAzureOpenAI,
+            azure_openai_client: AsyncOpenAI,
             temperature: float = 0.0,
             max_tokens: int = 4096,
     ) -> None:
@@ -24,7 +24,7 @@ class AzureOpenAIModel(BaseLLMModel):
 
         Args:
             model_name (str): Azure OpenAI deployment or model name.
-            azure_openai_client (AsyncAzureOpenAI): Pre-initialized asynchronous Azure OpenAI client.
+            azure_openai_client (AsyncOpenAI): Pre-initialized asynchronous Azure OpenAI client.
             temperature (float): Sampling temperature for generation.
             max_tokens (int): Maximum number of tokens to generate.
         """

@@ -1,4 +1,4 @@
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 
 from .base_embedder import BaseEmbedder
 from ..text_normalization.text_normalizer import TextNormalizer
@@ -9,7 +9,7 @@ class AzureOpenAIEmbedder(BaseEmbedder):
 
     def __init__(
             self,
-            client: AsyncAzureOpenAI,
+            client: AsyncOpenAI,
             model_name: str,
             dimensions: int,
             normalizer: TextNormalizer,
@@ -18,7 +18,7 @@ class AzureOpenAIEmbedder(BaseEmbedder):
         Initialize the Azure OpenAI embedder.
 
         Args:
-            client (AsyncAzureOpenAI): Azure OpenAI asynchronous client.
+            client (AsyncOpenAI): Azure OpenAI asynchronous client.
             model_name (str): Embedding model or Azure deployment name.
             dimensions (int): Number of dimensions in the embedding vectors.
             normalizer (TextNormalizer): Normalizer used to preprocess input text.

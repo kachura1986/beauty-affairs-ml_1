@@ -5,7 +5,7 @@ from functools import lru_cache
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes.aio import SearchIndexClient
 from fastapi import Request
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 
 from core.config import settings
 from core.logger import setup_logging
@@ -31,7 +31,7 @@ class PipelineDependencies:
     azure_search_index_client: SearchIndexClient
     azure_search_index_manager: AzureSearchIndexManager
     index_service: IndexService
-    openai_client: AsyncAzureOpenAI
+    openai_client: AsyncOpenAI
 
     @classmethod
     async def create(cls) -> "PipelineDependencies":
@@ -40,12 +40,11 @@ class PipelineDependencies:
         azure_search_index_client = None
 
         try:
-            openai_client = AsyncAzureOpenAI(
+            openai_client = AsyncOpenAI(
+                base_url=settings.AZURE_OPENAI_ENDPOINT,
                 api_key=settings.AZURE_OPENAI_API_KEY,
-                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT.rstrip("/"),
-                api_version=settings.OPENAI_API_VERSION,
                 timeout=20.0,
-                max_retries=0,
+                max_retries=2,
             )
 
             azure_model = AzureOpenAIModel(
