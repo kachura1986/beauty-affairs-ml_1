@@ -1,6 +1,7 @@
 # Ignore virtual environments and IDE-related files
 .venv
 .idea
+.vscode
 
 # Ignore version control system files
 .git
@@ -13,10 +14,11 @@
 
 # Ignore logs and temporary files
 .temp
+.logs
 *.log
 *.tmp
+.runs
 tools_
-runs
 
 # Exclude local configuration files
 .env
