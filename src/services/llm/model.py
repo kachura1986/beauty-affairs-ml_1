@@ -1,7 +1,7 @@
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
 
-from .schemas import Message, Reply
+from .schemas import Reply
 
 
 class LLMModel(Protocol):
@@ -11,22 +11,6 @@ class LLMModel(Protocol):
 
     @property
     def model_name(self) -> str:
-        ...
-
-    async def generate_response(
-            self,
-            messages: Sequence[Message],
-            stop: Sequence[str] | None = None,
-            timeout: float | None = None,
-    ) -> str:
-        ...
-
-    async def get_streaming_response(
-            self,
-            messages: Sequence[Message],
-            stop: Sequence[str] | None = None,
-            timeout: float | None = None,
-    ) -> AsyncIterator[str]:
         ...
 
     async def chat(

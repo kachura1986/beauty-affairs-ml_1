@@ -1,11 +1,11 @@
-from services.embedding import AzureOpenAIEmbedder
+from services.embedding import Embedder
 from services.search_index import AzureSearchIndexManager, ProductsSearchIndex, ServicesSearchIndex
 
 
 class IndexService:
     """Management of search_index indexes for products and services."""
 
-    def __init__(self, search_index_manager: AzureSearchIndexManager, embedder: AzureOpenAIEmbedder) -> None:
+    def __init__(self, search_index_manager: AzureSearchIndexManager, embedder: Embedder) -> None:
         self._search_index_manager = search_index_manager
         self._embedder = embedder
 

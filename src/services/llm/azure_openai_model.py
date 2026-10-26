@@ -1,12 +1,12 @@
 import asyncio
 import json
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from openai import AsyncOpenAI
 
 from .base_model import BaseLLMModel
-from .schemas import Message, Reply, UnknownRoleError
+from .schemas import Reply, UnknownRoleError
 
 
 class AzureOpenAIModel(BaseLLMModel):
@@ -242,163 +242,6 @@ class AzureOpenAIModel(BaseLLMModel):
         output_tokens = getattr(usage, 'completion_tokens', None) or 0
 
         return int(input_tokens), int(output_tokens)
-
-    async def generate_response(
-            self,
-            messages: Sequence[Message],
-            stop: Sequence[str] | None = None,
-            timeout: float | None = None,
-    ) -> str:
-        """
-        Asynchronously generate a complete text response.
-
-        Args:
-            messages (Sequence[Message]): Dialogue messages forming the context.
-            stop (Sequence[str] | None, optional): Strings that stop generation.
-            timeout (float | None, optional): Maximum time to wait for the request.
-
-        Returns:
-            str: The post-processed response text.
-
-        Raises:
-            ValueError: If tool messages are supplied; use chat() for tool calling.
-        """
-        self._validate_messages(messages)
-
-        for message in messages:
-            if message.role == 'tool':
-                raise ValueError("generate_response() does not support tool messages. Use chat() for tool calling.")
-
-        formatted_messages = [
-            {
-                'role': message.role,
-                'content': message.content,
-            }
-            for message in messages
-        ]
-
-        async def request() -> Any:
-            """Execute an Azure OpenAI completion request.
-
-            Returns:
-                Any: Raw Azure OpenAI completion response.
-            """
-            return await self._client.chat.completions.create(
-                model=self._model_name,
-                messages=formatted_messages,
-                temperature=self._temperature,
-                max_tokens=self._max_tokens,
-                stop=list(stop) if stop else None,
-            )
-
-        if timeout is not None:
-            response = await asyncio.wait_for(
-                request(),
-                timeout=timeout,
-            )
-        else:
-            response = await request()
-
-        text = self._extract_text(response)
-
-        return self._postprocess(text)
-
-    async def get_streaming_response(
-            self,
-            messages: Sequence[Message],
-            stop: Sequence[str] | None = None,
-            timeout: float | None = None,
-    ) -> AsyncIterator[str]:
-        """
-        Asynchronously stream the generated response text.
-
-        Args:
-            messages (Sequence[Message]): Dialogue messages forming the context.
-            stop (Sequence[str] | None, optional): Strings that stop generation.
-            timeout (float | None, optional): Maximum time to wait for each stream chunk.
-
-        Yields:
-            str: Post-processed text chunks as they become available.
-
-        Raises:
-            ValueError: If tool messages are supplied; use chat() for tool calling.
-        """
-        self._validate_messages(messages)
-
-        for message in messages:
-            if message.role == 'tool':
-                raise ValueError(
-                    "get_streaming_response() does not support tool messages. Use chat() for tool calling.")
-
-        formatted_messages = [
-            {
-                'role': message.role,
-                'content': message.content,
-            }
-            for message in messages
-        ]
-
-        async def request() -> Any:
-            """
-            Execute an Azure OpenAI completion request.
-
-            Returns:
-                Any: Raw Azure OpenAI completion response.
-            """
-            return await self._client.chat.completions.create(
-                model=self._model_name,
-                messages=formatted_messages,
-                temperature=self._temperature,
-                max_tokens=self._max_tokens,
-                stop=list(stop) if stop else None,
-                stream=True,
-            )
-
-        stream = await request()
-
-        raw_text = ''
-        emitted_text = ''
-
-        try:
-            while True:
-                if timeout is None:
-                    try:
-                        chunk = await anext(stream)
-                    except StopAsyncIteration:
-                        break
-                else:
-                    try:
-                        chunk = await asyncio.wait_for(anext(stream), timeout=timeout)
-                    except StopAsyncIteration:
-                        break
-
-                choices = getattr(chunk, 'choices', None) or []
-                if not choices:
-                    continue
-
-                delta = getattr(choices[0], 'delta', None)
-                if delta is None:
-                    continue
-
-                chunk_text = getattr(delta, 'content', None)
-                if not chunk_text:
-                    continue
-
-                raw_text += chunk_text
-
-                text_delta, emitted_text = self._stream_postprocess_delta(raw_text, emitted_text)
-
-                if text_delta:
-                    yield text_delta
-
-        finally:
-            close = getattr(stream, 'close', None)
-
-            if close is not None:
-                try:
-                    await close()
-                except Exception:
-                    pass
 
     async def chat(
             self,
