@@ -11,9 +11,16 @@ from services.llm import LLMModel, Message
 class AgentService:
     """The AgentService is a high-level interface for running agent_graphs."""
 
-    def __init__(self, llm: LLMModel, tools: ToolRegistry, policy: AgentPolicy | None = None) -> None:
+    def __init__(
+            self,
+            llm: LLMModel,
+            tools: ToolRegistry,
+            system_prompt: str,
+            policy: AgentPolicy | None = None
+    ) -> None:
         self._llm = llm
         self._tools = tools
+        self._system_prompt = system_prompt
         self._policy = policy or AgentPolicy()
 
     async def run(self, messages: Sequence[Message]) -> AgentResult:
@@ -37,19 +44,7 @@ class AgentService:
             for message in messages
         ]
 
-        prompt = next(
-            (
-                message['content']
-                for message in reversed(history)
-                if message['role'] == 'user'
-            ),
-            '',
-        )
-
-        if not prompt:
-            raise ValueError('Messages must contain at least one user message.')
-
-        task = Task(prompt=prompt, messages=history)
+        task = Task(system_prompt=self._system_prompt, initial_messages=history)
 
         trace = Trace(str(uuid4()))
 

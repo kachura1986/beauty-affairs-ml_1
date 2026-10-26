@@ -6,7 +6,7 @@ from langgraph.runtime import Runtime
 
 from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
-from ..context import build_window, observation, tool_message
+from ..context import observation, tool_message
 from ..domain import AgentResult, TerminationReason
 from ..tools import ToolRegistry, ToolStatus
 from ..trace import Trace
@@ -162,7 +162,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             budget_warning_emitted = True
 
     # Same context window construction as before
-    window = build_window(ctx.task, state['history'], warning)
+    window = ctx.task.build_window(state['history'], warning)
 
     reply, reason = await _request_llm(
         llm=ctx.llm,

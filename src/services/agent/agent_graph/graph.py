@@ -21,7 +21,7 @@ def build_graph():
     builder.add_node('finish', finish_node)
 
     # Edges
-    # Entry
+    # ENTRY
     builder.add_edge(START, 'decide')
 
     # DECIDE -> EXECUTE / VERIFY / FINISH / DECIDE

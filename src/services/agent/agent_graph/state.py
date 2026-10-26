@@ -64,12 +64,7 @@ def create_initial_state(task: Task) -> GraphState:
     Returns:
         GraphState: The initial graph state.
     """
-    history = task.messages or [
-        {
-            'role': 'user',
-            'content': task.prompt,
-        },
-    ]
+    history = list(task.initial_messages)
 
     return {
         # Conversation history is append-only

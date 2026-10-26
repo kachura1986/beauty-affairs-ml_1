@@ -91,25 +91,12 @@ class AzureOpenAIModel(BaseLLMModel):
                     if not isinstance(raw_tool_call, Mapping):
                         raise TypeError(f"{self.__class__.__name__}: Assistant tool call must be a mapping.")
 
-                    function = raw_tool_call.get('function')
-
-                    if isinstance(function, Mapping):
-                        function_data = dict(function)
-                    else:
-                        function_data = dict(raw_tool_call)
-
-                    tool_name = function_data.get('name') or raw_tool_call.get('name')
+                    tool_name = raw_tool_call.get('name')
 
                     if not tool_name:
                         raise ValueError(f"{self.__class__.__name__}: Assistant tool call is missing function name.")
 
-                    arguments = (
-                            function_data.get('arguments')
-                            or function_data.get('args')
-                            or raw_tool_call.get('arguments')
-                            or raw_tool_call.get('args')
-                            or {}
-                    )
+                    arguments = raw_tool_call.get('arguments') or {}
 
                     if not isinstance(arguments, str):
                         arguments = json.dumps(arguments, ensure_ascii=False)
@@ -246,24 +233,18 @@ class AzureOpenAIModel(BaseLLMModel):
 
                 formatted_tools.append(formatted_tool)
 
-        async def request() -> Any:
-            """Execute an Azure OpenAI completion request.
-
-            Returns:
-                Any: Raw Azure OpenAI completion response.
-            """
-            return await self._client.responses.create(
-                model=self._model_name,
-                input=formatted_messages,
-                tools=formatted_tools,
-                temperature=self._temperature,
-                max_output_tokens=self._max_tokens,
-            )
+        request = self._client.responses.create(
+            model=self._model_name,
+            input=formatted_messages,
+            tools=formatted_tools,
+            temperature=self._temperature,
+            max_output_tokens=self._max_tokens,
+        )
 
         if timeout is not None:
-            response = await asyncio.wait_for(request(), timeout=timeout)
+            response = await asyncio.wait_for(request, timeout=timeout)
         else:
-            response = await request()
+            response = await request
 
         text = self._extract_text(response)
         tool_calls = self._extract_tool_calls(response)

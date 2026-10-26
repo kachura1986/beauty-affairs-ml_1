@@ -1,6 +1,5 @@
 from typing import Any
 
-from .domain import Task
 from .tools import ToolResult
 
 SYSTEM_PROMPT = """You are a universal AI assistant with access to tools.
@@ -81,25 +80,6 @@ GENERAL QUESTION — ANSWER IT YOURSELF.
 QUESTION ABOUT EXTERNAL DATA — USE A TOOL.
 NO ACCESS TO REQUIRED DATA — STATE THIS HONESTLY.
 """
-
-
-def build_window(task: Task, history: list[dict], warning: str | None) -> list[dict]:
-    window: list[dict] = [
-        {
-            'role': 'system',
-            'content': SYSTEM_PROMPT,
-        }
-    ]
-    if warning:
-        window.append({
-            'role': 'system',
-            'content': warning,
-        })
-
-    # Do not add system prompts from the client history
-    window.extend(message for message in history if message.get('role') != 'system')
-
-    return window
 
 
 def observation(text: str) -> dict[str, str]:

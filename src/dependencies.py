@@ -7,6 +7,7 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from fastapi import Request
 from openai import AsyncOpenAI
 
+from services.agent.context import SYSTEM_PROMPT
 from core.config import settings
 from core.logger import setup_logging
 from services.agent.tools import create_product_tools
@@ -76,7 +77,11 @@ class PipelineDependencies:
             )
 
             # Use cases
-            agent_service = AgentService(llm=azure_model, tools=create_product_tools(products_index))
+            agent_service = AgentService(
+                llm=azure_model,
+                tools=create_product_tools(products_index),
+                system_prompt=SYSTEM_PROMPT,
+            )
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 
             return cls(

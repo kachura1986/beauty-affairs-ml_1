@@ -278,10 +278,8 @@ def handle_execution_exception(tool_name: str, exc: Exception) -> ToolResult:
     """
     if is_temporary_failure(exc):
         log_exception("Temporary tool failure.", tool_name, exc)
-        return temporary_failure_result(
-            tool_name,
-            retry_after_seconds(exc),
-        )
+
+        return temporary_failure_result(tool_name, retry_after_seconds(exc))
 
     log_exception("Tool execution failed.", tool_name, exc)
 
