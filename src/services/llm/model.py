@@ -5,9 +5,7 @@ from .schemas import Reply
 
 
 class LLMModel(Protocol):
-    """
-    Define the application-level interface for asynchronous LLM models.
-    """
+    """Define the application-level interface for asynchronous LLM models."""
 
     @property
     def model_name(self) -> str:
@@ -18,6 +16,5 @@ class LLMModel(Protocol):
             messages: Sequence[Mapping[str, Any]],
             tools: Sequence[dict[str, Any]] | None = None,
             timeout: float | None = None,
-            stop: Sequence[str] | None = None,
     ) -> Reply:
         ...

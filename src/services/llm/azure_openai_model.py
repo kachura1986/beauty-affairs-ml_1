@@ -6,7 +6,7 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from .base_model import BaseLLMModel
-from .schemas import Reply, UnknownRoleError
+from .schemas import Reply
 
 
 class AzureOpenAIModel(BaseLLMModel):
@@ -40,29 +40,6 @@ class AzureOpenAIModel(BaseLLMModel):
         """Return the configured model name."""
         return self._model_name
 
-    @staticmethod
-    def _extract_text(response: Any) -> str:
-        """
-        Extract response text from the first completion choice.
-
-        Args:
-            response (Any): Raw Azure OpenAI completion response.
-
-        Returns:
-            str: Response text, or an empty string if unavailable.
-        """
-        choices = getattr(response, 'choices', None) or []
-
-        if not choices:
-            return ''
-
-        message = getattr(choices[0], 'message', None)
-
-        if message is None:
-            return ''
-
-        return getattr(message, 'content', None) or ''
-
     def _format_chat_messages(self, messages: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
         """
         Validate and format chat messages for the Azure OpenAI API.
@@ -78,90 +55,94 @@ class AzureOpenAIModel(BaseLLMModel):
             TypeError: If an assistant tool call is not a mapping.
             ValueError: If a tool call has no function name.
         """
+        # Validate role
+        self._validate_roles(messages)
+
         formatted_messages: list[dict[str, Any]] = []
 
         for message in messages:
             role = message.get('role')
 
-            if role not in self.allowed_chat_roles():
-                raise UnknownRoleError(
-                    f"{self.__class__.__name__}: Unknown role '{role}'. "
-                    f"Allowed roles: {sorted(self.allowed_chat_roles())}"
-                )
+            content = message.get('content') or ''
 
-            formatted_message: dict[str, Any] = {
-                'role': role,
-                'content': message.get('content') or '',
-            }
+            if role == 'tool':
+                tool_call_id = message.get('tool_call_id')
 
-            name = message.get('name')
-            if name:
-                formatted_message['name'] = name
+                if not tool_call_id:
+                    raise ValueError(f"{self.__class__.__name__}: Tool message is missing tool_call_id.")
+
+                formatted_messages.append({
+                    'type': 'function_call_output',
+                    'call_id': str(tool_call_id),
+                    'output': content if isinstance(content, str) else json.dumps(content, ensure_ascii=False),
+                })
+                continue
 
             if role == 'assistant':
                 raw_tool_calls = message.get('tool_calls') or []
 
-                if raw_tool_calls:
-                    tool_calls: list[dict[str, Any]] = []
+                if content or not raw_tool_calls:
+                    formatted_messages.append({
+                        'role': role,
+                        'content': content,
+                    })
 
-                    for index, raw_tool_call in enumerate(raw_tool_calls):
-                        if not isinstance(raw_tool_call, Mapping):
-                            raise TypeError("Assistant tool call must be a mapping.")
+                for index, raw_tool_call in enumerate(raw_tool_calls):
+                    if not isinstance(raw_tool_call, Mapping):
+                        raise TypeError(f"{self.__class__.__name__}: Assistant tool call must be a mapping.")
 
-                        function = raw_tool_call.get('function')
+                    function = raw_tool_call.get('function')
 
-                        if isinstance(function, Mapping):
-                            function_data = dict(function)
-                        else:
-                            function_data = dict(raw_tool_call)
+                    if isinstance(function, Mapping):
+                        function_data = dict(function)
+                    else:
+                        function_data = dict(raw_tool_call)
 
-                        tool_name = function_data.get('name') or raw_tool_call.get('name')
+                    tool_name = function_data.get('name') or raw_tool_call.get('name')
 
-                        if not tool_name:
-                            raise ValueError("Assistant tool call is missing function name.")
+                    if not tool_name:
+                        raise ValueError(f"{self.__class__.__name__}: Assistant tool call is missing function name.")
 
-                        arguments = (
-                                function_data.get('arguments')
-                                or function_data.get('args')
-                                or raw_tool_call.get('arguments')
-                                or raw_tool_call.get('args')
-                                or {}
-                        )
+                    arguments = (
+                            function_data.get('arguments')
+                            or function_data.get('args')
+                            or raw_tool_call.get('arguments')
+                            or raw_tool_call.get('args')
+                            or {}
+                    )
 
-                        if not isinstance(arguments, str):
-                            arguments = json.dumps(arguments, ensure_ascii=False)
+                    if not isinstance(arguments, str):
+                        arguments = json.dumps(arguments, ensure_ascii=False)
 
-                        tool_calls.append({
-                            'id': str(raw_tool_call.get('id') or f'{tool_name}:{index}'),
-                            'type': 'function',
-                            'function': {
-                                'name': str(tool_name),
-                                'arguments': arguments,
-                            },
-                        })
+                    formatted_messages.append({
+                        'type': 'function_call',
+                        'call_id': str(raw_tool_call.get('id') or f'{tool_name}:{index}'),
+                        'name': str(tool_name),
+                        'arguments': arguments,
+                    })
 
-                    formatted_message['tool_calls'] = tool_calls
-
-            elif role == 'tool':
-                tool_name = message.get('tool_name') or message.get('name')
-                tool_call_id = message.get('tool_call_id')
-
-                if tool_name:
-                    formatted_message['name'] = tool_name
-
-                if tool_call_id:
-                    formatted_message['tool_call_id'] = str(tool_call_id)
-
-            formatted_messages.append(formatted_message)
+            else:
+                formatted_messages.append({
+                    'role': role,
+                    'content': content,
+                })
 
         return formatted_messages
 
-    def allowed_chat_roles(self) -> set[str]:
-        """Return the message roles supported by chat requests."""
-        return self.allowed_roles | {'tool'}
-
     @staticmethod
-    def _extract_tool_calls(response: Any) -> list[dict[str, Any]]:
+    def _extract_text(response: Any) -> str:
+        """
+        Extract response text from the first completion choice.
+
+        Args:
+            response (Any): Raw Azure OpenAI completion response.
+
+        Returns:
+            str: Response text, or an empty string if unavailable.
+        """
+        return getattr(response, 'output_text', None) or ''
+
+    def _extract_tool_calls(self, response: Any) -> list[dict[str, Any]]:
         """
         Extract and normalize tool calls from a completion response.
 
@@ -175,44 +156,32 @@ class AzureOpenAIModel(BaseLLMModel):
             ValueError: If tool-call arguments contain invalid JSON.
             TypeError: If tool-call arguments are not a mapping.
         """
-        choices = getattr(response, 'choices', None) or []
-
-        if not choices:
-            return []
-
-        message = getattr(choices[0], 'message', None)
-
-        if message is None:
-            return []
-
-        raw_tool_calls = getattr(message, 'tool_calls', None) or []
+        raw_output = getattr(response, 'output', None) or []
         result: list[dict[str, Any]] = []
 
-        for index, tool_call in enumerate(raw_tool_calls):
-            function = getattr(tool_call, 'function', None)
-
-            if function is None:
+        for index, tool_call in enumerate(raw_output):
+            if getattr(tool_call, 'type', None) != 'function_call':
                 continue
 
-            name = getattr(function, 'name', None)
+            name = getattr(tool_call, 'name', None)
 
             if not name:
                 continue
 
-            raw_arguments = getattr(function, 'arguments', None) or '{}'
+            raw_arguments = getattr(tool_call, 'arguments', None) or '{}'
 
             if isinstance(raw_arguments, str):
                 try:
                     arguments = json.loads(raw_arguments)
                 except json.JSONDecodeError as exc:
-                    raise ValueError(f"Invalid JSON arguments for tool '{name}'.") from exc
+                    raise ValueError(f"{self.__class__.__name__}: Invalid JSON arguments for tool '{name}'.") from exc
             else:
                 arguments = raw_arguments
 
             if not isinstance(arguments, Mapping):
-                raise TypeError(f"Arguments for tool '{name}' must be a mapping.")
+                raise TypeError(f"{self.__class__.__name__}: Arguments for tool '{name}' must be a mapping.")
 
-            call_id = getattr(tool_call, 'id', None)
+            call_id = getattr(tool_call, 'call_id', None)
 
             result.append({
                 'id': str(call_id or f'{name}:{index}'),
@@ -238,8 +207,8 @@ class AzureOpenAIModel(BaseLLMModel):
         if usage is None:
             return 0, 0
 
-        input_tokens = getattr(usage, 'prompt_tokens', None) or 0
-        output_tokens = getattr(usage, 'completion_tokens', None) or 0
+        input_tokens = getattr(usage, 'input_tokens', None) or 0
+        output_tokens = getattr(usage, 'output_tokens', None) or 0
 
         return int(input_tokens), int(output_tokens)
 
@@ -248,7 +217,6 @@ class AzureOpenAIModel(BaseLLMModel):
             messages: Sequence[Mapping[str, Any]],
             tools: Sequence[dict[str, Any]] | None = None,
             timeout: float | None = None,
-            stop: Sequence[str] | None = None,
     ) -> Reply:
         """
         Send a chat request and return a normalized response.
@@ -257,12 +225,26 @@ class AzureOpenAIModel(BaseLLMModel):
             messages (Sequence[Mapping[str, Any]]): Chat messages, including optional tool-call data.
             tools (Sequence[dict[str, Any]] | None, optional): Tool schemas available to the model.
             timeout (float | None, optional): Maximum time to wait for the request.
-            stop (Sequence[str] | None, optional): Strings that stop generation.
 
         Returns:
             Reply: Normalized response containing text, tool calls, token usage, and cost.
         """
         formatted_messages = self._format_chat_messages(messages)
+
+        formatted_tools = None
+
+        if tools:
+            formatted_tools = []
+
+            for tool in tools:
+                formatted_tool = dict(tool)
+                function = formatted_tool.get('function')
+
+                if isinstance(function, Mapping):
+                    formatted_tool.pop('function')
+                    formatted_tool.update(dict(function))
+
+                formatted_tools.append(formatted_tool)
 
         async def request() -> Any:
             """Execute an Azure OpenAI completion request.
@@ -270,13 +252,12 @@ class AzureOpenAIModel(BaseLLMModel):
             Returns:
                 Any: Raw Azure OpenAI completion response.
             """
-            return await self._client.chat.completions.create(
+            return await self._client.responses.create(
                 model=self._model_name,
-                messages=formatted_messages,
-                tools=list(tools) if tools else None,
+                input=formatted_messages,
+                tools=formatted_tools,
                 temperature=self._temperature,
-                max_tokens=self._max_tokens,
-                stop=list(stop) if stop else None,
+                max_output_tokens=self._max_tokens,
             )
 
         if timeout is not None:

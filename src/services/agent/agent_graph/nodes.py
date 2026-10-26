@@ -1,6 +1,5 @@
 import logging
 import time
-import traceback
 from typing import Any
 
 from langgraph.runtime import Runtime
@@ -16,15 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 def _log_internal_exception(message: str, exc: Exception, step: int | None = None) -> None:
-    extra = {
-        'exception_type': type(exc).__name__,
-        'stack': traceback.format_tb(exc.__traceback__),
-    }
+    extra = {'step': step}
 
-    if step is not None:
-        extra['step'] = step
-
-    logger.error(message, extra=extra)
+    logger.error(
+        '%s | step=%s',
+        message,
+        step,
+        exc_info=(type(exc), exc, exc.__traceback__),
+        extra=extra,
+    )
 
 
 def _check_budget(budget) -> TerminationReason | None:
@@ -78,20 +77,14 @@ async def _request_llm(
         chat = getattr(llm, 'chat', None)
 
         if chat is None:
-            raise ValueError(
-                f"{llm.__class__.__name__} does not support agent chat()"
-            )
+            raise ValueError(f"{llm.__class__.__name__} does not support agent chat()")
 
-        reply = await chat(
-            window,
-            tools.schemas(),
-            remaining,
-        )
+        reply = await chat(window, tools.schemas(), remaining)
 
     except Exception as exc:  # noqa: BLE001
         latency_ms = int((time.monotonic() - t0) * 1000)
 
-        _log_internal_exception('LLM request failed.', exc, step=budget.steps)
+        _log_internal_exception("LLM request failed.", exc, step=budget.steps)
 
         if budget.remaining_seconds() <= 0:
             trace.error(
@@ -200,9 +193,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
                 'budget': budget,
                 'consecutive_empty_steps': consecutive_empty_steps,
                 'budget_warning_emitted': budget_warning_emitted,
-                'termination_reason': (
-                    TerminationReason.NO_PROGRESS
-                ),
+                'termination_reason': TerminationReason.NO_PROGRESS,
             }
 
         return {
@@ -210,10 +201,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             'consecutive_empty_steps': consecutive_empty_steps,
             'budget_warning_emitted': budget_warning_emitted,
             'history': [
-                observation(
-                    'Empty response. '
-                    'Choose a tool or provide a final answer.'
-                )
+                observation('Empty response. Choose a tool or provide a final answer.')
             ],
         }
 
@@ -404,9 +392,7 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
     return {
         'pending_answer': None,
         'history': [
-            observation(
-                f'Postcondition not satisfied: {note}'
-            )
+            observation(f'Postcondition not satisfied: {note}')
         ],
     }
 
