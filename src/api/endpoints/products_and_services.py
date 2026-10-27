@@ -10,7 +10,16 @@ from ..schemas.products_and_services import RequestProductsAndServicesSchema
 router = APIRouter()
 
 
-@retry_strategy
+@retry_strategy(exceptions=(ConnectionError, TimeoutError))
+async def _upsert_documents_with_retry(index_service: IndexService, products: dict, services: dict) -> None:
+    await index_service.upsert_documents(products, services)
+
+
+@retry_strategy(exceptions=(ConnectionError, TimeoutError))
+async def _delete_documents_with_retry(index_service: IndexService, products: dict, services: dict) -> None:
+    await index_service.delete_documents(products, services)
+
+
 @router.post('/update', response_model=str)
 async def update(
         data: RequestProductsAndServicesSchema,
@@ -39,12 +48,11 @@ async def update(
     logger.info('Products: %s', products)
     logger.info('Services: %s', services)
 
-    await index_service.upsert_documents(products, services)
+    await _upsert_documents_with_retry(index_service, products, services)
 
     return 'Products and services have been updated in the search index'
 
 
-@retry_strategy
 @router.post('/delete', response_model=str)
 async def delete(
         data: RequestProductsAndServicesSchema,
@@ -63,9 +71,6 @@ async def delete(
 
     Returns:
         str: A response message.
-
-    Raises:
-        HTTPException: If an unexpected error occurs during the scaling process, a 500 error is raised.
     """
     products = {f'products_{key}': value for key, value in data.model_dump()['data']['products'].items()}
     services = {f'services_{key}': value for key, value in data.model_dump()['data']['services'].items()}
@@ -73,6 +78,6 @@ async def delete(
     logger.info('Products: %s', products)
     logger.info('Services: %s', services)
 
-    await index_service.delete_documents(products, services)
+    await _delete_documents_with_retry(index_service, products, services)
 
     return "Products and services have been deleted in the search index"

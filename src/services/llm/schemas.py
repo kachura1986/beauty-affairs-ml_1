@@ -31,7 +31,8 @@ class UnknownRoleError(ValueError):
 
 @dataclass
 class Reply:
-    """Represent a normalized model response.
+    """
+    Represent a normalized model response.
 
     Attributes:
         text (str): Text content of the response.

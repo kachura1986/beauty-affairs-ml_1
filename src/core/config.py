@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     HOST: str = '127.0.0.1'
     PORT: int = 8000
 
-    RUNS_DIR: Path = Path('./runs')
+    RUNS_DIR: Path = Path('./.runs')
 
     # LLM settings
     TEMPERATURE: float = 0

@@ -21,21 +21,26 @@ def retry_strategy(
         attempts: int = 3,
         min_wait: int = 2,
         max_wait: int = 5,
-        exceptions: tuple[type[BaseException], ...] = (Exception,),
+        exceptions: tuple[type[BaseException], ...] = (ConnectionError, TimeoutError),
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Wrapper for retry strategy.
     Supports both synchronous and asynchronous functions natively.
 
     Args:
-        attempts (int, optional): Maximum number of retry attempts. Defaults to 3.
+        attempts (int, optional): Maximum number of attempts, including the first one. Defaults to 3.
         min_wait (int, optional): Minimum wait time in seconds. Defaults to 2.
         max_wait (int, optional): Maximum wait time in seconds. Defaults to 5.
-        exceptions (tuple, optional): Exceptions to catch. Defaults to (Exception,).
+        exceptions (tuple, optional): Exceptions to catch. Defaults to (ConnectionError, TimeoutError).
 
     Returns:
         Callable: Decorated function.
     """
+    if attempts < 1:
+        raise ValueError("Attempts must be greater than or equal to 1")
+
+    if min_wait < 0 or max_wait < min_wait:
+        raise ValueError("Wait times must satisfy 0 <= min_wait <= max_wait")
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
         logger = get_logger()
