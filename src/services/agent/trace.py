@@ -12,7 +12,10 @@ RUNS_DIR = settings.RUNS_DIR
 
 
 class Trace:
-    """Трейс: JSONL, всегда включён"""
+    """
+    A trace records the execution of an agent_graph run, including its input, every LLM call,
+    and the final result. The trace is stored in a JSON Lines (JSONL) file, one record per line.
+    """
 
     def __init__(self, run_id: str) -> None:
         RUNS_DIR.mkdir(parents=True, exist_ok=True)

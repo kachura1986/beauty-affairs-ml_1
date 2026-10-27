@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Temporary files
-    RUNS_DIR: Path = Path('./.runs')
+    TEMP_DIR: Path = Path(__file__).resolve().parents[2] / '.temp'
+    RUNS_DIR: Path = TEMP_DIR / 'runs'
+    LOGS_DIR: Path = TEMP_DIR / 'logs'
 
     # Embedding
     EMBEDDING_DIMENSIONS: int = 1024

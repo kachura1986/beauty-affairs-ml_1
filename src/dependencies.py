@@ -21,7 +21,7 @@ from use_cases import AgentService, IndexService
 # Logger
 @lru_cache(maxsize=1)
 def get_logger() -> logging.Logger:
-    return setup_logging('app.log')
+    return setup_logging(settings.LOGS_DIR, 'app.log')
 
 
 # DI container

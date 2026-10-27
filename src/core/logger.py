@@ -1,9 +1,10 @@
 import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 
-def setup_logging(log_filename: str = 'app.log') -> logging.Logger:
+def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logger:
     """
     Configures the logging system for the application.
 
@@ -11,6 +12,7 @@ def setup_logging(log_filename: str = 'app.log') -> logging.Logger:
     The "logs" directory is automatically created if it doesn't exist. Older logs are kept for 7 days.
 
     Args:
+        logs_dir (Path): Directory where logs will be stored.
         log_filename (str, optional): Log file name (default: "app.log").
 
     Returns:
@@ -22,10 +24,8 @@ def setup_logging(log_filename: str = 'app.log') -> logging.Logger:
     if logger.handlers:
         return logger
 
-    log_dir = os.path.join(os.getcwd(), '.temp/logs')
-    os.makedirs(log_dir, exist_ok=True)
-
-    log_file = os.path.join(log_dir, log_filename)
+    os.makedirs(logs_dir, exist_ok=True)
+    log_file = os.path.join(logs_dir, log_filename)
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
