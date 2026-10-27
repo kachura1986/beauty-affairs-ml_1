@@ -373,8 +373,18 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
 
     except Exception as exc:  # noqa: BLE001
         _log_internal_exception('Postcondition verification failed.', exc)
-        ok = False
-        note = 'Postcondition verification failed due to an internal error.'
+        ctx.trace.error(
+            step=state['budget'].steps,
+            kind='postcondition_error',
+            message=type(exc).__name__,
+            latency_ms=0,
+            budget=state['budget'],
+        )
+        return {
+            'answer': answer,
+            'pending_answer': None,
+            'termination_reason': TerminationReason.POSTCONDITION_ERROR,
+        }
 
     # ------------------------------------------------------------
     # Verification succeeded

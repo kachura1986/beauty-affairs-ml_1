@@ -28,3 +28,6 @@ class TerminationReason(StrEnum):
 
     # The LLM request failed while execution time remained
     LLM_ERROR = 'llm_error'
+
+    # Postcondition verification raised an exception; the original answer is preserved
+    POSTCONDITION_ERROR = 'postcondition_error'
