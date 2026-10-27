@@ -98,6 +98,19 @@ class BaseAzureSearchIndex:
         # Upload updated documents
         await self._search_client.merge_or_upload_documents(documents=documents)
 
+    def _validate_batch_size(self, batch_size: int) -> None:
+        """
+        Validate the batch size.
+
+        Args:
+            batch_size (int): The size of the batch to validate.
+
+        Raises:
+            ValueError: If the batch size is less than or equal to 0, or greater than 1000.
+        """
+        if batch_size <= 0 or batch_size > 1000:
+            raise ValueError(f"{self.__class__.__name__}: 'batch_size' must be between 1 and 1000")
+
     async def get_document_count(self) -> int:
         """
         Get the total number of documents in the search index.
@@ -112,21 +125,21 @@ class BaseAzureSearchIndex:
         Get all document keys from the search index.
 
         Args:
-            batch_size (int): Number of documents to retrieve per batch.
+            batch_size (int): Number of documents to retrieve per page.
 
         Returns:
             list[dict]: List of documents containing their keys.
         """
-        if batch_size <= 0:
-            raise ValueError("batch_size must be greater than 0")
+        self._validate_batch_size(batch_size)
 
-        key_field = "id"
+        key_field = 'id'
         documents = []
 
         results = await self._search_client.search(search_text="*", select=[key_field], top=batch_size)
 
-        async for document in results:
-            documents.append({key_field: document[key_field]})
+        async for page in results.by_page():
+            async for document in page:
+                documents.append({key_field: document[key_field]})
 
         return documents
 
@@ -138,18 +151,22 @@ class BaseAzureSearchIndex:
             batch_size (int): Number of documents to delete per batch.
 
         Returns:
-            int: Number of documents submitted for deletion.
+            int: Number of documents successfully deleted.
         """
-        if batch_size <= 0:
-            raise ValueError("batch_size must be greater than 0")
+        self._validate_batch_size(batch_size)
 
-        documents = await self.get_all_documents()
+        documents = await self.get_all_documents(batch_size=batch_size)
         deleted_count = 0
 
         for i in range(0, len(documents), batch_size):
             batch = documents[i:i + batch_size]
 
-            await self._search_client.delete_documents(documents=batch)
-            deleted_count += len(batch)
+            results = await self._search_client.delete_documents(documents=batch)
+
+            failed = [result for result in results if not result.succeeded]
+            if failed:
+                raise RuntimeError(f"{self.__class__.__name__}: Failed to delete {len(failed)} documents")
+
+            deleted_count += len(results)
 
         return deleted_count
