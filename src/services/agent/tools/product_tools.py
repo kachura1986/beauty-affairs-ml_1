@@ -55,11 +55,6 @@ applied when this field is omitted.
         return self
 
 
-def _odata_escape(value: str) -> str:
-    """Escape a string for an OData string literal."""
-    return value.replace("'", "''")
-
-
 def _build_product_filter(min_price: float | None, max_price: float | None) -> str | None:
     conditions = []
 
