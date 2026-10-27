@@ -6,7 +6,6 @@ from typing import Any
 from .schemas import CANONICAL_ROLES, Reply, UnknownRoleError
 
 RE_REASONING_TAGS = re.compile(r'<(reasoning|think)>.*?</\1>', flags=re.DOTALL)
-RE_JSON_BLOCKS = re.compile(r'```json\s*|\s*```')
 
 
 class BaseLLMModel(ABC):
@@ -76,8 +75,6 @@ class BaseLLMModel(ABC):
             str: The cleaned text containing only the core response.
         """
         cleaned_text = RE_REASONING_TAGS.sub('', text)
-        cleaned_text = RE_JSON_BLOCKS.sub('', cleaned_text)
-
         processed_text = cleaned_text.strip()
 
         return processed_text
