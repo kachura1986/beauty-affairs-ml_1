@@ -22,7 +22,14 @@ class ToolRegistry:
         Args:
             tools: Iterable of Tool objects.
         """
-        self._tools = {tool.name: tool for tool in tools}
+        self._tools = {}
+
+        for tool in tools:
+            # Check for duplicate tool names
+            if tool.name in self._tools:
+                raise ValueError(f"{self.__class__.__name__}: Duplicate tool name: '{tool.name}'.")
+
+            self._tools[tool.name] = tool
 
     def schemas(self) -> list[dict[str, Any]]:
         """

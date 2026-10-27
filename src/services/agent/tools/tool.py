@@ -1,6 +1,7 @@
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -95,7 +96,7 @@ class ToolResult:
 class Tool:
     name: str
     description: str
-    fn: Callable[..., str | Awaitable[str]]
+    fn: Callable[..., Any | Awaitable[Any]]
     args_model: type[BaseModel]
 
     @property
