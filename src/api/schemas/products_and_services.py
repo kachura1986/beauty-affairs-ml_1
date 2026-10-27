@@ -13,9 +13,6 @@ class Product(BaseModel):
     quantity_value: float | None = None
     quantity_unit: str | None = None
 
-    class Config:
-        extra = 'ignore'
-
 
 class Service(BaseModel):
     id: str
@@ -26,9 +23,6 @@ class Service(BaseModel):
     price: float | None = None
     duration: int | None = None
     recovery_time: int | None = None
-
-    class Config:
-        extra = 'ignore'
 
 
 class Data(BaseModel):
