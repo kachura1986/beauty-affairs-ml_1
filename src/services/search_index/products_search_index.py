@@ -107,9 +107,7 @@ class ProductsSearchIndex(BaseAzureSearchIndex):
         return schema
 
     def __init__(self, index_name: str, azure_search_index_manager: AzureSearchIndexManager, embedder: Embedder):
-        self._search_client = azure_search_index_manager.get_instance_index(index_name)
-        self._embedder = embedder
-        super().__init__(self._search_client, self._embedder)
+        super().__init__(search_client=azure_search_index_manager.get_instance_index(index_name), embedder=embedder)
 
         self._fields_to_embed = ['name', 'description']
 
