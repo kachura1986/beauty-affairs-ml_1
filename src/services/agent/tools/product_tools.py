@@ -117,6 +117,12 @@ Product descriptions contain structured sections such as:
 These sections provide information about product features, intended benefits, usage instructions, ingredients, 
 and skin compatibility.
 
+Examples:
+- "Recommend products with vitamin C."
+- "Find products from the Merlot brand."
+- "Show products priced between 20 and 50."
+- "What are the ingredients and benefits of this product?"
+
 Only recommend products and prices supported by the search results. Never invent products or prices that 
 are not present in the results.
 """,
