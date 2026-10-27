@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import APIRouter, Depends
 
 from core.retry_strategy import retry_strategy
@@ -8,6 +6,8 @@ from use_cases.index_service import IndexService
 from ..schemas.products_and_services import RequestProductsAndServicesSchema
 
 router = APIRouter()
+
+logger = get_logger()
 
 
 @retry_strategy(exceptions=(ConnectionError, TimeoutError))
@@ -20,10 +20,22 @@ async def _delete_documents_with_retry(index_service: IndexService, products: di
     await index_service.delete_documents(products, services)
 
 
+def log_items(items: dict, item_type: str) -> None:
+    items_info = [
+        {'id': item.get('id'), 'name': item.get('name')}
+        for item_list in items.values()
+        for item in item_list
+    ]
+
+    logger.info(
+        f"{item_type} count: {sum(len(value) for value in items.values())}, "
+        f"{item_type.lower()}: {items_info}",
+    )
+
+
 @router.post('/update', response_model=str)
 async def update(
         data: RequestProductsAndServicesSchema,
-        logger: logging.Logger = Depends(get_logger),
         index_service: IndexService = Depends(get_index_service),
 ) -> str:
     """
@@ -33,7 +45,6 @@ async def update(
         data (RequestProductsAndServicesSchema):
             - **products** (dict): Dictionary of products to update.
             - **services** (dict): Dictionary of services to update.
-        logger (logging.Logger): Logger used for reporting request errors.
         index_service (IndexService): Index service used for updating products and services.
 
     Returns:
@@ -45,8 +56,8 @@ async def update(
     products = {f'products_{key}': value for key, value in data.model_dump()['data']['products'].items()}
     services = {f'services_{key}': value for key, value in data.model_dump()['data']['services'].items()}
 
-    logger.info('Products: %s', products)
-    logger.info('Services: %s', services)
+    log_items(products, "Products")
+    log_items(services, "Services")
 
     await _upsert_documents_with_retry(index_service, products, services)
 
@@ -56,7 +67,6 @@ async def update(
 @router.post('/delete', response_model=str)
 async def delete(
         data: RequestProductsAndServicesSchema,
-        logger: logging.Logger = Depends(get_logger),
         index_service: IndexService = Depends(get_index_service),
 ) -> str:
     """
@@ -66,7 +76,6 @@ async def delete(
         data (RequestProductsAndServicesSchema):
             - **products** (dict): Dictionary of products to delete.
             - **services** (dict): Dictionary of services to delete.
-        logger (logging.Logger): Logger used for reporting request errors.
         index_service (IndexService): Index service used for updating products and services.
 
     Returns:
@@ -75,8 +84,8 @@ async def delete(
     products = {f'products_{key}': value for key, value in data.model_dump()['data']['products'].items()}
     services = {f'services_{key}': value for key, value in data.model_dump()['data']['services'].items()}
 
-    logger.info('Products: %s', products)
-    logger.info('Services: %s', services)
+    log_items(products, "Products")
+    log_items(services, "Services")
 
     await _delete_documents_with_retry(index_service, products, services)
 
