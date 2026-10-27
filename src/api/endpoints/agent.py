@@ -23,5 +23,6 @@ async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_a
 
     return {
         'role': 'assistant',
-        'content': result.answer
+        'content': result.answer,
+        'reason': result.reason
     }
