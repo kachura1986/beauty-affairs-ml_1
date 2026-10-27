@@ -14,6 +14,7 @@ from azure.search.documents.indexes.models import (
     SemanticSearch,
 )
 
+from src.core.config import settings
 from .azure_search_index_manager import AzureSearchIndexManager
 from .base_azure_search_index import BaseAzureSearchIndex
 from ..embedding import Embedder
@@ -47,14 +48,14 @@ class ServicesSearchIndex(BaseAzureSearchIndex):
                 name='name_vector',
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                vector_search_dimensions=1024,
+                vector_search_dimensions=settings.EMBEDDING_DIMENSIONS,
                 vector_search_profile_name='HNSWProfile'
             ),
             SearchField(
                 name='description_vector',
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                vector_search_dimensions=1024,
+                vector_search_dimensions=settings.EMBEDDING_DIMENSIONS,
                 vector_search_profile_name='HNSWProfile'
             )
         ]

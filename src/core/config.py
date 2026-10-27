@@ -16,7 +16,11 @@ class Settings(BaseSettings):
     HOST: str = '127.0.0.1'
     PORT: int = 8000
 
+    # Temporary files
     RUNS_DIR: Path = Path('./.runs')
+
+    # Embedding
+    EMBEDDING_DIMENSIONS: int = 1024
 
     # LLM settings
     TEMPERATURE: float = 0

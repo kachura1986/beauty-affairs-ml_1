@@ -58,7 +58,7 @@ class PipelineDependencies:
             azure_embedder = AzureOpenAIEmbedder(
                 client=openai_client,
                 model_name=settings.AZURE_OPENAI_EMBEDDING_MODEL,
-                dimensions=1024,
+                dimensions=settings.EMBEDDING_DIMENSIONS,
                 normalizer=TextNormalizer(),
             )
 
