@@ -34,7 +34,7 @@ class AgentService:
             AgentResult: Stable result of the agent_graph execution.
         """
         if not messages:
-            raise ValueError('Messages cannot be empty.')
+            raise ValueError(f"{self.__class__.__name__}: Messages cannot be empty.")
 
         history = [
             {

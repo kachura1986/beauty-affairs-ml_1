@@ -24,8 +24,7 @@ def retry_strategy(
         exceptions: tuple[type[BaseException], ...] = (ConnectionError, TimeoutError),
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
-    Wrapper for retry strategy.
-    Supports both synchronous and asynchronous functions natively.
+    Wrapper for retry strategy. Supports both synchronous and asynchronous functions natively.
 
     Args:
         attempts (int, optional): Maximum number of attempts, including the first one. Defaults to 3.

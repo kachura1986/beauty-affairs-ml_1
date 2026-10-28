@@ -26,7 +26,7 @@ class IndexService:
         for index_type, index_names in indexes.items():
             index_class = self.index_classes.get(index_type)
             if index_class is None:
-                raise ValueError(f"Unsupported index type: {index_type}")
+                raise ValueError(f"{self.__class__.__name__}: Unsupported index type: {index_type}")
 
             schemas = []
             for index_name in index_names:
@@ -47,7 +47,7 @@ class IndexService:
         for index_type, documents in all_documents.items():
             index_class = self.index_classes.get(index_type)
             if index_class is None:
-                raise ValueError(f"Unsupported index type: {index_type}")
+                raise ValueError(f"{self.__class__.__name__}: Unsupported index type: {index_type}")
 
             for index_name, docs in documents.items():
                 if not docs:
@@ -75,7 +75,10 @@ class IndexService:
 
         conflicting_indexes = product_indexes & service_indexes
         if conflicting_indexes:
-            raise ValueError(f"Index names cannot be shared by products and services: {sorted(conflicting_indexes)}")
+            raise ValueError(
+                f"{self.__class__.__name__}: Index names cannot be shared by products and services: "
+                f"{sorted(conflicting_indexes)}"
+            )
 
         existing_indexes = await self._search_index_manager.list_index_names()
 
@@ -96,13 +99,13 @@ class IndexService:
         Deletes product and service documents from their respective indexes.
 
         Args:
-            all_documents ict[str, dict[str, list[dict]]]: A dictionary containing 'products' and 'services'
+            all_documents (dict[str, dict[str, list[dict]]]): A dictionary containing 'products' and 'services'
             documents grouped by index name.
         """
         for index_type, documents in all_documents.items():
             index_class = self.index_classes.get(index_type)
             if index_class is None:
-                raise ValueError(f"Unsupported index type: {index_type}")
+                raise ValueError(f"{self.__class__.__name__}: Unsupported index type: {index_type}")
 
             for index_name, docs in documents.items():
                 if not docs:
@@ -129,6 +132,9 @@ class IndexService:
 
         conflicting_indexes = product_indexes & service_indexes
         if conflicting_indexes:
-            raise ValueError(f"Index names cannot be shared by products and services: {sorted(conflicting_indexes)}")
+            raise ValueError(
+                f"{self.__class__.__name__}: Index names cannot be shared by products and services: "
+                f"{sorted(conflicting_indexes)}"
+            )
 
         await self._delete_documents({'products': products, 'services': services})
