@@ -53,6 +53,8 @@ class PipelineDependencies:
                 azure_openai_client=openai_client,
                 temperature=settings.TEMPERATURE,
                 max_tokens=settings.MAX_TOKENS,
+                input_cost_per_million=settings.INPUT_COST_PER_MILLION,
+                output_cost_per_million=settings.OUTPUT_COST_PER_MILLION,
             )
 
             azure_embedder = AzureOpenAIEmbedder(

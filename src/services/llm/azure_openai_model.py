@@ -18,6 +18,8 @@ class AzureOpenAIModel(BaseLLMModel):
             azure_openai_client: AsyncOpenAI,
             temperature: float = 0.0,
             max_tokens: int = 4096,
+            input_cost_per_million: float = 0,
+            output_cost_per_million: float = 0,
     ) -> None:
         """
         Initialize the Azure OpenAI chat model.
@@ -27,6 +29,8 @@ class AzureOpenAIModel(BaseLLMModel):
             azure_openai_client (AsyncOpenAI): Pre-initialized asynchronous Azure OpenAI client.
             temperature (float): Sampling temperature for generation.
             max_tokens (int): Maximum number of tokens to generate.
+            input_cost_per_million (float): Cost in USD per 1M input tokens. Defaults to 0 (cost accounting disabled).
+            output_cost_per_million (float): Cost in USD per 1M output tokens. Defaults to 0 (cost accounting disabled).
         """
         super().__init__()
 
@@ -34,6 +38,8 @@ class AzureOpenAIModel(BaseLLMModel):
         self._client = azure_openai_client
         self._temperature = temperature
         self._max_tokens = max_tokens
+        self._input_cost_per_million = input_cost_per_million
+        self._output_cost_per_million = output_cost_per_million
 
     @property
     def model_name(self) -> str:
@@ -199,6 +205,26 @@ class AzureOpenAIModel(BaseLLMModel):
 
         return int(input_tokens), int(output_tokens)
 
+    def _compute_cost(self, input_tokens: int, output_tokens: int) -> float:
+        """
+        Compute the request cost in USD from token counts and configured per-million rates.
+
+        Args:
+            input_tokens (int): Number of input tokens reported by the API.
+            output_tokens (int): Number of output tokens reported by the API.
+
+        Returns:
+            float: Cost in USD. Zero if rates are not configured or token stats are missing
+                (in which case cost-based budget limits are not enforced for this call).
+        """
+        input_rate = self._input_cost_per_million
+        output_rate = self._output_cost_per_million
+
+        if input_tokens <= 0 and output_tokens <= 0:
+            return 0.0
+
+        return (input_tokens * input_rate + output_tokens * output_rate) / 1_000_000.0
+
     async def chat(
             self,
             messages: Sequence[Mapping[str, Any]],
@@ -249,6 +275,7 @@ class AzureOpenAIModel(BaseLLMModel):
         text = self._extract_text(response)
         tool_calls = self._extract_tool_calls(response)
         input_tokens, output_tokens = self._extract_usage(response)
+        cost_usd = self._compute_cost(input_tokens, output_tokens)
 
         return Reply(
             text=self._postprocess(text),
@@ -256,5 +283,5 @@ class AzureOpenAIModel(BaseLLMModel):
             model=self._model_name,
             in_tokens=input_tokens,
             out_tokens=output_tokens,
-            cost_usd=0.0,
+            cost_usd=cost_usd,
         )

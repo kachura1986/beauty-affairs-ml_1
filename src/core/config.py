@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     # LLM settings
     TEMPERATURE: float = 0
     MAX_TOKENS: int = 4096
+    INPUT_COST_PER_MILLION: float = 0
+    OUTPUT_COST_PER_MILLION: float = 0
 
     AZURE_OPENAI_API_KEY: str
     AZURE_OPENAI_ENDPOINT: str
