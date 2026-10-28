@@ -32,11 +32,7 @@ class ToolError:
         Returns:
             str: Error message formatted for LLM.
         """
-        text = (
-            f'ERROR {self.error_code.value}. '
-            f'{self.message} '
-            f'Hint: {self.hint}.'
-        )
+        text = f'ERROR {self.error_code.value}. {self.message}. Hint: {self.hint}.'
 
         if self.retry_after is not None:
             text += f' Retry after {self.retry_after:.1f} sec.'
