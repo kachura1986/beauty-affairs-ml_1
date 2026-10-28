@@ -128,5 +128,6 @@ are not present in the results.
 """,
             fn=search_products,
             args_model=SearchProductsArgs,
+            max_output_chars=25000,
         ),
     ])

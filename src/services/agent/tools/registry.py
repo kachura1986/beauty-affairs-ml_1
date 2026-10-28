@@ -8,8 +8,9 @@ from pydantic import ValidationError
 
 from .errors import handle_execution_exception, unknown_tool_result, validation_error_result, validation_hint
 from .tool import Tool, ToolResult, ToolStatus
+from .truncation import truncate_for_model
 
-MAX_TOOL_OUTPUT = 4000
+MAX_TOOL_OUTPUT = 15000
 
 
 class ToolRegistry:
@@ -75,7 +76,7 @@ class ToolRegistry:
 
         return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
-    async def invoke(self, call: Any) -> ToolResult:
+    async def invoke(self, call: Any, *, truncate: bool | None = None) -> ToolResult:
         """Execute a tool call and convert failures into ToolResult errors.
 
         This method does not propagate tool execution exceptions to the caller. Expected input errors and
@@ -133,20 +134,18 @@ class ToolRegistry:
 
         try:
             out = tool.fn(**args)
-
             if inspect.isawaitable(out):
                 out = await out
-
-            out = str(out)
-
         except Exception as exc:  # noqa: BLE001
             return handle_execution_exception(name, exc)
 
-        # Keep the model context bounded by limiting the tool output size
-        truncated = len(out) > MAX_TOOL_OUTPUT
+        do_truncate = tool.truncate if truncate is None else truncate
+        budget = tool.max_output_chars if tool.max_output_chars is not None else MAX_TOOL_OUTPUT
+
+        content, was_truncated = truncate_for_model(out, budget if do_truncate else None)
 
         return ToolResult(
             status=ToolStatus.OK,
-            content=out[:MAX_TOOL_OUTPUT],
-            truncated=truncated,
+            content=content,
+            truncated=was_truncated,
         )

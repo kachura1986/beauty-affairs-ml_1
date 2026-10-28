@@ -82,13 +82,12 @@ class ToolResult:
         Returns:
             str: Text formatted for LLM.
         """
-        # Successful result: return the content and explicitly mark truncation
         if self.status is ToolStatus.OK:
-            tail = '\n[...output truncated...]' if self.truncated else ''
-            return self.content + tail
+            # In-band markers (_truncated / _truncated_fields) already signal truncation.
+            # A text suffix would corrupt the JSON payload.
+            return self.content
 
-        # An error result must contain a ToolError
-        # If it does not, the ToolResult violates its internal contract
+        # An error result must contain a ToolError. If it does not, the ToolResult violates its internal contract
         return self.error.to_model()
 
 
@@ -98,6 +97,8 @@ class Tool:
     description: str
     fn: Callable[..., Any | Awaitable[Any]]
     args_model: type[BaseModel]
+    truncate: bool = True
+    max_output_chars: int | None = None
 
     @property
     def parameters(self) -> dict[str, Any]:
