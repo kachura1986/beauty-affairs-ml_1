@@ -81,6 +81,7 @@ class PipelineDependencies:
                 llm=azure_model,
                 tools=create_product_tools(products_index),
                 system_prompt=SYSTEM_PROMPT,
+                runs_dir=settings.RUNS_DIR,
             )
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 

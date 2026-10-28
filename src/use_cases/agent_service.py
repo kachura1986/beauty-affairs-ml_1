@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from uuid import uuid4
+from pathlib import Path
 
 from services.agent.agent_graph import run_graph
 from services.agent.domain import AgentPolicy, AgentResult, Task
@@ -16,11 +16,13 @@ class AgentService:
             llm: LLMModel,
             tools: ToolRegistry,
             system_prompt: str,
+            runs_dir: Path,
             policy: AgentPolicy | None = None
     ) -> None:
         self._llm = llm
         self._tools = tools
         self._system_prompt = system_prompt
+        self._runs_dir = runs_dir
         self._policy = policy or AgentPolicy()
 
     async def run(self, messages: Sequence[Message]) -> AgentResult:
@@ -45,8 +47,7 @@ class AgentService:
         ]
 
         task = Task(system_prompt=self._system_prompt, initial_messages=history)
-
-        trace = Trace(str(uuid4()))
+        trace = Trace(self._runs_dir)
 
         return await run_graph(
             task=task,
