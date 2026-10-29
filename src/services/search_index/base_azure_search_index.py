@@ -84,10 +84,12 @@ class BaseAzureSearchIndex:
             documents (list[dict]): A list of documents to upload or update.
             fields_to_embed (list[dict]): A list of fields to embed.
         """
+        enriched: list[dict] = [dict(document) for document in documents]
+
         # Process and embed text fields
         for field_to_embed in fields_to_embed:
-            field_documents = [document for document in documents if field_to_embed in document]
-            texts = [document[field_to_embed] for document in field_documents]
+            field_documents = [d for d in enriched if field_to_embed in d]
+            texts = [d[field_to_embed] for d in field_documents]
 
             if texts:
                 embeddings = await self._embedder.batch_embed(texts, chunk_size=16)
@@ -96,7 +98,7 @@ class BaseAzureSearchIndex:
                     document[f'{field_to_embed}_vector'] = embedding
 
         # Upload updated documents
-        await self._search_client.merge_or_upload_documents(documents=documents)
+        await self._search_client.merge_or_upload_documents(documents=enriched)
 
     def _validate_batch_size(self, batch_size: int) -> None:
         """
@@ -120,19 +122,19 @@ class BaseAzureSearchIndex:
         """
         return await self._search_client.get_document_count()
 
-    async def get_all_documents(self, batch_size: int = 500) -> list[dict]:
+    async def get_all_documents(self, batch_size: int = 500, key_field: str = 'id') -> list[dict]:
         """
         Get all document keys from the search index.
 
         Args:
             batch_size (int): Number of documents to retrieve per page.
+            key_field (str): Field name to use as the key for deletion.
 
         Returns:
             list[dict]: List of documents containing their keys.
         """
         self._validate_batch_size(batch_size)
 
-        key_field = 'id'
         documents = []
 
         results = await self._search_client.search(search_text="*", select=[key_field], top=batch_size)
@@ -143,19 +145,20 @@ class BaseAzureSearchIndex:
 
         return documents
 
-    async def delete_all_documents(self, batch_size: int = 500) -> int:
+    async def delete_all_documents(self, batch_size: int = 500, key_field: str = 'id') -> int:
         """
         Delete all documents from the search index.
 
         Args:
             batch_size (int): Number of documents to delete per batch.
+            key_field (str): Field name to use as the key for deletion.
 
         Returns:
             int: Number of documents successfully deleted.
         """
         self._validate_batch_size(batch_size)
 
-        documents = await self.get_all_documents(batch_size=batch_size)
+        documents = await self.get_all_documents(batch_size=batch_size, key_field=key_field)
         deleted_count = 0
 
         for i in range(0, len(documents), batch_size):
