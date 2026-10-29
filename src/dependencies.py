@@ -36,8 +36,11 @@ class PipelineDependencies:
             openai_client = AsyncOpenAI(
                 base_url=settings.AZURE_OPENAI_ENDPOINT,
                 api_key=settings.AZURE_OPENAI_API_KEY,
-                timeout=20.0,
-                max_retries=2,
+                # The only time limit is asyncio.wait_for(remaining) in AzureOpenAIModel.chat,
+                # driven by the agent Budget. SDK defaults here (600s timeout, 2 retries)
+                # would race with that budget and raise a different exception type.
+                timeout=None,
+                max_retries=0,
             )
 
             azure_model = AzureOpenAIModel(

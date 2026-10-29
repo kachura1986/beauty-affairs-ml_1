@@ -2,6 +2,7 @@ import hashlib
 import json
 import secrets
 import time
+import weakref
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,8 @@ class Trace:
           so file names are unique, ordered by time, and cannot escape RUNS_DIR.
         - The trace must be closed via :meth:`close` or by using it as a
           context manager. Calling :meth:`close` more than once is safe.
-        - ``__del__`` provides a best-effort fallback so a forgotten handle is still released.
+        - If the trace is garbage-collected without being closed, a ``ResourceWarning``
+          is emitted via :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee).
         - Old trace files are pruned on every new trace creation, keeping at most ``MAX_TRACE_FILES`` most recent files.
     """
 
@@ -43,6 +45,8 @@ class Trace:
         self._closed = False
         self._fh = self.path.open('a', encoding='utf-8')
 
+        self._finalizer = weakref.finalize(self, self._warn_unclosed, self.path)
+
         # Keep runs_dir bounded. Done after opening our own file so that the
         # fresh file participates in the "most recent" ordering
         self._prune_old_runs()
@@ -59,6 +63,11 @@ class Trace:
         suffix = secrets.token_hex(4)
 
         return f'{timestamp}_{suffix}'
+
+    @staticmethod
+    def _warn_unclosed(path: Path) -> None:
+        import warnings
+        warnings.warn(f"Trace {path} was not closed", ResourceWarning, stacklevel=2)
 
     def _prune_old_runs(self) -> None:
         """
@@ -86,6 +95,9 @@ class Trace:
             return
         self._closed = True
 
+        # Cancel the diagnostic finalizer: the trace was closed explicitly
+        self._finalizer.detach()
+
         try:
             self._fh.close()
         except Exception:  # noqa: BLE001
@@ -112,15 +124,6 @@ class Trace:
                 pass
         self.close()
         # Returning None/False propagates the original exception unchanged
-
-    def __del__(self) -> None:
-        # Defensive: if the caller forgot to close the trace,
-        # release the file descriptor during GC. Must not raise from __del__
-        try:
-            if not getattr(self, '_closed', True):
-                self.close()
-        except Exception:  # noqa: BLE001
-            pass
 
     def _write(self, rec: dict[str, Any]) -> None:
         if self._closed:

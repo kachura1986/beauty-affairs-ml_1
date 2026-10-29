@@ -267,10 +267,10 @@ class AzureOpenAIModel(BaseLLMModel):
             max_output_tokens=self._max_tokens,
         )
 
-        if timeout is not None:
-            response = await asyncio.wait_for(request, timeout=timeout)
-        else:
-            response = await request
+        if timeout is None:
+            raise ValueError(f"{self.__class__.__name__}: timeout is required.")
+
+        response = await asyncio.wait_for(request, timeout=timeout)
 
         text = self._extract_text(response)
         tool_calls = self._extract_tool_calls(response)
