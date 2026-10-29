@@ -6,7 +6,7 @@ from langgraph.runtime import Runtime
 
 from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
-from ..context import observation, tool_message
+from ..context import build_window,  build_observation_message, build_tool_message
 from ..domain import AgentResult, TerminationReason
 from ..tools import ToolRegistry, ToolStatus
 from ..trace import Trace
@@ -162,7 +162,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             budget_warning_emitted = True
 
     # Same context window construction as before
-    window = ctx.task.build_window(state['history'], warning)
+    window = build_window(ctx.task.system_prompt, state['history'], warning)
 
     reply, reason = await _request_llm(
         llm=ctx.llm,
@@ -200,9 +200,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             'budget': budget,
             'consecutive_empty_steps': consecutive_empty_steps,
             'budget_warning_emitted': budget_warning_emitted,
-            'history': [
-                observation('Empty response. Choose a tool or provide a final answer.')
-            ],
+            'history': [build_observation_message('Empty response. Choose a tool or provide a final answer.')],
         }
 
     # Any non-empty response resets the empty-response counter
@@ -217,6 +215,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     # ------------------------------------------------------------
     if not reply.tool_calls:
         result['pending_answer'] = reply.text
+
         return result
 
     # ------------------------------------------------------------
@@ -277,7 +276,10 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
         # execute_tools() then proceeds to the next call
         if fp in failed_set:
             history_updates.append(
-                observation('This tool call has already failed irrecoverably. Choose a different approach.')
+                build_observation_message(
+                    'This tool call has already failed irrecoverably. '
+                    'Choose a different approach.'
+                )
             )
             continue
 
@@ -315,7 +317,7 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
         # --------------------------------------------------------
         # Add result to conversation history
         # --------------------------------------------------------
-        history_updates.append(tool_message(call, res))
+        history_updates.append(build_tool_message(call, res))
 
         # --------------------------------------------------------
         # Check hard budget after every tool call
@@ -402,7 +404,7 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
     return {
         'pending_answer': None,
         'history': [
-            observation(f'Postcondition not satisfied: {note}')
+            build_observation_message(f'Postcondition not satisfied: {note}')
         ],
     }
 
