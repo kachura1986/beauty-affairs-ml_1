@@ -1,3 +1,5 @@
+import logging
+
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -6,7 +8,8 @@ from fastapi import FastAPI
 from api.router import main_router
 from core.config import settings
 from core.error_handler import ErrorHandler
-from dependencies import PipelineDependencies, get_logger
+from core.logger import get_logger
+from dependencies import PipelineDependencies
 
 
 @asynccontextmanager
@@ -47,7 +50,7 @@ def init_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    ErrorHandler(app, get_logger())
+    ErrorHandler(app, logging.getLogger(__name__))
 
     app.include_router(main_router)
 
@@ -58,7 +61,7 @@ app = init_app()
 
 if __name__ == '__main__':
     uvicorn.run(
-        app='main:app',
+        app=app,
         host=settings.HOST,
         port=settings.PORT,
         log_config=None,

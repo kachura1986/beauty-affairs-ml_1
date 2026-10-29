@@ -1,7 +1,10 @@
 import logging
 import os
+from functools import lru_cache
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+
+from core.config import settings
 
 
 def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logger:
@@ -52,3 +55,8 @@ def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logg
     logger.info(f"Logging setup complete. Logs are stored in {log_file}")
 
     return logger
+
+
+@lru_cache(maxsize=1)
+def get_logger() -> logging.Logger:
+    return setup_logging(settings.LOGS_DIR, 'app.log')

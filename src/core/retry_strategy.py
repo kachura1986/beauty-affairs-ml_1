@@ -1,4 +1,5 @@
 import logging
+
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
@@ -10,8 +11,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from dependencies import get_logger
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -42,7 +41,7 @@ def retry_strategy(
         raise ValueError("Wait times must satisfy 0 <= min_wait <= max_wait")
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        logger = get_logger()
+        logger = logging.getLogger(__name__)
 
         return retry(
             stop=stop_after_attempt(attempts),

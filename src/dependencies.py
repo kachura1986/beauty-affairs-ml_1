@@ -1,6 +1,4 @@
-import logging
 from dataclasses import dataclass
-from functools import lru_cache
 
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes.aio import SearchIndexClient
@@ -9,19 +7,13 @@ from openai import AsyncOpenAI
 
 from services.agent.context import SYSTEM_PROMPT
 from core.config import settings
-from core.logger import setup_logging
+from core.logger import get_logger
 from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel
 from services.search_index import AzureSearchIndexManager, ProductsSearchIndex
 from services.text_normalization.text_normalizer import TextNormalizer
 from use_cases import AgentService, IndexService
-
-
-# Logger
-@lru_cache(maxsize=1)
-def get_logger() -> logging.Logger:
-    return setup_logging(settings.LOGS_DIR, 'app.log')
 
 
 # DI container

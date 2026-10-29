@@ -37,7 +37,7 @@ class ErrorHandler:
             request (Request): FastAPI request object.
             error_type (str): Type of the error (e.g. "ValidationError").
             message (str): Main error message.
-            http_status (str): HTTP status code.
+            http_status (int): HTTP status code.
             details (dict | Sequence | None, optional): Optional detailed error information.
 
         Returns:

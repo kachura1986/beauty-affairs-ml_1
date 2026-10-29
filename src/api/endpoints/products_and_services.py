@@ -1,12 +1,14 @@
+import logging
+
 from fastapi import APIRouter, Depends
 
 from core.retry_strategy import retry_strategy
-from dependencies import get_logger, get_index_service
+from dependencies import get_index_service
 from use_cases.index_service import IndexService
 from ..schemas.products_and_services import RequestProductsAndServices, ResponseProductsAndServices
 
 router = APIRouter()
-logger = get_logger()
+logger = logging.getLogger(__name__)
 
 
 @retry_strategy(exceptions=(ConnectionError, TimeoutError))
