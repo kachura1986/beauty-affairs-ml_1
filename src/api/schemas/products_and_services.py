@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -30,5 +32,10 @@ class Data(BaseModel):
     services: dict[str, list[Service]]
 
 
-class RequestProductsAndServicesSchema(BaseModel):
+class RequestProductsAndServices(BaseModel):
     data: Data
+
+
+class ResponseProductsAndServices(BaseModel):
+    status: Literal['ok']
+    message: str

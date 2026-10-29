@@ -3,10 +3,9 @@ from fastapi import APIRouter, Depends
 from core.retry_strategy import retry_strategy
 from dependencies import get_logger, get_index_service
 from use_cases.index_service import IndexService
-from ..schemas.products_and_services import RequestProductsAndServicesSchema
+from ..schemas.products_and_services import RequestProductsAndServices, ResponseProductsAndServices
 
 router = APIRouter()
-
 logger = get_logger()
 
 
@@ -33,60 +32,67 @@ def log_items(items: dict, item_type: str) -> None:
     )
 
 
-@router.post('/update', response_model=str)
+def _prefix_and_log(data: RequestProductsAndServices) -> tuple[dict, dict]:
+    payload = data.model_dump()['data']
+
+    products = {f'products_{key}': value for key, value in payload['products'].items()}
+    services = {f'services_{key}': value for key, value in payload['services'].items()}
+
+    log_items(products, "Products")
+    log_items(services, "Services")
+
+    return products, services
+
+
+@router.post('/update', response_model=ResponseProductsAndServices)
 async def update(
-        data: RequestProductsAndServicesSchema,
-        index_service: IndexService = Depends(get_index_service),
-) -> str:
+        data: RequestProductsAndServices,
+        index_service: IndexService = Depends(get_index_service)
+) -> ResponseProductsAndServices:
     """
     Update products and services in the search index.
 
     Args:
-        data (RequestProductsAndServicesSchema):
-            - **products** (dict): Dictionary of products to update.
-            - **services** (dict): Dictionary of services to update.
+        data (RequestProductsAndServices):
+            - **data.products** (dict): Dictionary of products to update.
+            - **data.services** (dict): Dictionary of services to update.
         index_service (IndexService): Index service used for updating products and services.
 
     Returns:
-        str: A response message.
-
-    Raises:
-        HTTPException: If an unexpected error occurs during processing, a 500 error is raised.
+        ResponseProductsAndServices: A response message.
     """
-    products = {f'products_{key}': value for key, value in data.model_dump()['data']['products'].items()}
-    services = {f'services_{key}': value for key, value in data.model_dump()['data']['services'].items()}
-
-    log_items(products, "Products")
-    log_items(services, "Services")
+    products, services = _prefix_and_log(data)
 
     await _upsert_documents_with_retry(index_service, products, services)
 
-    return 'Products and services have been updated in the search index'
+    return ResponseProductsAndServices(
+        status="ok",
+        message="Products and services have been updated in the search index"
+    )
 
 
-@router.post('/delete', response_model=str)
+@router.post('/delete', response_model=ResponseProductsAndServices)
 async def delete(
-        data: RequestProductsAndServicesSchema,
-        index_service: IndexService = Depends(get_index_service),
-) -> str:
+        data: RequestProductsAndServices,
+        index_service: IndexService = Depends(get_index_service)
+) -> ResponseProductsAndServices:
     """
     Delete products and services in search index.
 
     Args:
-        data (RequestProductsAndServicesSchema):
-            - **products** (dict): Dictionary of products to delete.
-            - **services** (dict): Dictionary of services to delete.
+        data (RequestProductsAndServices):
+            - **data.products** (dict): Dictionary of products to delete.
+            - **data.services** (dict): Dictionary of services to delete.
         index_service (IndexService): Index service used for updating products and services.
 
     Returns:
-        str: A response message.
+        ResponseProductsAndServices: A response message.
     """
-    products = {f'products_{key}': value for key, value in data.model_dump()['data']['products'].items()}
-    services = {f'services_{key}': value for key, value in data.model_dump()['data']['services'].items()}
-
-    log_items(products, "Products")
-    log_items(services, "Services")
+    products, services = _prefix_and_log(data)
 
     await _delete_documents_with_retry(index_service, products, services)
 
-    return "Products and services have been deleted in the search index"
+    return ResponseProductsAndServices(
+        status="ok",
+        message="Products and services have been deleted in the search index"
+    )
