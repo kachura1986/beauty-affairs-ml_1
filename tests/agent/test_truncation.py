@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from src.services.agent.tools.truncation import MAX_DEPTH, TRUNCATED_FIELDS_KEY, TRUNCATED_LIST_KEY, truncate_for_model
+from services.agent.tools.truncation import MAX_DEPTH, TRUNCATED_FIELDS_KEY, TRUNCATED_LIST_KEY, truncate_for_model
 
 
 # ---------------------------------------------------------------------------

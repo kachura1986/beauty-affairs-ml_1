@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from src.services.agent.context.context_window import (
+from services.agent.context.context_window import (
     ContextOverflow,
     MULTIMODAL_PART_WEIGHT,
     PER_TOOL_MSG_LIMIT,

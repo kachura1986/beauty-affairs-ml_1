@@ -22,6 +22,7 @@ lint = [
 
 test = [
     "pytest",
+    "pytest-asyncio"
 ]
 
 [tool.ruff]
@@ -44,3 +45,9 @@ pretty = true
 follow_imports = "silent"
 warn_unused_ignores = true
 check_untyped_defs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["src"]
