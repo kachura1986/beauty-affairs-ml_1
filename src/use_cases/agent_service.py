@@ -1,11 +1,24 @@
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Literal, Protocol
 
 from services.agent.agent_graph import run_graph
 from services.agent.domain import AgentPolicy, AgentResult, Task
 from services.agent.tools import ToolRegistry
 from services.agent.trace import Trace
-from services.llm import LLMModel, Message
+from services.llm import LLMModel
+
+
+class Message(Protocol):
+    """
+    Minimal structural contract for a client chat message accepted by AgentService.
+
+    Only ``user`` and ``assistant`` roles are allowed. System prompts are supplied by the service itself
+    (``Task.system_prompt``), and tool messages are produced exclusively by the internal agent loop, never by the client.
+    """
+
+    role: Literal['user', 'assistant']
+    content: str
 
 
 class AgentService:
@@ -37,6 +50,13 @@ class AgentService:
         """
         if not messages:
             raise ValueError(f"{self.__class__.__name__}: Messages cannot be empty.")
+
+        for message in messages:
+            if message.role not in ('user', 'assistant'):
+                raise ValueError(
+                    f"{self.__class__.__name__}: unsupported role {message.role!r}; "
+                    "only 'user' and 'assistant' are allowed."
+                )
 
         history = [
             {
