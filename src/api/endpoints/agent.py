@@ -1,28 +1,34 @@
 from fastapi import APIRouter, Depends
 
-from api.schemas.agent import ChatRequest
+from api.schemas.agent import ChatRequest, ChatResponse, ChatUsage
 from dependencies import get_agent_service
 from use_cases import AgentService
 
 router = APIRouter()
 
 
-@router.post('/chat')
-async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_agent_service)) -> dict:
+@router.post('/chat', response_model=ChatResponse)
+async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_agent_service)) -> ChatResponse:
     """
     Executes the agent request and returns the response.
 
     Args:
-        request (ChatRequest): Chat request containing messages and model identifier.
+        request (ChatRequest): Chat request containing messages.
         agent_service (AgentService): Orchestrator responsible for executing agent requests.
 
     Returns:
-        dict: Agent response containing the answer, request ID, and latency.
+        ChatResponse: Structured agent response with role, content, termination reason and usage stats.
     """
     result = await agent_service.run(request.messages)
 
-    return {
-        'role': 'assistant',
-        'content': result.answer,
-        'reason': result.reason
-    }
+    return ChatResponse(
+        role='assistant',
+        content=result.answer,
+        termination_reason=result.reason,
+        usage=ChatUsage(
+            steps=result.steps,
+            tokens=result.tokens,
+            cost_usd=result.cost_usd,
+            seconds=result.seconds,
+        ),
+    )
