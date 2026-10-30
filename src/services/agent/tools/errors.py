@@ -284,3 +284,64 @@ def handle_execution_exception(tool_name: str, exc: Exception) -> ToolResult:
     log_exception("Tool execution failed.", tool_name, exc)
 
     return execution_failed_result(tool_name)
+
+
+def already_failed_result(tool_name: str) -> ToolResult:
+    """
+    Tool call whose exact form previously failed irrecoverably.
+
+    Args:
+        tool_name (str): Name of the tool that failed irrecoverably.
+
+    Returns:
+        ToolResult: Structured irrecoverable failure result.
+    """
+    return ToolResult(
+        status=ToolStatus.ERROR,
+        error=ToolError(
+            error_code=ToolErrorCode.EXECUTION_FAILED,
+            message=f"Tool '{tool_name}' previously failed irrecoverably.",
+            hint="Do not retry the same call; choose a different approach.",
+            retryable=False,
+        ),
+    )
+
+
+def repeated_action_result(tool_name: str) -> ToolResult:
+    """
+    Tool call that exceeded the repeat limit.
+
+    Args:
+        tool_name (str): Name of the tool that exceeded the repeat limit.
+
+    Returns:
+        ToolResult: Structured repeat limit exceeded result.
+    """
+    return ToolResult(
+        status=ToolStatus.ERROR,
+        error=ToolError(
+            error_code=ToolErrorCode.EXECUTION_FAILED,
+            message=f"Tool '{tool_name}' was called with identical arguments too many times.",
+            hint="Do not retry the same call; choose a different approach.",
+            retryable=False,
+        ),
+    )
+
+
+def skipped_due_to_termination_result(tool_name: str, reason_value: str) -> ToolResult:
+    """
+    Tool call not executed because the run is terminating.
+
+    Args:
+        tool_name (str): Name of the tool that was not executed.
+        reason_value (str): The reason for termination as a string value.
+    """
+    return ToolResult(
+        status=ToolStatus.ERROR,
+        error=ToolError(
+            error_code=ToolErrorCode.EXECUTION_FAILED,
+            message=f"Tool '{tool_name}' was not executed: run is terminating ({reason_value}).",
+            hint="No action required.",
+            retryable=False,
+        ),
+    )
