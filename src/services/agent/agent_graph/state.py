@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
 from services.llm import LLMModel
-from ..domain import AgentPolicy, AgentResult, Budget, BudgetLimits, Task, TerminationReason
+from ..domain import AgentPolicy, AgentResult, Budget, Task, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace
 
@@ -71,14 +71,7 @@ def create_initial_state(task: Task) -> GraphState:
         'history': history,
 
         # Existing runtime resource accounting
-        'budget': Budget(
-            limits=BudgetLimits(
-                max_steps=task.max_steps,
-                max_seconds=task.max_seconds,
-                max_tokens=task.max_tokens,
-                max_cost_usd=task.max_cost_usd,
-            )
-        ),
+        'budget': Budget(limits=task.budget_limits),
 
         # Existing anti-repeat / anti-loop state
         'action_counts': {},

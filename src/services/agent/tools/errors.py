@@ -335,6 +335,9 @@ def skipped_due_to_termination_result(tool_name: str, reason_value: str) -> Tool
     Args:
         tool_name (str): Name of the tool that was not executed.
         reason_value (str): The reason for termination as a string value.
+
+    Returns:
+        ToolResult: Structured termination result.
     """
     return ToolResult(
         status=ToolStatus.ERROR,

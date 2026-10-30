@@ -36,7 +36,7 @@ async def run_graph(
             config={
                 # Your max_steps counts LLM calls. LangGraph's recursion_limit counts graph super-steps,
                 # so they are intentionally not treated as the same value
-                'recursion_limit': max(64, task.max_steps * 4 + 16),
+                'recursion_limit': max(64, task.budget_limits.max_steps * 4 + 16),
             },
         )
     finally:

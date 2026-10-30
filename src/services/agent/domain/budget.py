@@ -1,29 +1,39 @@
+import math
 import time
-from dataclasses import dataclass, field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from .reason import TerminationReason
 
 
-@dataclass
-class BudgetLimits:
+class BudgetLimits(BaseModel):
     """
-    Defines the resource limits for an agent_graph run.
+    Resource limits for an agent_graph run.
 
     Attributes:
         max_steps (int): Maximum number of LLM decision steps allowed.
         max_seconds (float): Maximum wall-clock time allowed for the run, in seconds.
         max_tokens (int): Token budget for LLM input and output tokens.
-        max_cost_usd (float): Cost budget for LLM usage, in USD.
+        max_cost_usd (float): Cost budget for LLM usage, in USD. A value of ``0`` means
+            a free model and free tools: the run proceeds as long as no nonzero cost is
+            recorded, and terminates as soon as any nonzero cost is reported.
     """
 
-    max_steps: int
-    max_seconds: float
-    max_tokens: int
-    max_cost_usd: float
+    model_config = ConfigDict(frozen=True)
+
+    max_steps: int = Field(gt=0, description="Maximum number of LLM decision steps.")
+    max_seconds: float = Field(gt=0, description="Maximum wall-clock time in seconds.")
+    max_tokens: int = Field(gt=0, description="Token budget for LLM input and output.")
+    max_cost_usd: float = Field(
+        ge=0,
+        description=(
+            "Cost budget for LLM usage, in USD. A value of 0 means a free model: "
+            "the run proceeds as long as no nonzero cost is recorded."
+        ),
+    )
 
 
-@dataclass
-class Budget:
+class Budget(BaseModel):
     """
     Tracks resource usage against the configured limits of an agent_graph run.
 
@@ -33,18 +43,20 @@ class Budget:
 
     Attributes:
         limits (BudgetLimits): Resource limits configured for the run.
-        started (float): Monotonic timestamp used as the budget start time. Defaults to the value of
-        ``time.monotonic()`` when the budget is created.
+        started (float): Monotonic timestamp used as the budget start time. Defaults to
+            ``time.monotonic()`` when the budget is created.
         steps (int): Number of LLM decision steps executed so far.
         tokens (int): Total number of input and output LLM tokens consumed.
         cost_usd (float): Total accumulated LLM cost in USD.
     """
 
+    model_config = ConfigDict(validate_assignment=True)
+
     limits: BudgetLimits
-    started: float = field(default_factory=time.monotonic)
-    steps: int = 0
-    tokens: int = 0
-    cost_usd: float = 0.0
+    started: float = Field(default_factory=time.monotonic, description="Monotonic start timestamp.")
+    steps: int = Field(default=0, ge=0, description="LLM decision steps executed.")
+    tokens: int = Field(default=0, ge=0, description="Total tokens consumed.")
+    cost_usd: float = Field(default=0.0, ge=0, description="Accumulated cost in USD.")
 
     def elapsed(self) -> float:
         """
@@ -79,8 +91,12 @@ class Budget:
         Return the remaining LLM cost budget.
 
         Returns:
-            float: Remaining budget in USD. Returns ``0.0`` when the limit has been reached or exceeded.
+            float: Remaining budget in USD. Returns ``math.inf`` when ``max_cost_usd == 0``
+            (free model), and ``0.0`` when the limit has been reached or exceeded.
         """
+        if self.limits.max_cost_usd == 0:
+            return math.inf
+
         return max(0.0, self.limits.max_cost_usd - self.cost_usd)
 
     def remaining_steps(self) -> int:
@@ -110,6 +126,9 @@ class Budget:
         The step limit is intentionally not checked so that the final allowed LLM step
         can be processed before the run is stopped.
 
+        ``max_cost_usd == 0`` means a free model and free tools: the run proceeds as long as
+        no nonzero cost is recorded, and terminates as soon as any nonzero cost is reported.
+
         Returns:
             TerminationReason | None: A budget reason if a limit has been reached or exceeded, otherwise ``None``.
         """
@@ -119,7 +138,10 @@ class Budget:
         if self.tokens >= self.limits.max_tokens:
             return TerminationReason.BUDGET_TOKENS
 
-        if self.cost_usd >= self.limits.max_cost_usd:
+        if self.limits.max_cost_usd > 0:
+            if self.cost_usd >= self.limits.max_cost_usd:
+                return TerminationReason.BUDGET_COST
+        elif self.cost_usd > 0:
             return TerminationReason.BUDGET_COST
 
         return None
@@ -130,6 +152,9 @@ class Budget:
 
         Limits are checked in the following order: steps, time, tokens, and cost.
         The first reached limit determines the returned reason.
+
+        ``max_cost_usd == 0`` means a free model and free tools: the run proceeds as long as
+        no nonzero cost is recorded, and terminates as soon as any nonzero cost is reported.
 
         Returns:
             TerminationReason | None: A budget reason if a limit has been reached or exceeded, otherwise ``None``.
@@ -143,7 +168,10 @@ class Budget:
         if self.tokens >= self.limits.max_tokens:
             return TerminationReason.BUDGET_TOKENS
 
-        if self.cost_usd >= self.limits.max_cost_usd:
+        if self.limits.max_cost_usd > 0:
+            if self.cost_usd >= self.limits.max_cost_usd:
+                return TerminationReason.BUDGET_COST
+        elif self.cost_usd > 0:
             return TerminationReason.BUDGET_COST
 
         return None

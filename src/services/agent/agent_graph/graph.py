@@ -1,11 +1,12 @@
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from .nodes import decide_node, execute_node, finish_node, verify_node
 from .routing import route_after_decide, route_after_execute, route_after_verify
 from .state import AgentContext, GraphState
 
 
-def build_graph():
+def build_graph() -> CompiledStateGraph:
     """
     Build and compile the LangGraph workflow.
 

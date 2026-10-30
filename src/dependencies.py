@@ -84,7 +84,7 @@ class PipelineDependencies:
                 system_prompt=SYSTEM_PROMPT,
                 runs_dir=settings.RUNS_DIR,
                 policy=agent_config.policy,
-                budget_limits=agent_config.budget.to_limits(),
+                budget_limits=agent_config.budget,
             )
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 

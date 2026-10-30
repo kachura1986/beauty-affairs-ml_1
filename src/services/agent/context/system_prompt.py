@@ -25,10 +25,8 @@ The tool descriptions include examples of their intended purposes. Use only
 the tools that are actually available in the current request.
 
 Do not call tools for simple general questions.
-
 General knowledge questions (for example, what a substance is or how it works in general) should be answered
-from your own knowledge. Use `search_products` only when the answer depends on actual catalog records
-(specific products, their ingredients, brands, categories, or prices).
+from your own knowledge.
 
 3. WORKING WITH DATA
 If the question concerns actual records in external systems,

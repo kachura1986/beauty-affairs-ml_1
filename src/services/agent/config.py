@@ -6,30 +6,9 @@ from pydantic import BaseModel, Field
 from .domain import AgentPolicy, BudgetLimits
 
 
-class BudgetConfig(BaseModel):
-    max_steps: int = Field(gt=0)
-    max_seconds: float = Field(gt=0)
-    max_tokens: int = Field(gt=0)
-    max_cost_usd: float = Field(gt=0)
-
-    def to_limits(self) -> BudgetLimits:
-        """
-        Convert the configuration into a BudgetLimits instance.
-
-        Returns:
-            BudgetLimits: Budget limits used by the agent graph.
-        """
-        return BudgetLimits(
-            max_steps=self.max_steps,
-            max_seconds=self.max_seconds,
-            max_tokens=self.max_tokens,
-            max_cost_usd=self.max_cost_usd,
-        )
-
-
 class AgentConfig(BaseModel):
-    policy: AgentPolicy = Field(default_factory=AgentPolicy)
-    budget: BudgetConfig
+    policy: AgentPolicy
+    budget: BudgetLimits
 
 
 def load_agent_configs(path: Path) -> dict[str, AgentConfig]:

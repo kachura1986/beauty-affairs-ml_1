@@ -30,14 +30,14 @@ class AgentService:
             tools: ToolRegistry,
             system_prompt: str,
             runs_dir: Path,
-            policy: AgentPolicy | None = None,
-            budget_limits: BudgetLimits | None = None,
+            policy: AgentPolicy,
+            budget_limits: BudgetLimits,
     ) -> None:
         self._llm = llm
         self._tools = tools
         self._system_prompt = system_prompt
         self._runs_dir = runs_dir
-        self._policy = policy or AgentPolicy()
+        self._policy = policy
         self._budget_limits = budget_limits
 
     async def run(self, messages: Sequence[Message]) -> AgentResult:
@@ -68,17 +68,11 @@ class AgentService:
             for message in messages
         ]
 
-        if self._budget_limits is None:
-            task = Task(system_prompt=self._system_prompt, initial_messages=history)
-        else:
-            task = Task(
-                system_prompt=self._system_prompt,
-                initial_messages=history,
-                max_steps=self._budget_limits.max_steps,
-                max_seconds=self._budget_limits.max_seconds,
-                max_tokens=self._budget_limits.max_tokens,
-                max_cost_usd=self._budget_limits.max_cost_usd,
-            )
+        task = Task(
+            system_prompt=self._system_prompt,
+            initial_messages=history,
+            budget_limits=self._budget_limits,
+        )
 
         trace = Trace(self._runs_dir)
 

@@ -14,6 +14,7 @@ from .tools import ToolResult
 MAX_TRACE_FILES = 500
 
 
+# TODO code refactoring
 class Trace:
     """
     A trace records the execution of an agent_graph run, including its input, every LLM call,
@@ -144,7 +145,7 @@ class Trace:
 
         return hashlib.sha256(blob.encode()).hexdigest()[:12]
 
-    def step(self, n: int, window: list[dict], reply: Reply, budget: Budget, latency_ms: int) -> None:
+    def step(self, n: int, window: list[dict[str, Any]], reply: Reply, budget: Budget, latency_ms: int) -> None:
         self._write({
             't': 'step',
             'step': n,

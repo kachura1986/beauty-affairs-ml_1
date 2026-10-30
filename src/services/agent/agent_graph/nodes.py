@@ -7,7 +7,7 @@ from langgraph.runtime import Runtime
 from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
 from ..context import build_window, build_observation_message, build_tool_message
-from ..domain import AgentResult, TerminationReason
+from ..domain import AgentResult, Budget, TerminationReason
 from ..tools import ToolRegistry, ToolStatus
 from ..tools.errors import already_failed_result, repeated_action_result, skipped_due_to_termination_result
 from ..trace import Trace
@@ -27,11 +27,16 @@ def _log_internal_exception(message: str, exc: Exception, step: int | None = Non
     )
 
 
-def _check_budget(budget) -> TerminationReason | None:
+def _check_budget(budget: Budget) -> TerminationReason | None:
     """
     Preserve the existing agent_graph budget semantics.
-
     Step budget is checked first; then time/token/cost limits.
+
+    Args:
+        budget (Budget): Budget to check.
+
+    Returns:
+        TerminationReason | None: Termination reason if the budget is exceeded, otherwise None.
     """
     if not budget.can_start_step():
         return TerminationReason.BUDGET_STEPS
@@ -44,14 +49,14 @@ async def _request_llm(
         llm: LLMModel,
         tools: ToolRegistry,
         trace: Trace,
-        budget,
+        budget: Budget,
         window: list[dict[str, Any]],
 ) -> tuple[Reply | None, TerminationReason | None]:
     """
     Execute exactly one LLM decision step.
 
     Args:
-        llm (LLMProvider): LLM to use for the request.
+        llm (LLMModel): LLM to use for the request.
         tools (ToolRegistry): Tool registry for the request.
         trace (Trace): Trace for the request.
         budget (Budget): Budget for the request.
