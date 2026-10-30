@@ -1,0 +1,9 @@
+product_advisor:
+  policy:
+    empty_limit: 2
+    repeat_limit: 3
+  budget:
+    max_steps: 16
+    max_seconds: 300
+    max_tokens: 200000
+    max_cost_usd: 0.50

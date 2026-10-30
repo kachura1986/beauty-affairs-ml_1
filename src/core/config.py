@@ -39,5 +39,8 @@ class Settings(BaseSettings):
     SEARCH_API_KEY: str
     SEARCH_ENDPOINT: str
 
+    # Agent configuration
+    AGENTS_CONFIG: Path = Path(__file__).resolve().parents[1] / 'config' / 'agents.yaml'
+
 
 settings = Settings()

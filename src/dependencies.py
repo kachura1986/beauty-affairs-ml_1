@@ -5,6 +5,7 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from fastapi import Request
 from openai import AsyncOpenAI
 
+from services.agent.config import load_agent_configs
 from services.agent.context import SYSTEM_PROMPT
 from core.config import settings
 from core.logger import get_logger
@@ -73,12 +74,17 @@ class PipelineDependencies:
                 embedder=azure_embedder
             )
 
+            agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
+            agent_config = agent_configs['product_advisor']
+
             # Use cases
             agent_service = AgentService(
                 llm=azure_model,
                 tools=create_product_tools(products_index),
                 system_prompt=SYSTEM_PROMPT,
                 runs_dir=settings.RUNS_DIR,
+                policy=agent_config.policy,
+                budget_limits=agent_config.budget.to_limits(),
             )
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 
