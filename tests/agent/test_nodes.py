@@ -456,7 +456,9 @@ async def test_execute_irrecoverable_failed_action_skipped(trace):
     """A non-retryable failure is recorded, then skipped on the next attempt.
 
     The second execution must not invoke the tool again; instead it must
-    append an observation asking the model to choose a different approach.
+    append a structured already_failed tool message with the matching
+    tool_call_id (an [observation] user message would break the tool_call
+    contract — that was the old, buggy behaviour).
     """
     call = {"id": "c1", "name": "failing", "arguments": {}}
     registry = make_registry(
@@ -470,18 +472,23 @@ async def test_execute_irrecoverable_failed_action_skipped(trace):
     first = await execute_node(state, FakeRuntime(ctx))
     assert first["failed_actions"]
 
-    # Second: same call must be skipped with observation
+    # Second: same call must be answered synthetically with a tool message
     state["pending_tool_calls"] = [call]
     state["failed_actions"] = first["failed_actions"]
     second = await execute_node(state, FakeRuntime(ctx))
 
     assert len(second["history"]) == 1
-    assert any("[observation]" in m["content"] for m in second["history"])
-    assert "already failed" in second["history"][0]["content"]
+    assert second["history"][0]["role"] == "tool"
+    assert second["history"][0]["tool_call_id"] == "c1"
+    assert "previously failed irrecoverably" in second["history"][0]["content"]
 
 
 async def test_execute_repeated_action_terminates(trace):
-    """Exceeding repeat_limit terminates with REPEATED_ACTION without calling the tool."""
+    """Exceeding repeat_limit terminates with REPEATED_ACTION without calling the tool.
+
+    The offending call still receives a matching tool message so that the
+    assistant tool_calls stay paired in history; the loop must not `break`.
+    """
     call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
     ctx = make_context(trace, policy=AgentPolicy(repeat_limit=2))
     state = make_state(ctx)
@@ -493,7 +500,10 @@ async def test_execute_repeated_action_terminates(trace):
     result = await execute_node(state, FakeRuntime(ctx))
 
     assert result["termination_reason"] == TerminationReason.REPEATED_ACTION
-    assert result["history"] == []
+    assert len(result["history"]) == 1
+    assert result["history"][0]["role"] == "tool"
+    assert result["history"][0]["tool_call_id"] == "c1"
+    assert "too many times" in result["history"][0]["content"]
 
 
 async def test_execute_budget_exceeded_after_tool(trace):
@@ -576,7 +586,11 @@ async def test_execute_temporary_failure_does_not_add_to_failed_set(trace):
 
 
 async def test_execute_skips_duplicate_failed_action(trace):
-    """A call whose fingerprint is already in failed_actions is skipped."""
+    """A call whose fingerprint is already in failed_actions is skipped.
+
+    The skipped call must still receive a tool message with the matching
+    tool_call_id so the assistant tool_calls stay paired in history.
+    """
     call = {"id": "c1", "name": "failing", "arguments": {}}
     registry = make_registry(
         Tool(name="failing", description="", fn=failing_fn, args_model=EchoArgs)
@@ -590,8 +604,9 @@ async def test_execute_skips_duplicate_failed_action(trace):
     result = await execute_node(state, FakeRuntime(ctx))
 
     assert len(result["history"]) == 1
-    assert result["history"][0]["role"] == "user"
-    assert "already failed" in result["history"][0]["content"]
+    assert result["history"][0]["role"] == "tool"
+    assert result["history"][0]["tool_call_id"] == "c1"
+    assert "previously failed irrecoverably" in result["history"][0]["content"]
 
 
 # ---------------------------------------------------------------------------
@@ -831,3 +846,238 @@ async def test_execute_multiple_calls_second_fails_irrecoverable(trace):
 
     assert len(result["failed_actions"]) == 1
     assert len(result["history"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for the execute_node tool_call pairing invariant
+# ---------------------------------------------------------------------------
+
+async def test_regression_failed_set_same_batch(trace):
+    """Two identical failed calls in one batch each get a matching tool message.
+
+    Regression for the bug where a repeated failed call inside the same batch
+    was answered with build_observation_message (role='user') instead of
+    build_tool_message, leaving the assistant tool_calls unpaired.
+    """
+    call1 = {"id": "c1", "name": "failing", "arguments": {}}
+    call2 = {"id": "c2", "name": "failing", "arguments": {}}
+    registry = make_registry(
+        Tool(name="failing", description="", fn=failing_fn, args_model=EchoArgs)
+    )
+    ctx = make_context(trace, tools=registry)
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [call1, call2]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result.get("termination_reason") is None
+    assert len(result["history"]) == 2
+    assert [m["role"] for m in result["history"]] == ["tool", "tool"]
+    assert [m["tool_call_id"] for m in result["history"]] == ["c1", "c2"]
+    # First ran and failed; second was answered synthetically.
+    assert "internal error" in result["history"][0]["content"]
+    assert "previously failed irrecoverably" in result["history"][1]["content"]
+
+
+async def test_regression_repeated_action_three_calls(trace):
+    """Three identical calls with repeat_limit=1 produce three paired tool messages.
+
+    Regression for the bug where exceeding repeat_limit issued a `break`,
+    leaving the remaining calls without tool messages. Expected shape:
+    call1 executes normally, call2 trips the limit, call3 is skipped.
+    """
+    call1 = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
+    call2 = {"id": "c2", "name": "echo", "arguments": {"value": "x"}}
+    call3 = {"id": "c3", "name": "echo", "arguments": {"value": "x"}}
+    ctx = make_context(trace, policy=AgentPolicy(repeat_limit=1))
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [call1, call2, call3]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.REPEATED_ACTION
+    assert len(result["history"]) == 3
+    assert [m["role"] for m in result["history"]] == ["tool", "tool", "tool"]
+    assert [m["tool_call_id"] for m in result["history"]] == ["c1", "c2", "c3"]
+
+    # First: real result. Second: repeated_action. Third: skipped_due_to_termination.
+    assert "x" in result["history"][0]["content"]
+    assert "too many times" in result["history"][1]["content"]
+    assert "was not executed" in result["history"][2]["content"]
+
+    # action_counts incremented once per identical attempt that reached branch (3):
+    # call1 -> 1, call2 -> 2 (trip limit), call3 -> skipped before counting.
+    fp = ToolRegistry.fingerprint(call1)
+    assert result["action_counts"] == {fp: 2}
+
+
+async def test_regression_budget_exceeded_mid_batch(trace):
+    """Budget overrun after the first call leaves the remaining calls paired.
+
+    Regression for the bug where hitting a hard budget mid-batch issued a
+    `break`, leaving trailing tool_calls without matching tool messages. The
+    two trailing calls must now carry skipped_due_to_termination results.
+    """
+    call1 = {"id": "c1", "name": "slow", "arguments": {}}
+    call2 = {"id": "c2", "name": "echo", "arguments": {}}
+    call3 = {"id": "c3", "name": "echo", "arguments": {}}
+
+    ctx = make_context(trace, max_seconds=10)
+    state = make_state(ctx)
+
+    async def slow_fn(**kwargs):
+        # Emulate the first call burning through the wall-clock budget.
+        state["budget"].started -= 10_000
+        return "ok"
+
+    registry = make_registry(
+        Tool(name="slow", description="", fn=slow_fn, args_model=EchoArgs)
+    )
+    ctx = make_context(trace, tools=registry, max_seconds=10)
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [call1, call2, call3]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TIME
+    assert len(result["history"]) == 3
+    assert [m["role"] for m in result["history"]] == ["tool", "tool", "tool"]
+    assert [m["tool_call_id"] for m in result["history"]] == ["c1", "c2", "c3"]
+
+    # First: real result. Trailing two: skipped with the reason spelled out.
+    assert "ok" in result["history"][0]["content"]
+    for skipped in result["history"][1:]:
+        assert "was not executed" in skipped["content"]
+        assert "budget_time" in skipped["content"]
+        assert "ERROR execution_failed" in skipped["content"]
+
+
+# ---------------------------------------------------------------------------
+# Property: every pending tool call is paired with exactly one tool message
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "calls, policy_kwargs, extra_tools",
+    [
+        # Happy path
+        (
+                [
+                    {"id": "c1", "name": "echo", "arguments": {"value": "a"}},
+                    {"id": "c2", "name": "echo", "arguments": {"value": "b"}},
+                ],
+                {},
+                [],
+        ),
+        # failed_set: both calls share a fingerprint; first fails, second skipped
+        (
+                [
+                    {"id": "c1", "name": "failing", "arguments": {}},
+                    {"id": "c2", "name": "failing", "arguments": {}},
+                ],
+                {},
+                [Tool(name="failing", description="", fn=failing_fn, args_model=EchoArgs)],
+        ),
+        # REPEATED_ACTION trips mid-batch, last call is skipped
+        (
+                [
+                    {"id": "c1", "name": "echo", "arguments": {"value": "x"}},
+                    {"id": "c2", "name": "echo", "arguments": {"value": "x"}},
+                    {"id": "c3", "name": "echo", "arguments": {"value": "x"}},
+                ],
+                {"repeat_limit": 1},
+                [],
+        ),
+    ],
+)
+async def test_property_pending_calls_are_all_paired(trace, calls, policy_kwargs, extra_tools):
+    """Every pending call receives exactly one tool message with a matching id.
+
+    This is the invariant that execute_node must preserve on any exit path.
+    A failure here means a future refactor introduced a `break`, an early
+    return, or a plain observation message in place of a tool message.
+    """
+    registry = make_registry(*extra_tools)
+    ctx = make_context(trace, tools=registry, policy=AgentPolicy(**policy_kwargs))
+    state = make_state(ctx)
+    state["pending_tool_calls"] = list(calls)
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert len(result["history"]) == len(calls)
+    assert all(m["role"] == "tool" for m in result["history"])
+    assert [m["tool_call_id"] for m in result["history"]] == [c["id"] for c in calls]
+
+
+# ---------------------------------------------------------------------------
+# Additional edge cases for the pairing invariant
+# ---------------------------------------------------------------------------
+
+async def test_execute_empty_batch_is_noop(trace):
+    """An empty pending_tool_calls produces no history and no termination."""
+    ctx = make_context(trace)
+    state = make_state(ctx)
+    state["pending_tool_calls"] = []
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["history"] == []
+    assert result["pending_tool_calls"] == []
+    assert "termination_reason" not in result
+
+
+async def test_regression_skipped_message_carries_reason(trace):
+    """A call skipped after termination records the reason in its content.
+
+    Together with trace-side visibility, this lets post-mortem and regression
+    tests distinguish a real execution from a synthetic skip. Note that the
+    call which *trips* the limit carries repeated_action_result; only the
+    calls after it go through skipped_due_to_termination_result, which is
+    the message that embeds the termination reason verbatim.
+    """
+    call1 = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
+    call2 = {"id": "c2", "name": "echo", "arguments": {"value": "x"}}
+    call3 = {"id": "c3", "name": "echo", "arguments": {"value": "x"}}
+    ctx = make_context(trace, policy=AgentPolicy(repeat_limit=1))
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [call1, call2, call3]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    # c2 trips the limit; its message is the repeat-limit flavour, not skipped.
+    repeated = result["history"][1]
+    assert repeated["tool_call_id"] == "c2"
+    assert "too many times" in repeated["content"]
+    assert "repeated_action" not in repeated["content"]
+
+    # c3 goes through branch (1) and embeds the termination reason.
+    skipped = result["history"][2]
+    assert skipped["tool_call_id"] == "c3"
+    assert "repeated_action" in skipped["content"]
+    assert "was not executed" in skipped["content"]
+
+
+async def test_execute_failed_set_persists_across_batches(trace):
+    """failed_actions recorded in one batch are honoured on the next batch.
+
+    Verifies that the failed-set state is properly threaded through the graph
+    state and produces a synthetic response instead of re-invoking the tool.
+    """
+    call = {"id": "c1", "name": "failing", "arguments": {}}
+    registry = make_registry(
+        Tool(name="failing", description="", fn=failing_fn, args_model=EchoArgs)
+    )
+    ctx = make_context(trace, tools=registry)
+    state = make_state(ctx)
+
+    state["pending_tool_calls"] = [call]
+    first = await execute_node(state, FakeRuntime(ctx))
+    assert first["failed_actions"]
+
+    # Second batch carries the recorded fingerprint forward.
+    state["pending_tool_calls"] = [call]
+    state["failed_actions"] = first["failed_actions"]
+    second = await execute_node(state, FakeRuntime(ctx))
+
+    assert second["history"][0]["role"] == "tool"
+    assert second["history"][0]["tool_call_id"] == "c1"
+    assert "previously failed irrecoverably" in second["history"][0]["content"]
