@@ -95,6 +95,7 @@ class Tool:
     args_model: type[BaseModel]
     truncate: bool = True
     max_output_chars: int | None = None
+    timeout_seconds: float | None = None
 
     @property
     def parameters(self) -> dict[str, Any]:

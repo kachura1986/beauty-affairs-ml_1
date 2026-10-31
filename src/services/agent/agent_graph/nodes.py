@@ -4,6 +4,7 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
+from core.config import settings
 from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
 from ..context import build_window, build_observation_message, build_tool_message
@@ -75,6 +76,18 @@ async def _request_llm(
     if remaining <= 0:
         return None, TerminationReason.BUDGET_TIME
 
+    # Pre-flight for tokens. Strict '<' on purpose: a caller that lands exactly
+    # on MIN_EXPECTED_TOKENS is still allowed to try one more call.
+    if budget.remaining_tokens() < settings.MIN_EXPECTED_TOKENS:
+        trace.error(
+            step=budget.steps,
+            kind='preflight_tokens',
+            message=f'remaining={budget.remaining_tokens()}, min={settings.MIN_EXPECTED_TOKENS}',
+            latency_ms=0,
+            budget=budget,
+        )
+        return None, TerminationReason.BUDGET_TOKENS
+
     budget.steps += 1
 
     t0 = time.monotonic()
@@ -85,7 +98,8 @@ async def _request_llm(
         if chat is None:
             raise ValueError(f"{llm.__class__.__name__} does not support agent chat()")
 
-        reply = await chat(window, tools.schemas(), remaining)
+        timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
+        reply = await chat(window, tools.schemas(), timeout)
 
     except Exception as exc:  # noqa: BLE001
         latency_ms = int((time.monotonic() - t0) * 1000)
@@ -298,9 +312,23 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
 
             continue  # remaining calls are handled by branch (1)
 
-        # Step 4. Execute the tool call.
+        # Step 4. Pre-flight: do not start a tool call when the run budget has already expired.
+        # Between _request_llm and this point some time passed, so remaining may now be <= 0.
+        # `remaining` is computed once here and passed straight to invoke() below: the operations between this check
+        # and invoke() are microseconds (t0 = time.monotonic()), so a second recomputation would be noise, not precision.
+        remaining = budget.remaining_seconds()
+        if remaining <= 0:
+            termination_reason = TerminationReason.BUDGET_TIME
+            history_updates.append(build_tool_message(
+                call,
+                skipped_due_to_termination_result(call.get('name', '?'), termination_reason.value),
+            ))
+            continue
+
+        # Step 5. Execute the tool call with a timeout capped by both the remaining wall-clock budget and
+        # the per-tool ceiling (the latter is applied inside invoke()).
         t0 = time.monotonic()
-        res = await ctx.tools.invoke(call)
+        res = await ctx.tools.invoke(call, timeout=remaining)
         latency_ms = int((time.monotonic() - t0) * 1000)
         ctx.trace.tool(budget.steps, call, res, latency_ms)
 
@@ -312,7 +340,7 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
 
         history_updates.append(build_tool_message(call, res))
 
-        # Step 5. Hard budget check after each call: record the reason but
+        # Step 6. Hard budget check after each call: record the reason but
         # keep iterating so every remaining call still gets a response.
         reason = budget.exceeded_without_steps()
         if reason:

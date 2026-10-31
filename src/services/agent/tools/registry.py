@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import inspect
 import json
@@ -5,6 +6,8 @@ from collections.abc import Mapping
 from typing import Any, Iterable
 
 from pydantic import ValidationError
+
+from core.config import settings
 
 from .errors import handle_execution_exception, unknown_tool_result, validation_error_result, validation_hint
 from .tool import Tool, ToolResult, ToolStatus
@@ -76,7 +79,7 @@ class ToolRegistry:
 
         return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
-    async def invoke(self, call: Any, *, truncate: bool | None = None) -> ToolResult:
+    async def invoke(self, call: Any, *, timeout: float | None = None, truncate: bool | None = None) -> ToolResult:
         """Execute a tool call and convert failures into ToolResult errors.
 
         This method does not propagate tool execution exceptions to the caller. Expected input errors and
@@ -84,6 +87,8 @@ class ToolRegistry:
 
         Args:
             call: Dictionary containing the tool name and arguments.
+            timeout: Optional timeout in seconds for the tool execution.
+            truncate: Optional flag to truncate the output.
 
         Returns:
             ToolResult: Result of the tool execution.
@@ -135,7 +140,16 @@ class ToolRegistry:
         try:
             out = tool.fn(**args)
             if inspect.isawaitable(out):
-                out = await out
+                per_tool_cap = (
+                    tool.timeout_seconds
+                    if tool.timeout_seconds is not None
+                    else settings.TOOL_DEFAULT_TIMEOUT_SECONDS
+                )
+                # Both bounds apply: caller's `timeout` (typically budget.remaining_seconds()) and the per-tool ceiling.
+                # The per-tool ceiling is authoritative and dominates the caller when it is smaller: a tool declared with
+                # timeout_seconds=0.05 must not run for 300s just because the run budget allowed it.
+                effective = min(per_tool_cap, timeout) if timeout is not None else per_tool_cap
+                out = await asyncio.wait_for(out, timeout=effective)
         except Exception as exc:  # noqa: BLE001
             return handle_execution_exception(name, exc)
 
