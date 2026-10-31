@@ -45,13 +45,13 @@ class Settings(BaseSettings):
     # Agent configuration
     AGENTS_CONFIG: Path = Path(__file__).resolve().parents[1] / 'config' / 'agents.yaml'
 
-    # Timeouts (per-operation caps; the run budget remains the outer limit)
+    # Per-operation caps; the run budget remains the outer limit
     LLM_DEFAULT_TIMEOUT_SECONDS: float = 120.0
-    TOOL_DEFAULT_TIMEOUT_SECONDS: float = 30.0
-
     # Pre-flight threshold: do not start an LLM call when remaining tokens
     # are strictly below this value. Boundary (==) is allowed.
     MIN_EXPECTED_TOKENS: int = 500
+    TOOL_DEFAULT_TIMEOUT_SECONDS: float = 30.0
+    TOOL_DEFAULT_MAX_OUTPUT_CHARS: int = 15000
 
 
 settings = Settings()

@@ -7,25 +7,25 @@ from typing import Any, Iterable
 
 from pydantic import ValidationError
 
-from core.config import settings
-
 from .errors import handle_execution_exception, unknown_tool_result, validation_error_result, validation_hint
 from .tool import Tool, ToolResult, ToolStatus
 from .truncation import truncate_for_model
-
-MAX_TOOL_OUTPUT = 15000
 
 
 class ToolRegistry:
     """Registry of tools available to the agent_graph."""
 
-    def __init__(self, tools: Iterable[Tool]) -> None:
+    def __init__(self, tools: Iterable[Tool], default_timeout_seconds: float, max_output_chars: int) -> None:
         """
         Initialize the registry with the given tools.
 
         Args:
             tools: Iterable of Tool objects.
+            default_timeout_seconds: Fallback timeout applied to tools that do not define ``timeout_seconds``.
+            max_output_chars: Fallback output character budget applied to tools that do not define ``max_output_chars``.
         """
+        self._default_timeout_seconds = default_timeout_seconds
+        self._max_output_chars = max_output_chars
         self._tools = {}
 
         for tool in tools:
@@ -143,7 +143,7 @@ class ToolRegistry:
                 per_tool_cap = (
                     tool.timeout_seconds
                     if tool.timeout_seconds is not None
-                    else settings.TOOL_DEFAULT_TIMEOUT_SECONDS
+                    else self._default_timeout_seconds
                 )
                 # Both bounds apply: caller's `timeout` (typically budget.remaining_seconds()) and the per-tool ceiling.
                 # The per-tool ceiling is authoritative and dominates the caller when it is smaller: a tool declared with
@@ -154,7 +154,7 @@ class ToolRegistry:
             return handle_execution_exception(name, exc)
 
         do_truncate = tool.truncate if truncate is None else truncate
-        budget = tool.max_output_chars if tool.max_output_chars is not None else MAX_TOOL_OUTPUT
+        budget = tool.max_output_chars if tool.max_output_chars is not None else self._max_output_chars
 
         content, was_truncated = truncate_for_model(out, budget if do_truncate else None)
 

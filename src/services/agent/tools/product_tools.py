@@ -67,7 +67,11 @@ def _build_product_filter(min_price: float | None, max_price: float | None) -> s
     return " and ".join(conditions) if conditions else None
 
 
-def create_product_tools(products_index: ProductsSearchIndex) -> ToolRegistry:
+def create_product_tools(
+        products_index: ProductsSearchIndex,
+        default_timeout_seconds:
+        float, max_output_chars: int,
+) -> ToolRegistry:
     async def search_products(
             query: str,
             top_k: int = 10,
@@ -130,4 +134,7 @@ are not present in the results.
             args_model=SearchProductsArgs,
             max_output_chars=25000,
         ),
-    ])
+    ],
+        default_timeout_seconds=default_timeout_seconds,
+        max_output_chars=max_output_chars,
+    )

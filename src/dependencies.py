@@ -80,7 +80,11 @@ class PipelineDependencies:
             # Use cases
             agent_service = AgentService(
                 llm=azure_model,
-                tools=create_product_tools(products_index),
+                tools=create_product_tools(
+                    products_index,
+                    default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,
+                    max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS,
+                ),
                 system_prompt=SYSTEM_PROMPT,
                 runs_dir=settings.RUNS_DIR,
                 policy=agent_config.policy,
