@@ -16,10 +16,10 @@ class AzureOpenAIModel(BaseLLMModel):
             self,
             model_name: str,
             azure_openai_client: AsyncOpenAI,
-            temperature: float = 0.0,
-            max_tokens: int = 4096,
-            input_cost_per_million: float = 0,
-            output_cost_per_million: float = 0,
+            temperature: float,
+            max_tokens: int,
+            input_cost_per_million: float,
+            output_cost_per_million: float,
     ) -> None:
         """
         Initialize the Azure OpenAI chat model.
@@ -214,7 +214,7 @@ class AzureOpenAIModel(BaseLLMModel):
             output_tokens (int): Number of output tokens reported by the API.
 
         Returns:
-            float: Cost in USD. Zero if rates are not configured or token stats are missing
+            float: Cost in USD. Zero if both rates are explicitly zero or token stats are missing
                 (in which case cost-based budget limits are not enforced for this call).
         """
         input_rate = self._input_cost_per_million
