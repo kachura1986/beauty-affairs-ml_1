@@ -306,6 +306,127 @@ async def test_request_llm_no_steps_left(trace):
     assert llm.calls == []
 
 
+async def test_request_llm_timeout_capped_by_remaining_budget(trace):
+    """The LLM call timeout equals the remaining budget when it is below the cap.
+
+    With the default LLM_DEFAULT_TIMEOUT_SECONDS (120s), a 10s budget must
+    cap the call at ~10s rather than letting it run for the full default.
+    """
+    llm = FakeLLM(reply(text="hello"))
+    ctx = make_context(trace, llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+    )
+
+    assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
+
+
+async def test_request_llm_timeout_capped_by_default(trace, monkeypatch):
+    """The LLM call timeout equals the default cap when the budget is larger.
+
+    A 300s budget must not force a call to wait the whole 300s when
+    LLM_DEFAULT_TIMEOUT_SECONDS is 5s: min(300, 5) == 5.
+    """
+    from core.config import settings
+    monkeypatch.setattr(settings, "LLM_DEFAULT_TIMEOUT_SECONDS", 5.0)
+
+    llm = FakeLLM(reply(text="hello"))
+    ctx = make_context(trace, llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=300, max_tokens=1000, max_cost_usd=1))
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+    )
+
+    assert llm.calls[0]["timeout"] == pytest.approx(5.0, abs=0.1)
+
+
+async def test_request_llm_preflight_tokens_below_minimum(trace):
+    """A token budget below MIN_EXPECTED_TOKENS short-circuits before chat().
+
+    The check is strict '<', so a caller that lands exactly on the threshold
+    must still be allowed to try (see the boundary test). A clearly
+    insufficient budget must never reach the LLM.
+    """
+    from core.config import settings
+
+    llm = FakeLLM(reply(text="never"))
+    ctx = make_context(trace, llm=llm)
+    budget = Budget(limits=BudgetLimits(
+        max_steps=10,
+        max_seconds=10,
+        max_tokens=settings.MIN_EXPECTED_TOKENS - 1,
+        max_cost_usd=1,
+    ))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+    )
+
+    assert result is None
+    assert reason == TerminationReason.BUDGET_TOKENS
+    assert llm.calls == []
+
+
+async def test_request_llm_preflight_tokens_at_boundary_allowed(trace):
+    """Exactly MIN_EXPECTED_TOKENS remaining is still allowed to call the LLM.
+
+    The pre-flight uses strict '<', so the boundary value must pass through
+    to chat() rather than terminating early.
+    """
+    from core.config import settings
+
+    llm = FakeLLM(reply(text="ok"))
+    ctx = make_context(trace, llm=llm)
+    budget = Budget(limits=BudgetLimits(
+        max_steps=10,
+        max_seconds=10,
+        max_tokens=settings.MIN_EXPECTED_TOKENS,
+        max_cost_usd=1,
+    ))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+    )
+
+    assert reason is None
+    assert result is not None
+    assert len(llm.calls) == 1
+
+
+async def test_request_llm_preflight_tokens_emits_trace(trace):
+    """The pre-flight rejection is recorded in the trace with kind='preflight_tokens'.
+
+    Parses the JSONL file rather than substring-matching, so the check is
+    independent of the trace's separators and field ordering.
+    """
+    import json
+    from core.config import settings
+
+    llm = FakeLLM(reply(text="never"))
+    ctx = make_context(trace, llm=llm)
+    budget = Budget(limits=BudgetLimits(
+        max_steps=10,
+        max_seconds=10,
+        max_tokens=settings.MIN_EXPECTED_TOKENS - 1,
+        max_cost_usd=1,
+    ))
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+    )
+
+    records = [
+        json.loads(line)
+        for line in trace.path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+
+    assert any(r.get("kind") == "preflight_tokens" for r in records)
+
+
 # ---------------------------------------------------------------------------
 # decide_node
 # ---------------------------------------------------------------------------
@@ -412,9 +533,9 @@ async def test_decide_tool_calls_clears_stale_pending_answer(trace):
 async def test_decide_emits_budget_warning_once(trace):
     """The soft budget warning sets the emitted flag exactly once and is passed to LLM."""
     llm = FakeLLM(reply(text="a"), reply(text="b"))
-    ctx = make_context(trace, llm=llm, max_steps=10, max_tokens=10)
+    ctx = make_context(trace, llm=llm, max_steps=10)
     state = make_state(ctx)
-    state["budget"].tokens = 9  # > 80% of 10
+    state["budget"].cost_usd = 0.45  # 90% of the default 0.50 cost budget
 
     first = await decide_node(state, FakeRuntime(ctx))
     assert first["budget_warning_emitted"] is True
@@ -429,9 +550,9 @@ async def test_decide_emits_budget_warning_once(trace):
 async def test_decide_budget_warning_not_reemitted(trace):
     """Once emitted, the warning flag stays True on subsequent steps."""
     llm = FakeLLM(reply(text="a"))
-    ctx = make_context(trace, llm=llm, max_steps=10, max_tokens=10)
+    ctx = make_context(trace, llm=llm, max_steps=10)
     state = make_state(ctx)
-    state["budget"].tokens = 9
+    state["budget"].cost_usd = 0.45
     state["budget_warning_emitted"] = True
 
     result = await decide_node(state, FakeRuntime(ctx))
@@ -530,6 +651,28 @@ async def test_execute_budget_exceeded_after_tool(trace):
     result = await execute_node(state, FakeRuntime(ctx))
 
     assert result["termination_reason"] == TerminationReason.BUDGET_TIME
+
+
+async def test_execute_preflight_time_skips_tool(trace):
+    """An already-expired wall-clock budget short-circuits before invoke().
+
+    Between the LLM step and execute_node some time may pass, so the budget
+    can expire before the first tool call. The tool must not be invoked, and
+    the skipped call must still receive a paired tool message.
+    """
+    call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
+    ctx = make_context(trace, max_seconds=0.001)
+    state = make_state(ctx)
+    state["budget"].started = time.monotonic() - 10
+    state["pending_tool_calls"] = [call]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TIME
+    assert len(result["history"]) == 1
+    assert result["history"][0]["role"] == "tool"
+    assert result["history"][0]["tool_call_id"] == "c1"
+    assert "was not executed" in result["history"][0]["content"]
 
 
 async def test_execute_stops_after_budget_exceeded_between_calls(trace):
