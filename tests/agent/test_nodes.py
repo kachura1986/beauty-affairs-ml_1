@@ -91,7 +91,7 @@ def make_registry(*extra_tools: Tool) -> ToolRegistry:
         Tool(name="echo", description="echo", fn=echo_fn, args_model=EchoArgs),
         *extra_tools,
     ]
-    return ToolRegistry(tools)
+    return ToolRegistry(tools, default_timeout_seconds=30.0, max_output_chars=15000)
 
 
 def make_context(

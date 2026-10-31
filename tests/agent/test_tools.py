@@ -29,15 +29,19 @@ async def test_per_tool_cap_triggers_temporary_failure():
     async def hanging_fn(**kwargs):
         await asyncio.sleep(10)
 
-    registry = ToolRegistry([
-        Tool(
-            name="hang",
-            description="",
-            fn=hanging_fn,
-            args_model=EchoArgs,
-            timeout_seconds=0.05,
-        ),
-    ])
+    registry = ToolRegistry(
+        [
+            Tool(
+                name="hang",
+                description="",
+                fn=hanging_fn,
+                args_model=EchoArgs,
+                timeout_seconds=0.05,
+            ),
+        ],
+        default_timeout_seconds=30.0,
+        max_output_chars=15000,
+    )
 
     res = await registry.invoke({"name": "hang", "arguments": {}})
 
@@ -56,15 +60,19 @@ async def test_per_tool_cap_dominates_caller_timeout():
     async def hanging_fn(**kwargs):
         await asyncio.sleep(10)
 
-    registry = ToolRegistry([
-        Tool(
-            name="hang",
-            description="",
-            fn=hanging_fn,
-            args_model=EchoArgs,
-            timeout_seconds=0.05,
-        ),
-    ])
+    registry = ToolRegistry(
+        [
+            Tool(
+                name="hang",
+                description="",
+                fn=hanging_fn,
+                args_model=EchoArgs,
+                timeout_seconds=0.05,
+            ),
+        ],
+        default_timeout_seconds=30.0,
+        max_output_chars=15000,
+    )
 
     res = await registry.invoke({"name": "hang", "arguments": {}}, timeout=10.0)
 
@@ -81,15 +89,19 @@ async def test_caller_timeout_dominates_per_tool_cap():
     async def hanging_fn(**kwargs):
         await asyncio.sleep(10)
 
-    registry = ToolRegistry([
-        Tool(
-            name="hang",
-            description="",
-            fn=hanging_fn,
-            args_model=EchoArgs,
-            timeout_seconds=10.0,
-        ),
-    ])
+    registry = ToolRegistry(
+        [
+            Tool(
+                name="hang",
+                description="",
+                fn=hanging_fn,
+                args_model=EchoArgs,
+                timeout_seconds=10.0,
+            ),
+        ],
+        default_timeout_seconds=30.0,
+        max_output_chars=15000,
+    )
 
     res = await registry.invoke({"name": "hang", "arguments": {}}, timeout=0.05)
 
@@ -103,15 +115,19 @@ async def test_quick_call_completes_within_per_tool_cap():
         await asyncio.sleep(0.01)
         return "ok"
 
-    registry = ToolRegistry([
-        Tool(
-            name="quick",
-            description="",
-            fn=quick_fn,
-            args_model=EchoArgs,
-            timeout_seconds=0.5,
-        ),
-    ])
+    registry = ToolRegistry(
+        [
+            Tool(
+                name="quick",
+                description="",
+                fn=quick_fn,
+                args_model=EchoArgs,
+                timeout_seconds=0.5,
+            ),
+        ],
+        default_timeout_seconds=30.0,
+        max_output_chars=15000,
+    )
 
     res = await registry.invoke({"name": "quick", "arguments": {}})
 
@@ -131,15 +147,19 @@ async def test_cancelled_error_propagates():
     async def cancelled_fn(**kwargs):
         raise asyncio.CancelledError()
 
-    registry = ToolRegistry([
-        Tool(
-            name="cancelled",
-            description="",
-            fn=cancelled_fn,
-            args_model=EchoArgs,
-            timeout_seconds=1.0,
-        ),
-    ])
+    registry = ToolRegistry(
+        [
+            Tool(
+                name="cancelled",
+                description="",
+                fn=cancelled_fn,
+                args_model=EchoArgs,
+                timeout_seconds=1.0,
+            ),
+        ],
+        default_timeout_seconds=30.0,
+        max_output_chars=15000,
+    )
 
     with pytest.raises(asyncio.CancelledError):
         await registry.invoke({"name": "cancelled", "arguments": {}})
