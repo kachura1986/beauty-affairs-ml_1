@@ -36,7 +36,7 @@ class PipelineDependencies:
         try:
             openai_client = AsyncOpenAI(
                 base_url=settings.AZURE_OPENAI_ENDPOINT,
-                api_key=settings.AZURE_OPENAI_API_KEY,
+                api_key=settings.AZURE_OPENAI_API_KEY.get_secret_value(),
                 # The only time limit is asyncio.wait_for(remaining) in AzureOpenAIModel.chat,
                 # driven by the agent Budget. SDK defaults here (600s timeout, 2 retries)
                 # would race with that budget and raise a different exception type.
@@ -60,7 +60,7 @@ class PipelineDependencies:
                 normalizer=TextNormalizer(),
             )
 
-            search_credential = AzureKeyCredential(settings.SEARCH_API_KEY)
+            search_credential = AzureKeyCredential(settings.SEARCH_API_KEY.get_secret_value())
 
             azure_search_index_client = SearchIndexClient(endpoint=settings.SEARCH_ENDPOINT,
                                                           credential=search_credential)

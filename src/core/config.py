@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,17 +27,19 @@ class Settings(BaseSettings):
 
     # LLM settings
     TEMPERATURE: float = 0
-    MAX_TOKENS: int = 4096
-    INPUT_COST_PER_MILLION: float = 0
-    OUTPUT_COST_PER_MILLION: float = 0
+    MAX_TOKENS: int = Field(default=8192, gt=0)
+    # A value of 0 explicitly means the model is free: the run proceeds as long as no nonzero cost is recorded,
+    # and terminates as soon as any nonzero cost is reported (see Budget.exceeded_without_steps).
+    INPUT_COST_PER_MILLION: float = Field(ge=0)
+    OUTPUT_COST_PER_MILLION: float = Field(ge=0)
 
-    AZURE_OPENAI_API_KEY: str
+    AZURE_OPENAI_API_KEY: SecretStr
     AZURE_OPENAI_ENDPOINT: str
     AZURE_OPENAI_CHAT_MODEL: str
     AZURE_OPENAI_EMBEDDING_MODEL: str
 
     # Searching
-    SEARCH_API_KEY: str
+    SEARCH_API_KEY: SecretStr
     SEARCH_ENDPOINT: str
 
     # Agent configuration
