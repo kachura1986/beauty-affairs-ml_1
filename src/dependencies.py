@@ -75,7 +75,7 @@ class PipelineDependencies:
             )
 
             agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
-            agent_config = agent_configs['product_advisor']
+            agent_config = agent_configs['default_agent']
 
             # Use cases
             agent_service = AgentService(
