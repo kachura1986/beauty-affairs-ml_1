@@ -69,8 +69,8 @@ def _build_product_filter(min_price: float | None, max_price: float | None) -> s
 
 def create_product_tools(
         products_index: ProductsSearchIndex,
-        default_timeout_seconds:
-        float, max_output_chars: int,
+        default_timeout_seconds: float,
+        max_output_chars: int,
 ) -> ToolRegistry:
     async def search_products(
             query: str,

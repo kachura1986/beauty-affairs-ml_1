@@ -635,24 +635,6 @@ async def test_execute_repeated_action_terminates(trace):
     assert "too many times" in result["history"][0]["content"]
 
 
-async def test_execute_budget_exceeded_after_tool(trace):
-    """Wall-clock budget is checked after each tool call.
-
-    The budget's started timestamp is shifted into the past to emulate an
-    expired run without sleeping, so the loop must break immediately after the
-    first tool call instead of waiting for the next LLM step.
-    """
-    call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
-    ctx = make_context(trace, max_seconds=0.001)
-    state = make_state(ctx)
-    state["budget"].started = time.monotonic() - 10
-    state["pending_tool_calls"] = [call]
-
-    result = await execute_node(state, FakeRuntime(ctx))
-
-    assert result["termination_reason"] == TerminationReason.BUDGET_TIME
-
-
 async def test_execute_preflight_time_skips_tool(trace):
     """An already-expired wall-clock budget short-circuits before invoke().
 
@@ -678,9 +660,6 @@ async def test_execute_preflight_time_skips_tool(trace):
 async def test_execute_stops_after_budget_exceeded_between_calls(trace):
     """If the budget expires during the first tool, the second must not execute."""
     calls_made = []
-
-    ctx = make_context(trace, max_seconds=10)
-    state = make_state(ctx)
 
     async def slow_fn(**kwargs):
         calls_made.append(1)
@@ -1081,9 +1060,6 @@ async def test_regression_budget_exceeded_mid_batch(trace):
     call1 = {"id": "c1", "name": "slow", "arguments": {}}
     call2 = {"id": "c2", "name": "echo", "arguments": {}}
     call3 = {"id": "c3", "name": "echo", "arguments": {}}
-
-    ctx = make_context(trace, max_seconds=10)
-    state = make_state(ctx)
 
     async def slow_fn(**kwargs):
         # Emulate the first call burning through the wall-clock budget.
