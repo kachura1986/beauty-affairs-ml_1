@@ -110,17 +110,19 @@ def make_context(
         system_prompt=system_prompt,
         initial_messages=[{"role": "user", "content": "hi"}],
         postcondition=postcondition,
-        max_steps=max_steps,
-        max_seconds=max_seconds,
-        max_tokens=max_tokens,
-        max_cost_usd=max_cost_usd,
+        budget_limits=BudgetLimits(
+            max_steps=max_steps,
+            max_seconds=max_seconds,
+            max_tokens=max_tokens,
+            max_cost_usd=max_cost_usd,
+        ),
     )
     return AgentContext(
         task=task,
         tools=tools or make_registry(),
         llm=llm or FakeLLM(reply(text="ok")),
         trace=trace,
-        policy=policy or AgentPolicy(),
+        policy=policy or AgentPolicy(empty_limit=3, repeat_limit=3),
     )
 
 
@@ -141,38 +143,41 @@ def trace(tmp_path: Path):
 
 def test_check_budget_steps_exhausted():
     """An exhausted step budget yields BUDGET_STEPS."""
-    budget = Budget(BudgetLimits(max_steps=1, max_seconds=10, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=10, max_cost_usd=1))
     budget.steps = 1
     assert _check_budget(budget) == TerminationReason.BUDGET_STEPS
 
 
 def test_check_budget_time_exceeded():
-    """A zero wall-clock limit yields BUDGET_TIME even when steps remain.
+    """An expired wall-clock budget yields BUDGET_TIME even when steps remain.
 
-    ``BudgetLimits`` is a plain dataclass without Pydantic validation, so ``0``
-    is accepted here even though ``Task`` rejects it upstream.
+    ``BudgetLimits`` enforces ``max_seconds > 0``, so the budget is expired
+    by shifting its start time into the past instead of setting the limit to zero.
     """
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=0, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=10, max_cost_usd=1))
+    budget.started = time.monotonic() - 10
     assert _check_budget(budget) == TerminationReason.BUDGET_TIME
 
 
 def test_check_budget_ok():
     """A fresh budget with all limits intact yields None."""
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=10, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=10, max_cost_usd=1))
     assert _check_budget(budget) is None
 
 
 def test_check_budget_steps_take_priority_over_time():
     """Steps exhaustion is checked before time exhaustion."""
-    budget = Budget(BudgetLimits(max_steps=1, max_seconds=0, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=0.001, max_tokens=10, max_cost_usd=1))
     budget.steps = 1
+    budget.started = time.monotonic() - 10
     assert _check_budget(budget) == TerminationReason.BUDGET_STEPS
 
 
 def test_exceeded_without_steps_time_before_tokens():
     """Time exhaustion is checked before token exhaustion."""
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=0, max_tokens=1, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=1, max_cost_usd=1))
     budget.tokens = 100
+    budget.started = time.monotonic() - 10
     assert budget.exceeded_without_steps() == TerminationReason.BUDGET_TIME
 
 
@@ -184,7 +189,7 @@ async def test_request_llm_success(trace):
     """A successful LLM call increments steps and records tokens and cost."""
     llm = FakeLLM(reply(text="hello", in_tokens=5, out_tokens=3, cost_usd=0.001))
     ctx = make_context(trace, llm=llm)
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
@@ -208,12 +213,15 @@ async def test_request_llm_timeout_returns_budget_time(trace, monkeypatch):
     """
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(trace, llm=llm)
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost_usd=1))
 
     # Emulate that the LLM call took longer than the remaining budget (1.0s).
     # Use a fallback to prevent StopIteration when budget.snapshot() calls elapsed() again.
+    # Patch the method on the class: Budget uses validate_assignment=True, so an
+    # instance-level setattr of a non-field attribute (such as a replacement
+    # `elapsed`) is rejected by Pydantic. monkeypatch restores it after the test.
     times = iter([0.0, 2.0])
-    monkeypatch.setattr(budget, "elapsed", lambda: next(times, 2.0))
+    monkeypatch.setattr(Budget, "elapsed", lambda self: next(times, 2.0))
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
@@ -228,7 +236,7 @@ async def test_request_llm_llm_error(trace):
     """An LLM exception with remaining time yields LLM_ERROR."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(trace, llm=llm)
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
@@ -242,7 +250,7 @@ async def test_request_llm_error_still_increments_steps(trace):
     """Steps are incremented even if the LLM call fails, as the step was started."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(trace, llm=llm)
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
@@ -258,7 +266,7 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace):
         model_name = "fake"
 
     ctx = make_context(trace, llm=NoChatLLM())
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
@@ -272,7 +280,7 @@ async def test_request_llm_exceeded_after_successful_call(trace):
     """A successful call that pushes usage over the limit yields BUDGET_TOKENS."""
     llm = FakeLLM(reply(text="x", in_tokens=100, out_tokens=0, cost_usd=0))
     ctx = make_context(trace, llm=llm)
-    budget = Budget(BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1, max_cost_usd=1))
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
@@ -286,7 +294,7 @@ async def test_request_llm_no_steps_left(trace):
     """No steps left short-circuits before any LLM call is made."""
     llm = FakeLLM(reply(text="never"))
     ctx = make_context(trace, llm=llm)
-    budget = Budget(BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1))
     budget.steps = 1
 
     result, reason = await _request_llm(
@@ -333,7 +341,7 @@ async def test_decide_raises_if_llm_returns_nothing(trace, monkeypatch):
 async def test_decide_empty_response_increments_and_adds_observation(trace):
     """An empty LLM reply increments the empty counter and appends an observation."""
     llm = FakeLLM(reply(text="   "))
-    ctx = make_context(trace, llm=llm, policy=AgentPolicy(empty_limit=2))
+    ctx = make_context(trace, llm=llm, policy=AgentPolicy(empty_limit=2, repeat_limit=3))
     state = make_state(ctx)
 
     result = await decide_node(state, FakeRuntime(ctx))
@@ -348,7 +356,7 @@ async def test_decide_empty_response_increments_and_adds_observation(trace):
 async def test_decide_empty_response_exceeds_limit_returns_no_progress(trace):
     """Crossing the empty-response limit terminates with NO_PROGRESS."""
     llm = FakeLLM(reply(text=""))
-    ctx = make_context(trace, llm=llm, policy=AgentPolicy(empty_limit=1))
+    ctx = make_context(trace, llm=llm, policy=AgentPolicy(empty_limit=1, repeat_limit=3))
     state = make_state(ctx)
     state["consecutive_empty_steps"] = 1
 
@@ -490,7 +498,7 @@ async def test_execute_repeated_action_terminates(trace):
     assistant tool_calls stay paired in history; the loop must not `break`.
     """
     call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
-    ctx = make_context(trace, policy=AgentPolicy(repeat_limit=2))
+    ctx = make_context(trace, policy=AgentPolicy(empty_limit=3, repeat_limit=2))
     state = make_state(ctx)
     state["pending_tool_calls"] = [call]
     state["action_counts"] = {
@@ -819,12 +827,21 @@ def test_route_after_verify():
 
 def test_create_initial_state_copies_history():
     """The state history must be a copy, not an alias of the task history."""
-    task = Task(system_prompt="s", initial_messages=[{"role": "user", "content": "a"}])
+    task = Task(
+        system_prompt="s",
+        initial_messages=[{"role": "user", "content": "a"}],
+        budget_limits=BudgetLimits(
+            max_steps=16,
+            max_seconds=300.0,
+            max_tokens=200_000,
+            max_cost_usd=0.50,
+        ),
+    )
     state = create_initial_state(task)
 
     assert state["history"] == task.initial_messages
     assert state["history"] is not task.initial_messages
-    assert state["budget"].limits.max_steps == task.max_steps
+    assert state["budget"].limits.max_steps == task.budget_limits.max_steps
 
 
 # ---------------------------------------------------------------------------
@@ -889,7 +906,7 @@ async def test_regression_repeated_action_three_calls(trace):
     call1 = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
     call2 = {"id": "c2", "name": "echo", "arguments": {"value": "x"}}
     call3 = {"id": "c3", "name": "echo", "arguments": {"value": "x"}}
-    ctx = make_context(trace, policy=AgentPolicy(repeat_limit=1))
+    ctx = make_context(trace, policy=AgentPolicy(empty_limit=3, repeat_limit=1))
     state = make_state(ctx)
     state["pending_tool_calls"] = [call1, call2, call3]
 
@@ -965,7 +982,7 @@ async def test_regression_budget_exceeded_mid_batch(trace):
                     {"id": "c1", "name": "echo", "arguments": {"value": "a"}},
                     {"id": "c2", "name": "echo", "arguments": {"value": "b"}},
                 ],
-                {},
+                {"empty_limit": 3, "repeat_limit": 3},
                 [],
         ),
         # failed_set: both calls share a fingerprint; first fails, second skipped
@@ -974,7 +991,7 @@ async def test_regression_budget_exceeded_mid_batch(trace):
                     {"id": "c1", "name": "failing", "arguments": {}},
                     {"id": "c2", "name": "failing", "arguments": {}},
                 ],
-                {},
+                {"empty_limit": 3, "repeat_limit": 3},
                 [Tool(name="failing", description="", fn=failing_fn, args_model=EchoArgs)],
         ),
         # REPEATED_ACTION trips mid-batch, last call is skipped
@@ -984,7 +1001,7 @@ async def test_regression_budget_exceeded_mid_batch(trace):
                     {"id": "c2", "name": "echo", "arguments": {"value": "x"}},
                     {"id": "c3", "name": "echo", "arguments": {"value": "x"}},
                 ],
-                {"repeat_limit": 1},
+                {"empty_limit": 3, "repeat_limit": 1},
                 [],
         ),
     ],
@@ -1037,7 +1054,7 @@ async def test_regression_skipped_message_carries_reason(trace):
     call1 = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
     call2 = {"id": "c2", "name": "echo", "arguments": {"value": "x"}}
     call3 = {"id": "c3", "name": "echo", "arguments": {"value": "x"}}
-    ctx = make_context(trace, policy=AgentPolicy(repeat_limit=1))
+    ctx = make_context(trace, policy=AgentPolicy(empty_limit=3, repeat_limit=1))
     state = make_state(ctx)
     state["pending_tool_calls"] = [call1, call2, call3]
 

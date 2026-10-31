@@ -6,15 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from .budget import BudgetLimits
 
 
-def _default_budget_limits() -> BudgetLimits:
-    return BudgetLimits(
-        max_steps=16,
-        max_seconds=300.0,
-        max_tokens=200_000,
-        max_cost_usd=0.50,
-    )
-
-
 class Task(BaseModel):
     """
     A single agent_graph task.
@@ -38,7 +29,4 @@ class Task(BaseModel):
         default=None,
         description="Optional final-answer verifier; returns (ok, note).",
     )
-    budget_limits: BudgetLimits = Field(
-        default_factory=_default_budget_limits,
-        description="Resource limits used to build the run budget.",
-    )
+    budget_limits: BudgetLimits = Field(..., description="Resource limits used to build the run budget.")
