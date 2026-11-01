@@ -1,6 +1,5 @@
 import logging
 import math
-import traceback
 from typing import Any
 
 from .tool import ToolError, ToolErrorCode, ToolResult, ToolStatus
@@ -75,7 +74,7 @@ def retry_after_seconds(exc: Exception) -> float | None:
     return max(0.0, value)
 
 
-def log_exception(message: str, tool_name: str, exc: Exception) -> None:
+def log_exception(message: str, tool_name: str, exc: Exception, error_code: str) -> None:
     """
     Log an exception with structured tool execution context.
 
@@ -83,13 +82,14 @@ def log_exception(message: str, tool_name: str, exc: Exception) -> None:
         message (str): Log message describing the failure.
         tool_name (str): Name of the tool that raised the exception.
         exc (Exception): Exception raised during tool execution.
+        error_code (str): Structured error code from ``ToolErrorCode``.
     """
     logger.error(
         message,
+        exc_info=(type(exc), exc, exc.__traceback__),
         extra={
-            'tool_name': tool_name,
-            'exception_type': type(exc).__name__,
-            'stack': traceback.format_tb(exc.__traceback__),
+            'tool': tool_name,
+            'error_code': error_code,
         },
     )
 
@@ -277,11 +277,11 @@ def handle_execution_exception(tool_name: str, exc: Exception) -> ToolResult:
         ToolResult: Structured temporary or internal execution error result.
     """
     if is_temporary_failure(exc):
-        log_exception("Temporary tool failure.", tool_name, exc)
+        log_exception("Temporary tool failure.", tool_name, exc, ToolErrorCode.TEMPORARY_FAILURE.value)
 
         return temporary_failure_result(tool_name, retry_after_seconds(exc))
 
-    log_exception("Tool execution failed.", tool_name, exc)
+    log_exception("Tool execution failed.", tool_name, exc, ToolErrorCode.EXECUTION_FAILED.value)
 
     return execution_failed_result(tool_name)
 
