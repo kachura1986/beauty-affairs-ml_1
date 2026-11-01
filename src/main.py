@@ -11,6 +11,11 @@ from core.error_handler import ErrorHandler
 from core.logger import get_logger
 from dependencies import PipelineDependencies
 
+# Set up logging handlers before first log record
+get_logger()
+
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,8 +23,7 @@ async def lifespan(app: FastAPI):
     Asynchronous context manager for managing the application lifecycle.
     Ensures that setup and cleanup occur only within the worker process.
     """
-    logger = get_logger()
-    logger.info("Starting %s server...", settings.APP_TITLE)
+    logger.info(f"Starting {settings.APP_TITLE} server...")
 
     dependencies = await PipelineDependencies.create()
     app.state.dependencies = dependencies
@@ -50,7 +54,7 @@ def init_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    ErrorHandler(app, logging.getLogger(__name__))
+    ErrorHandler(app, logging.getLogger(ErrorHandler.__module__))
 
     app.include_router(main_router)
 
