@@ -21,6 +21,10 @@ from ..embedding import Embedder
 
 
 class ServicesSearchIndex(BaseAzureSearchIndex):
+    _vector_fields = ['name_vector', 'description_vector']
+    _text_fields = ['name', 'category_name', 'subcategory_name', 'description']
+    _semantic_config = 'services-semantic-config'
+
     @classmethod
     def build_schema(cls, index_name: str) -> SearchIndex:
         """
@@ -107,51 +111,3 @@ class ServicesSearchIndex(BaseAzureSearchIndex):
         super().__init__(search_client=azure_search_index_manager.get_instance_index(index_name), embedder=embedder)
 
         self._fields_to_embed = ['name', 'description']
-
-    async def upsert_documents(self, documents: list[dict]) -> None:
-        """
-        Update or upload documents to the search_index search_index.
-
-        Args:
-            documents (list[dict]): A list of documents to upload or update.
-        """
-        await self._upsert_documents(documents=documents, fields_to_embed=self._fields_to_embed)
-
-    async def search_documents(
-            self,
-            query_text: str,
-            top_k: int,
-            vector_candidates: int | None = None,
-            filters: str | None = None
-    ) -> list[dict]:
-        """
-        Perform hybrid text and vector search.
-
-        Args:
-            query_text (str): Text used for both text search and embedding generation.
-            top_k (int): Number of documents to return.
-            vector_candidates (int | None): Number of candidate documents to consider for vector search.
-                If None, defaults to top_k.
-            filters (str | None): OData filter expression. If None, no filter is applied.
-
-        Returns:
-            list[dict]: A list of matching documents.
-        """
-        return await self._hybrid_search(
-            query_text=query_text,
-            vector_fields=['name_vector', 'description_vector'],
-            text_fields=['name', 'category_name', 'subcategory_name', 'description'],
-            top_k=top_k,
-            semantic_config='services-semantic-config',
-            vector_candidates=vector_candidates,
-            filters=filters,
-        )
-
-    async def delete_documents(self, documents: list[dict]) -> None:
-        """
-        Delete documents from the search_index search_index.
-
-        Args:
-            documents (list[dict]): A list of documents to delete.
-        """
-        await self._search_client.delete_documents(documents=documents)
