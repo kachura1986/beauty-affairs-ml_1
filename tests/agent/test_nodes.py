@@ -43,8 +43,13 @@ class FakeLLM:
         self.calls: list[dict] = []
         self.model_name = "fake"
 
-    async def chat(self, messages, tools=None, timeout=None):
-        self.calls.append({"messages": messages, "tools": tools, "timeout": timeout})
+    async def chat(self, messages, tools=None, timeout=None, system_prompt=None):
+        self.calls.append({
+            "messages": messages,
+            "tools": tools,
+            "timeout": timeout,
+            "system_prompt": system_prompt,
+        })
         if self._errors:
             raise self._errors.pop(0)
         return self._replies.pop(0)
@@ -192,7 +197,8 @@ async def test_request_llm_success(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert reason is None
@@ -202,6 +208,7 @@ async def test_request_llm_success(trace):
     assert budget.cost_usd == pytest.approx(0.001)
     assert llm.calls[0]["tools"] == ctx.tools.schemas()
     assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
+    assert llm.calls[0]["system_prompt"] == "sys"
 
 
 async def test_request_llm_timeout_returns_budget_time(trace, monkeypatch):
@@ -224,7 +231,8 @@ async def test_request_llm_timeout_returns_budget_time(trace, monkeypatch):
     monkeypatch.setattr(Budget, "elapsed", lambda self: next(times, 2.0))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert result is None
@@ -239,7 +247,8 @@ async def test_request_llm_llm_error(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert result is None
@@ -253,7 +262,8 @@ async def test_request_llm_error_still_increments_steps(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert budget.steps == 1
@@ -269,7 +279,8 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert result is None
@@ -283,7 +294,8 @@ async def test_request_llm_exceeded_after_successful_call(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert result is None
@@ -298,7 +310,8 @@ async def test_request_llm_no_steps_left(trace):
     budget.steps = 1
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert result is None
@@ -317,7 +330,8 @@ async def test_request_llm_timeout_capped_by_remaining_budget(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
@@ -337,7 +351,8 @@ async def test_request_llm_timeout_capped_by_default(trace, monkeypatch):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=300, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert llm.calls[0]["timeout"] == pytest.approx(5.0, abs=0.1)
@@ -362,7 +377,8 @@ async def test_request_llm_preflight_tokens_below_minimum(trace):
     ))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert result is None
@@ -388,7 +404,8 @@ async def test_request_llm_preflight_tokens_at_boundary_allowed(trace):
     ))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     assert reason is None
@@ -415,7 +432,8 @@ async def test_request_llm_preflight_tokens_emits_trace(trace):
     ))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[]
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
+        system_prompt="sys",
     )
 
     records = [
@@ -539,12 +557,12 @@ async def test_decide_emits_budget_warning_once(trace):
 
     first = await decide_node(state, FakeRuntime(ctx))
     assert first["budget_warning_emitted"] is True
-    assert any("WARNING: more than 80%" in m["content"] for m in llm.calls[0]["messages"])
+    assert "WARNING: more than 80%" in llm.calls[0]["system_prompt"]
 
     state["budget_warning_emitted"] = True
     second = await decide_node(state, FakeRuntime(ctx))
     assert second["budget_warning_emitted"] is True
-    assert not any("WARNING: more than 80%" in m["content"] for m in llm.calls[1]["messages"])
+    assert "WARNING: more than 80%" not in llm.calls[1]["system_prompt"]
 
 
 async def test_decide_budget_warning_not_reemitted(trace):
@@ -558,7 +576,7 @@ async def test_decide_budget_warning_not_reemitted(trace):
     result = await decide_node(state, FakeRuntime(ctx))
 
     assert result["budget_warning_emitted"] is True
-    assert not any("WARNING: more than 80%" in m["content"] for m in llm.calls[0]["messages"])
+    assert "WARNING: more than 80%" not in llm.calls[0]["system_prompt"]
 
 
 # ---------------------------------------------------------------------------
