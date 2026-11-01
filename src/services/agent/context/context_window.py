@@ -20,12 +20,13 @@ MULTIMODAL_PART_WEIGHT = 1_000
 
 class ContextOverflow(Exception):
     """
-    Pinned content or the current request alone exceeds the budget.
+    System prompt + pinned turns or the current request alone exceed the budget.
 
-    Contract for callers:
-      * MUST catch this and translate into a user-facing message
-        (e.g. "please start a new dialog");
-      * MUST NOT let it bubble up as a 500 server error.
+    Raised only by ``prepare_context`` and ``build_window``, both called
+    exclusively from ``decide_node``. ``decide_node`` MUST catch it and return
+    ``TerminationReason.CONTEXT_OVERFLOW``; the run then terminates normally
+    through ``finish_node`` and is reported to the caller via
+    ``AgentResult.reason`` / ``ChatResponse.termination_reason``.
     """
 
 
@@ -107,51 +108,83 @@ def _group_turns(messages: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     return turns
 
 
+def prepare_context(system_prompt: str, warning: str | None) -> tuple[str, int]:
+    """
+    Combine the task system prompt with an optional soft-budget warning
+    and compute the character budget available for history messages.
+
+    The returned ``history_budget_chars`` ALREADY EXCLUDES
+    ``RESERVED_OUTPUT_CHARS`` — do not subtract it again in ``build_window``.
+
+    Args:
+        system_prompt (str): Task-level system prompt.
+        warning (str | None): Optional soft-budget warning to append.
+
+    Returns:
+        tuple[str, int]: ``(effective_system, history_budget_chars)``.
+
+    Raises:
+        ContextOverflow: If the system part alone does not fit the context.
+    """
+    effective_system = system_prompt.strip()
+    if warning:
+        effective_system = f"{effective_system}\n\n{warning.strip()}"
+
+    history_budget = MAX_ESTIMATED_CHARS - RESERVED_OUTPUT_CHARS - len(effective_system)
+    if history_budget <= 0:
+        raise ContextOverflow("system prompt alone exceeds budget")
+
+    return effective_system, history_budget
+
+
 # Build window
 def build_window(
-        system_prompt: str,
         history: list[dict[str, Any]],
-        warning: str | None = None,
+        *,
+        history_budget_chars: int,
         max_messages: int = MAX_MESSAGES,
-        max_estimated_chars: int = MAX_ESTIMATED_CHARS,
 ) -> list[dict[str, Any]]:
     """
-    Build the input window for the model with a bounded context.
+    Pack ``history`` into a list of ``input`` messages under ``history_budget_chars``.
+
+    ``system_prompt`` is NOT part of the window — it goes to
+    ``chat(system_prompt=...)``. ``history_budget_chars`` is expected to ALREADY
+    EXCLUDE the output reserve (see ``prepare_context``); it is NOT re-subtracted
+    here.
 
     Rules (in priority order):
-      1. ``system_prompt`` and ``warning`` are always kept. Client-supplied ``system`` messages are dropped.
-         If the server content alone does not fit — ``ContextOverflow`` is raised, even for empty history.
+      1. Client-supplied ``system`` messages are dropped (never part of ``input``).
       2. The earliest available turn is kept as the best available context (usually the task description,
          but the code does not assume it).
       3. The last turn is always kept — it is the current request; without it a reply would be meaningless.
          If it does not fit — overflow.
-      4. Remaining turns are added newest-to-oldest until either ``max_messages`` or ``max_estimated_chars`` is hit.
-         Iteration stops on the first turn that does not fit (``break``, not ``continue``):
-         we keep a *continuous* recent tail. Skipping an oversized middle turn would create a gap in the reasoning chain,
-         which is worse for multi-step tasks than losing older context.
-      5. Oversized ``tool`` outputs are trimmed head + tail before grouping. User/assistant messages are kept whole.
+      4. Remaining turns are added newest-to-oldest until either ``max_messages`` or ``history_budget_chars``
+         is hit. Iteration stops on the first turn that does not fit (``break``, not ``continue``):
+         we keep a *continuous* recent tail. Skipping an oversized middle turn would create a gap in the
+         reasoning chain, which is worse for multi-step tasks than losing older context.
+      5. Oversized ``tool`` outputs are trimmed head + tail before grouping. User/assistant messages are
+         kept whole.
 
     Pinning: only turn 0 and the last turn are pinned — this is a server-side decision. The client cannot
     influence pinning (a hostile client must not be able to pin everything and force a ``ContextOverflow``).
 
     Client history cannot contain ``system`` messages, and any ``pinned``
     flags are ignored: pinning is a server concern, not a client one.
+
+    Args:
+        history (list[dict[str, Any]]): Conversation history to pack.
+        history_budget_chars (int): Character budget for the packed history,
+            already net of ``RESERVED_OUTPUT_CHARS`` and the system part.
+        max_messages (int, optional): Maximum number of messages in the window.
+
+    Raises:
+        ContextOverflow: If pinned turns alone exceed the message or character budget.
     """
-    # Step 0. Server-controlled part must fit on its own
-    window: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
-    if warning:
-        window.append({"role": "system", "content": warning})
-
-    base_chars = sum(_size(m) for m in window)
-    if base_chars + RESERVED_OUTPUT_CHARS > max_estimated_chars:
-        # Fixes reviewer #3: validate even before checking history.
-        raise ContextOverflow("system prompt alone exceeds budget")
-
     # Step 1. sanitize history
     # Drop client system messages; trim only tool outputs (see _truncate_tool).
     messages = [_truncate_tool(m) for m in history if m.get("role") != "system"]
     if not messages:
-        return window
+        return []
 
     turns = _group_turns(messages)
 
@@ -165,12 +198,11 @@ def build_window(
     if pinned_msgs > max_messages:
         raise ContextOverflow("pinned turns exceed message limit")
 
-    if base_chars + pinned_chars + RESERVED_OUTPUT_CHARS > max_estimated_chars:
-        # Includes the "current request alone is too large" case —
-        # see reviewer #4: this is a deliberate, documented contract.
+    if pinned_chars > history_budget_chars:
+        # Includes the "current request alone is too large" case — this is a deliberate, documented contract.
         raise ContextOverflow("mandatory turns exceed budget")
 
-    budget = (max_estimated_chars - base_chars - RESERVED_OUTPUT_CHARS - pinned_chars)
+    budget = history_budget_chars - pinned_chars
     keep: set[int] = set(pinned_idx)
     kept_msgs = pinned_msgs
     used = 0
@@ -193,6 +225,7 @@ def build_window(
         kept_msgs += turn_len
 
     # Step 4: restore chronological order
+    window: list[dict[str, Any]] = []
     for i in sorted(keep):
         window.extend(turns[i])
 

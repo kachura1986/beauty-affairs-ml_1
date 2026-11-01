@@ -49,6 +49,7 @@ class BaseLLMModel(ABC):
             messages: Sequence[Mapping[str, Any]],
             tools: Sequence[dict[str, Any]] | None = None,
             timeout: float | None = None,
+            system_prompt: str | None = None,
     ) -> Reply:
         """
         Generate a response for the Agent.
@@ -57,6 +58,7 @@ class BaseLLMModel(ABC):
             messages (Sequence[Mapping[str, Any]]): Dialogue context.
             tools: (Sequence[dict[str, Any]], optional): Available tool schemas.
             timeout (float | None, optional): Maximum time to wait for the request.
+            system_prompt (str | None, optional): System instructions.
 
         Returns:
             Reply: Model response including text, tool calls, token usage and cost.

@@ -16,5 +16,6 @@ class LLMModel(Protocol):
             messages: Sequence[Mapping[str, Any]],
             tools: Sequence[dict[str, Any]] | None = None,
             timeout: float | None = None,
+            system_prompt: str | None = None,
     ) -> Reply:
         ...

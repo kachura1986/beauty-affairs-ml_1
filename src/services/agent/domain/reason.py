@@ -31,3 +31,7 @@ class TerminationReason(StrEnum):
 
     # Postcondition verification raised an exception; the original answer is preserved
     POSTCONDITION_ERROR = 'postcondition_error'
+
+    # The context (system prompt + pinned turns) exceeded the configured budget;
+    # the request must be retried with a shorter dialog
+    CONTEXT_OVERFLOW = 'context_overflow'

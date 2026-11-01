@@ -7,7 +7,13 @@ from langgraph.runtime import Runtime
 from core.config import settings
 from services.llm import LLMModel, Reply
 from .state import AgentContext, GraphState
-from ..context import build_window, build_observation_message, build_tool_message
+from ..context import (
+    ContextOverflow,
+    build_window,
+    build_observation_message,
+    build_tool_message,
+    prepare_context,
+)
 from ..domain import AgentResult, Budget, TerminationReason
 from ..tools import ToolRegistry, ToolStatus
 from ..tools.errors import already_failed_result, repeated_action_result, skipped_due_to_termination_result
@@ -52,6 +58,7 @@ async def _request_llm(
         trace: Trace,
         budget: Budget,
         window: list[dict[str, Any]],
+        system_prompt: str,
 ) -> tuple[Reply | None, TerminationReason | None]:
     """
     Execute exactly one LLM decision step.
@@ -62,6 +69,8 @@ async def _request_llm(
         trace (Trace): Trace for the request.
         budget (Budget): Budget for the request.
         window (list[dict[str, Any]]): Context window for the request.
+        system_prompt (str): Effective system prompt delivered separately
+            from ``window`` (task prompt + optional budget warning).
 
     Returns:
         tuple[Reply | None, TerminationReason | None]: Tuple of (reply, termination reason).
@@ -99,7 +108,7 @@ async def _request_llm(
             raise ValueError(f"{llm.__class__.__name__} does not support agent chat()")
 
         timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
-        reply = await chat(window, tools.schemas(), timeout)
+        reply = await chat(window, tools.schemas(), timeout, system_prompt=system_prompt)
 
     except Exception as exc:  # noqa: BLE001
         latency_ms = int((time.monotonic() - t0) * 1000)
@@ -133,7 +142,7 @@ async def _request_llm(
     budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
 
     # Preserve existing trace format
-    trace.step(budget.steps, window, reply, budget, latency_ms)
+    trace.step(budget.steps, window, reply, budget, latency_ms, system_prompt=system_prompt)
 
     # A completed LLM call may itself push us over a hard budget
     reason = budget.exceeded_without_steps()
@@ -181,8 +190,32 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
         if warning:
             budget_warning_emitted = True
 
-    # Same context window construction as before
-    window = build_window(ctx.task.system_prompt, state['history'], warning)
+    # Context assembly: the system prompt goes to the model through a dedicated
+    # channel (`system_prompt` / Responses API `instructions`), while the window
+    # contains only the history. `ContextOverflow` is caught here and translated
+    # into a normal TerminationReason so the run terminates through `finish_node`.
+    try:
+        effective_system, history_budget_chars = prepare_context(
+            ctx.task.system_prompt,
+            warning,
+        )
+        window = build_window(
+            state['history'],
+            history_budget_chars=history_budget_chars,
+        )
+    except ContextOverflow as exc:
+        ctx.trace.error(
+            step=budget.steps,
+            kind='context_overflow',
+            message=str(exc)[:500],
+            latency_ms=0,
+            budget=budget,
+        )
+        return {
+            'budget': budget,
+            'budget_warning_emitted': budget_warning_emitted,
+            'termination_reason': TerminationReason.CONTEXT_OVERFLOW,
+        }
 
     reply, reason = await _request_llm(
         llm=ctx.llm,
@@ -190,6 +223,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
         trace=ctx.trace,
         budget=budget,
         window=window,
+        system_prompt=effective_system,
     )
 
     if reason:

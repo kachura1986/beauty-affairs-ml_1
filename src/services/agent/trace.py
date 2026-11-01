@@ -145,7 +145,20 @@ class Trace:
 
         return hashlib.sha256(blob.encode()).hexdigest()[:12]
 
-    def step(self, n: int, window: list[dict[str, Any]], reply: Reply, budget: Budget, latency_ms: int) -> None:
+    def step(
+            self,
+            n: int,
+            window: list[dict[str, Any]],
+            reply: Reply,
+            budget: Budget,
+            latency_ms: int,
+            *,
+            system_prompt: str,
+    ) -> None:
+        # `system_hash` / `system_chars` capture the effective system prompt
+        # (task prompt + optional budget warning) that was sent this step.
+        # The warning is emitted at most once per run (budget_warning_emitted),
+        # so `system_hash` changes at most once — enough for post-hoc debugging.
         self._write({
             't': 'step',
             'step': n,
@@ -156,6 +169,8 @@ class Trace:
             'latency_ms': latency_ms,
             'window_hash': self._hash(window),
             'window_msgs': len(window),
+            'system_hash': self._hash(system_prompt),
+            'system_chars': len(system_prompt),
             'decision': 'tool_call' if reply.tool_calls else ('answer' if reply.text.strip() else 'empty'),
             'tools': [c['name'] for c in reply.tool_calls],
             'budget': budget.snapshot(),

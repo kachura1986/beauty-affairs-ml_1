@@ -29,8 +29,8 @@ class AzureOpenAIModel(BaseLLMModel):
             azure_openai_client (AsyncOpenAI): Pre-initialized asynchronous Azure OpenAI client.
             temperature (float): Sampling temperature for generation.
             max_tokens (int): Maximum number of tokens to generate.
-            input_cost_per_million (float): Cost in USD per 1M input tokens. Defaults to 0 (cost accounting disabled).
-            output_cost_per_million (float): Cost in USD per 1M output tokens. Defaults to 0 (cost accounting disabled).
+            input_cost_per_million (float): Cost in USD per 1M input tokens.
+            output_cost_per_million (float): Cost in USD per 1M output tokens.
         """
         super().__init__()
 
@@ -68,6 +68,10 @@ class AzureOpenAIModel(BaseLLMModel):
 
         for message in messages:
             role = message.get('role')
+
+            # Skip messages with 'system' role, as they are supplied separately to the input
+            if role == 'system':
+                continue
 
             content = message.get('content') or ''
 
@@ -230,6 +234,7 @@ class AzureOpenAIModel(BaseLLMModel):
             messages: Sequence[Mapping[str, Any]],
             tools: Sequence[dict[str, Any]] | None = None,
             timeout: float | None = None,
+            system_prompt: str | None = None,
     ) -> Reply:
         """
         Send a chat request and return a normalized response.
@@ -238,10 +243,14 @@ class AzureOpenAIModel(BaseLLMModel):
             messages (Sequence[Mapping[str, Any]]): Chat messages, including optional tool-call data.
             tools (Sequence[dict[str, Any]] | None, optional): Tool schemas available to the model.
             timeout (float | None, optional): Maximum time to wait for the request.
+            system_prompt (str | None, optional): System instructions.
 
         Returns:
             Reply: Normalized response containing text, tool calls, token usage, and cost.
         """
+        if system_prompt is not None:
+            system_prompt = system_prompt.strip() or None
+
         formatted_messages = self._format_chat_messages(messages)
 
         formatted_tools = None
@@ -259,13 +268,23 @@ class AzureOpenAIModel(BaseLLMModel):
 
                 formatted_tools.append(formatted_tool)
 
-        request = self._client.responses.create(
-            model=self._model_name,
-            input=formatted_messages,
-            tools=formatted_tools,
-            temperature=self._temperature,
-            max_output_tokens=self._max_tokens,
-        )
+        if system_prompt:
+            request = self._client.responses.create(
+                model=self._model_name,
+                input=formatted_messages,
+                tools=formatted_tools,
+                temperature=self._temperature,
+                max_output_tokens=self._max_tokens,
+                instructions=system_prompt,
+            )
+        else:
+            request = self._client.responses.create(
+                model=self._model_name,
+                input=formatted_messages,
+                tools=formatted_tools,
+                temperature=self._temperature,
+                max_output_tokens=self._max_tokens,
+            )
 
         if timeout is None:
             raise ValueError(f"{self.__class__.__name__}: timeout is required.")
