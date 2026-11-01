@@ -113,6 +113,23 @@ def _build_shared_processors() -> list[Processor]:
     ]
 
 
+def _is_ours(handler: logging.Handler) -> bool:
+    """
+    Return True if the handler was installed by setup_logging.
+
+    Foreign handlers (pytest plugins, host applications, etc.) must not
+    prevent our handlers from being installed, and must not be treated
+    as evidence that setup already ran.
+
+    Args:
+        handler (logging.Handler): Any logging handler attached to root.
+
+    Returns:
+        bool: True if the handler carries the _structlog_handler marker.
+    """
+    return getattr(handler, '_structlog_handler', False)
+
+
 def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logger:
     """
     Configures structured JSON logging for the application.
@@ -123,6 +140,16 @@ def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logg
     Fields passed via extra=... are projected onto the JSON event when their
     names are in the whitelist: run_id, step, tool, error_code, latency_ms, log_file.
 
+    Foreign handlers already attached to the root logger (e.g. pytest plugins,
+    embedding applications) are left untouched: setup_logging only appends its
+    own file and console handlers. Idempotency is defined as "our handlers are
+    present", not "root has no handlers".
+
+    logger.setLevel(INFO) and the noisy-logger quieting are applied when our
+    handlers are installed. A second call early-returns, so they are not
+    re-applied — that is deliberate: our handlers already exist, and the
+    loggers are already quieted.
+
     Args:
         logs_dir (Path): Directory where logs will be stored.
         log_filename (str, optional): Log file name (default: "app.log").
@@ -132,8 +159,9 @@ def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logg
     """
     logger = logging.getLogger()
 
-    # Prevent duplicate handlers during reload
-    if logger.handlers:
+    # Prevent duplicate installation of *our* handlers. Foreign handlers (plugins, host app) must be ignored,
+    # not treated as evidence that setup already ran.
+    if any(_is_ours(h) for h in logger.handlers):
         return logger
 
     os.makedirs(logs_dir, exist_ok=True)
@@ -176,9 +204,11 @@ def setup_logging(logs_dir: Path, log_filename: str = 'app.log') -> logging.Logg
         backupCount=7,
         encoding='utf-8',
     )
+    file_handler._structlog_handler = True
     file_handler.setFormatter(formatter)
 
     console_handler = logging.StreamHandler(sys.stdout)
+    console_handler._structlog_handler = True
     console_handler.setFormatter(formatter)
 
     # Configure logging
