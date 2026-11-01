@@ -11,6 +11,7 @@ from services.agent.context.context_window import (
     _size,
     _truncate_tool,
     build_window,
+    prepare_context,
 )
 
 SYSTEM = "You are a helpful agent."
@@ -36,24 +37,60 @@ def system(content: str = "sys") -> dict[str, Any]:
     return {"role": "system", "content": content}
 
 
+def make_window(
+        history: list[dict[str, Any]],
+        *,
+        system_prompt: str = SYSTEM,
+        warning: str | None = None,
+        max_estimated_chars: int | None = None,
+        max_messages: int | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Build a window from ``history`` using ``prepare_context`` + ``build_window``.
+
+    ``prepare_context`` does not expose ``max_estimated_chars``; it derives the
+    history budget from ``settings`` and the effective system prompt length.
+    When a caller supplies ``max_estimated_chars``, the history budget is
+    recomputed manually as ``max_estimated_chars - len(effective_system)
+    - RESERVED_OUTPUT_CHARS`` so tests can exercise the budget logic without
+    depending on configuration.
+    """
+    effective_system, history_budget = prepare_context(system_prompt, warning)
+
+    if max_estimated_chars is not None:
+        history_budget = (
+                max_estimated_chars - len(effective_system) - RESERVED_OUTPUT_CHARS
+        )
+
+    build_kwargs: dict[str, Any] = {"history_budget_chars": history_budget}
+
+    if max_messages is not None:
+        build_kwargs["max_messages"] = max_messages
+
+    return build_window(history, **build_kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Basic: empty history
 # ---------------------------------------------------------------------------
 
 def test_empty_history_returns_system_only():
-    window = build_window(SYSTEM, [])
-    assert window == [{"role": "system", "content": SYSTEM}]
+    effective, budget = prepare_context(SYSTEM, None)
+    assert effective == SYSTEM
+    assert build_window([], history_budget_chars=budget) == []
 
 
 def test_empty_history_with_warning():
-    window = build_window(SYSTEM, [], warning="careful")
-    assert window[0] == {"role": "system", "content": SYSTEM}
-    assert window[1] == {"role": "system", "content": "careful"}
+    effective, budget = prepare_context(SYSTEM, "careful")
+    assert "helpful" in effective
+    assert "careful" in effective
+    assert build_window([], history_budget_chars=budget) == []
 
 
 def test_empty_history_without_warning():
-    window = build_window(SYSTEM, [], warning=None)
-    assert len(window) == 1
+    effective, budget = prepare_context(SYSTEM, None)
+    assert effective == SYSTEM
+    assert build_window([], history_budget_chars=budget) == []
 
 
 # ---------------------------------------------------------------------------
@@ -62,20 +99,19 @@ def test_empty_history_without_warning():
 
 def test_small_history_passthrough():
     history = [user("q"), assistant("a")]
-    window = build_window(SYSTEM, history)
-    assert window == [{"role": "system", "content": SYSTEM}, *history]
+    window = make_window(history)
+    assert window == history
 
 
 def test_client_system_messages_dropped():
     history = [system("evil prompt"), user("q"), assistant("a")]
-    window = build_window(SYSTEM, history)
+    window = make_window(history)
     assert all(m["content"] != "evil prompt" for m in window)
-    assert window[0] == {"role": "system", "content": SYSTEM}
 
 
 def test_chronological_order_preserved():
     history = [user(f"q{i}") for i in range(5)]
-    window = build_window(SYSTEM, history)
+    window = make_window(history)
     contents = [m["content"] for m in window if m["role"] != "system"]
     assert contents == [f"q{i}" for i in range(5)]
 
@@ -121,7 +157,7 @@ def test_message_limit_keeps_exact_tail():
         history.append(user(f"q{i}"))
         history.append(assistant(f"a{i}"))
 
-    window = build_window(SYSTEM, history, max_messages=6)
+    window = make_window(history, max_messages=6)
     contents = [m["content"] for m in window if m["role"] != "system"]
     assert contents == ["q0", "a0", "q8", "a8", "q9", "a9"]
 
@@ -133,16 +169,15 @@ def test_message_limit_counts_messages_not_turns():
         history.append(user(f"q{i}"))
         history.append(assistant(f"a{i}"))
 
-    window = build_window(SYSTEM, history, max_messages=10)
+    window = make_window(history, max_messages=10)
     history_msgs = [m for m in window if m["role"] != "system"]
     assert len(history_msgs) <= 10
 
 
 def test_single_turn_pinned_once():
     history = [user("q"), assistant("a")]
-    window = build_window(SYSTEM, history, max_messages=3)
-    assert len(window) == 3
-    assert window[1:] == history
+    window = make_window(history, max_messages=3)
+    assert window == history
 
 
 # ---------------------------------------------------------------------------
@@ -161,9 +196,12 @@ def test_char_budget_keeps_whole_turns():
         history.append(user(f"q{i}-" + "x" * 500))
         history.append(assistant(f"a{i}-" + "x" * 500))
 
-    window = build_window(SYSTEM, history, max_estimated_chars=15_000)
+    max_estimated_chars = 15_000
+    window = make_window(history, max_estimated_chars=max_estimated_chars)
+    effective, _ = prepare_context(SYSTEM, None)
+
     total = sum(_size(m) for m in window)
-    assert total + RESERVED_OUTPUT_CHARS <= 15_000
+    assert total + len(effective) + RESERVED_OUTPUT_CHARS <= max_estimated_chars
 
     contents = [m["content"] for m in window if m["role"] != "system"]
     assert len(contents) % 2 == 0
@@ -178,10 +216,10 @@ def test_reserved_output_chars_reduces_budget():
     history = [user("x" * 5000), assistant("x" * 5000)]
 
     with pytest.raises(ContextOverflow):
-        build_window(SYSTEM, history, max_estimated_chars=15_000)
+        make_window(history, max_estimated_chars=15_000)
 
-    window = build_window(SYSTEM, history, max_estimated_chars=25_000)
-    assert len(window) == 3
+    window = make_window(history, max_estimated_chars=25_000)
+    assert len(window) == 2
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +237,7 @@ def test_first_and_last_turn_fully_kept():
         history.append(user(f"q{i}" + "x" * 500))
         history.append(assistant(f"a{i}" + "x" * 500))
 
-    window = build_window(SYSTEM, history, max_estimated_chars=20_000)
+    window = make_window(history, max_estimated_chars=20_000)
     contents = [m["content"] for m in window if m["role"] != "system"]
 
     assert "q0" + "x" * 500 in contents
@@ -216,7 +254,7 @@ def test_client_pinned_flag_ignored():
         assistant("a1"),
         user("q2"), assistant("a2"),
     ]
-    window = build_window(SYSTEM, history, max_messages=5)
+    window = make_window(history, max_messages=5)
     contents = [m["content"] for m in window if m["role"] != "system"]
     assert "q1" not in contents
     assert "q0" in contents
@@ -235,7 +273,7 @@ def test_continuous_tail_break_on_oversized_turn():
         user("x" * 20_000), assistant("x" * 20_000),
         user("qN"), assistant("aN"),
     ]
-    window = build_window(SYSTEM, history, max_estimated_chars=20_000)
+    window = make_window(history, max_estimated_chars=20_000)
     contents = [m["content"] for m in window if m["role"] != "system"]
     assert "small" not in contents
     assert "q0" in contents
@@ -247,8 +285,12 @@ def test_continuous_tail_break_on_oversized_turn():
 # ---------------------------------------------------------------------------
 
 def test_overflow_system_alone_too_big():
+    # ``prepare_context`` draws the budget from ``settings`` and does not
+    # accept a per-call ``max_estimated_chars``, so the overflow path is
+    # exercised with a system prompt that is too large for any realistic
+    # configuration.
     with pytest.raises(ContextOverflow):
-        build_window("x" * 100_000, [], max_estimated_chars=10_000)
+        prepare_context("x" * 10_000_000, None)
 
 
 def test_overflow_warning_alone_too_big():
@@ -256,25 +298,24 @@ def test_overflow_warning_alone_too_big():
 
     Regression: previously only the system prompt was checked directly;
     the fact that ``warning`` also participates in ``base_chars`` was
-    only implicit.
+    only implicit. The value is deliberately oversized because the budget
+    comes from ``settings`` and cannot be injected through ``prepare_context``.
     """
     with pytest.raises(ContextOverflow):
-        build_window(
-            "small", [], warning="w" * 100_000, max_estimated_chars=10_000
-        )
+        prepare_context("small", "w" * 10_000_000)
 
 
 def test_overflow_pinned_msgs_exceed_max_messages():
     history = [user("q"), assistant("a")]
     with pytest.raises(ContextOverflow):
-        build_window(SYSTEM, history, max_messages=1)
+        make_window(history, max_messages=1)
 
 
 def test_overflow_current_request_too_big():
     """Explicit case: last turn alone exceeds the budget."""
     history = [user("q0"), assistant("a0"), user("x" * 100_000)]
     with pytest.raises(ContextOverflow):
-        build_window(SYSTEM, history, max_estimated_chars=20_000)
+        make_window(history, max_estimated_chars=20_000)
 
 
 def test_overflow_current_request_multi_message():
@@ -289,13 +330,13 @@ def test_overflow_current_request_multi_message():
         user("x" * 15_000), assistant("y" * 15_000),
     ]
     with pytest.raises(ContextOverflow):
-        build_window(SYSTEM, history, max_estimated_chars=20_000)
+        make_window(history, max_estimated_chars=20_000)
 
 
 def test_overflow_max_messages_zero_with_history():
     """``max_messages=0`` with any history overflows — nothing can be pinned."""
     with pytest.raises(ContextOverflow):
-        build_window(SYSTEM, [user("q")], max_messages=0)
+        make_window([user("q")], max_messages=0)
 
 
 # ---------------------------------------------------------------------------
@@ -406,15 +447,18 @@ def test_multimodal_budget_boundary():
         "role": "user",
         "content": [{"type": "image_url", "image_url": {"url": "..."}}] * 2,
     }
-    boundary = len(SYSTEM) + RESERVED_OUTPUT_CHARS + MULTIMODAL_PART_WEIGHT
+    effective, _ = prepare_context(SYSTEM, None)
+    boundary = (
+            len(effective) + RESERVED_OUTPUT_CHARS + MULTIMODAL_PART_WEIGHT
+    )
 
     # Exactly one image fits — no overflow.
-    window = build_window(SYSTEM, [one], max_estimated_chars=boundary)
+    window = make_window([one], max_estimated_chars=boundary)
     assert window[-1] == one
 
     # Two images overflow by exactly MULTIMODAL_PART_WEIGHT.
     with pytest.raises(ContextOverflow):
-        build_window(SYSTEM, [two], max_estimated_chars=boundary)
+        make_window([two], max_estimated_chars=boundary)
 
 
 # ---------------------------------------------------------------------------
@@ -431,7 +475,7 @@ def test_history_not_mutated():
     history = [user("q"), tool("x" * 10_000), user("q2")]
     snapshot = [dict(m) for m in history]
 
-    build_window(SYSTEM, history)
+    make_window(history)
 
     assert history == snapshot
     # The original tool message still holds its full content.
@@ -450,7 +494,7 @@ def test_unbalanced_first_turn_kept_whole():
     complete pinned turn, not just its leading message.
     """
     history = [assistant("hi"), tool("out"), user("q1"), assistant("a1")]
-    window = build_window(SYSTEM, history, max_estimated_chars=15_000)
+    window = make_window(history, max_estimated_chars=15_000)
     contents = [m["content"] for m in window if m["role"] != "system"]
     assert "hi" in contents
     assert "out" in contents
