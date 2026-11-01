@@ -1028,6 +1028,7 @@ async def test_regression_failed_set_same_batch(trace):
     result = await execute_node(state, FakeRuntime(ctx))
 
     assert result.get("termination_reason") is None
+    assert len(result["failed_actions"]) == 1
     assert len(result["history"]) == 2
     assert [m["role"] for m in result["history"]] == ["tool", "tool"]
     assert [m["tool_call_id"] for m in result["history"]] == ["c1", "c2"]

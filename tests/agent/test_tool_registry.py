@@ -163,3 +163,54 @@ async def test_cancelled_error_propagates():
 
     with pytest.raises(asyncio.CancelledError):
         await registry.invoke({"name": "cancelled", "arguments": {}})
+
+
+# ---------------------------------------------------------------------------
+# ToolRegistry.__init__: rejects sync callables at registration
+# ---------------------------------------------------------------------------
+
+def test_registry_rejects_sync_function_at_registration():
+    """A sync callable must fail loud at ToolRegistry construction.
+
+    Regression guard: the registry only supports async tools. If the
+    fail-loud check in __init__ is removed, a sync tool would register
+    silently and hang/misbehave at invoke() time instead of failing
+    at startup.
+    """
+
+    def sync_fn(value: str = "ok"):
+        return value
+
+    with pytest.raises(TypeError, match=r"must be an async callable") as exc_info:
+        ToolRegistry(
+            [Tool(name="sync", description="", fn=sync_fn, args_model=EchoArgs)],
+            default_timeout_seconds=30.0,
+            max_output_chars=15000,
+        )
+    assert "sync" in str(exc_info.value)
+    assert "async" in str(exc_info.value).lower()
+
+
+def test_registry_rejects_sync_function_even_alongside_async():
+    """A single sync tool must abort registration even if async tools are valid.
+
+    Pins that the fail-loud check runs per-tool during __init__, not
+    lazily at invoke() time, and that a valid async tool earlier in the
+    iterable does not mask the problem.
+    """
+
+    def sync_fn(value: str = "ok"):
+        return value
+
+    async def async_fn(value: str = "ok"):
+        return value
+
+    with pytest.raises(TypeError, match=r"must be an async callable"):
+        ToolRegistry(
+            [
+                Tool(name="good", description="", fn=async_fn, args_model=EchoArgs),
+                Tool(name="bad", description="", fn=sync_fn, args_model=EchoArgs),
+            ],
+            default_timeout_seconds=30.0,
+            max_output_chars=15000,
+        )
