@@ -91,7 +91,7 @@ class ToolResult:
 class Tool:
     name: str
     description: str
-    fn: Callable[..., Any | Awaitable[Any]]
+    fn: Callable[..., Awaitable[Any]]
     args_model: type[BaseModel]
     truncate: bool = True
     max_output_chars: int | None = None

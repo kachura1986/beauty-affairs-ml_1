@@ -14,6 +14,30 @@ from .tool import Tool, ToolResult, ToolStatus
 from .truncation import truncate_for_model
 
 
+def _is_async_callable(fn: Any) -> bool:
+    """
+    Return True only if fn is an ``async def`` callable.
+
+    Covers plain ``async def`` functions, ``functools.partial`` wrapping an ``async def`` (inspect handles it),
+    and objects whose ``__call__`` is ``async def``.
+
+    Deliberately rejects regular functions that merely *return* an awaitable: their synchronous prologue runs on
+    the event loop *before* ``asyncio.wait_for`` sees the coroutine, so the timeout and budget guarantees would not hold.
+
+    Args:
+        fn: Callable to check.
+
+    Returns:
+        bool: True if fn is an async callable, False otherwise.
+    """
+    if inspect.iscoroutinefunction(fn):
+        return True
+
+    call = getattr(fn, '__call__', None)
+
+    return call is not None and inspect.iscoroutinefunction(call)
+
+
 class ToolRegistry:
     """Registry of tools available to the agent_graph."""
 
@@ -31,6 +55,14 @@ class ToolRegistry:
         self._tools = {}
 
         for tool in tools:
+            # Async-only contract: a sync callable would bypass asyncio.wait_for below,
+            # and with it both the per-tool timeout and the run budget.
+            if not _is_async_callable(tool.fn):
+                raise TypeError(
+                    f"{self.__class__.__name__}: tool '{tool.name}' must be an async callable; "
+                    f"got {type(tool.fn).__name__}."
+                )
+
             # Check for duplicate tool names
             if tool.name in self._tools:
                 raise ValueError(f"{self.__class__.__name__}: Duplicate tool name: '{tool.name}'.")
@@ -141,17 +173,22 @@ class ToolRegistry:
 
         try:
             out = tool.fn(**args)
-            if inspect.isawaitable(out):
-                per_tool_cap = (
-                    tool.timeout_seconds
-                    if tool.timeout_seconds is not None
-                    else self._default_timeout_seconds
-                )
-                # Both bounds apply: caller's `timeout` (typically budget.remaining_seconds()) and the per-tool ceiling.
-                # The per-tool ceiling is authoritative and dominates the caller when it is smaller: a tool declared with
-                # timeout_seconds=0.05 must not run for 300s just because the run budget allowed it.
-                effective = min(per_tool_cap, timeout) if timeout is not None else per_tool_cap
-                out = await asyncio.wait_for(out, timeout=effective)
+        except Exception as exc:  # noqa: BLE001
+            return handle_execution_exception(name, exc)
+
+        # Registry guarantees fn is async (see __init__). This is an invariant check, not a fallback:
+        # if it ever fires, the per-tool timeout and run budget would be silently bypassed — fail loud instead.
+        if not inspect.isawaitable(out):
+            raise TypeError(f"Tool '{name}' returned a non-awaitable; async callable expected.")
+
+        per_tool_cap = tool.timeout_seconds if tool.timeout_seconds is not None else self._default_timeout_seconds
+        # Both bounds apply: caller's `timeout` (typically budget.remaining_seconds()) and the per-tool ceiling.
+        # The per-tool ceiling is authoritative and dominates the caller when it is smaller: a tool declared with
+        # timeout_seconds=0.05 must not run for 300s just because the run budget allowed it.
+        effective = min(per_tool_cap, timeout) if timeout is not None else per_tool_cap
+
+        try:
+            out = await asyncio.wait_for(out, timeout=effective)
         except Exception as exc:  # noqa: BLE001
             return handle_execution_exception(name, exc)
 
