@@ -2,7 +2,7 @@ import operator
 from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
-from services.llm import LLMModel
+from services.llm import LLMModel, ToolCall
 from ..domain import AgentPolicy, AgentResult, Budget, Task, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace
@@ -45,7 +45,7 @@ class GraphState(TypedDict, total=False):
     budget_warning_emitted: bool
 
     # Graph-local pending values
-    pending_tool_calls: list[dict[str, Any]]
+    pending_tool_calls: list[ToolCall]
     pending_answer: str | None
 
     # Terminal state

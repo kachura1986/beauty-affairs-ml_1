@@ -6,7 +6,7 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from .base_model import BaseLLMModel
-from .schemas import Reply
+from .schemas import Reply, ToolCall
 
 
 class AzureOpenAIModel(BaseLLMModel):
@@ -135,7 +135,7 @@ class AzureOpenAIModel(BaseLLMModel):
         """
         return getattr(response, 'output_text', None) or ''
 
-    def _extract_tool_calls(self, response: Any) -> list[dict[str, Any]]:
+    def _extract_tool_calls(self, response: Any) -> list[ToolCall]:
         """
         Extract and normalize tool calls from a completion response.
 
@@ -143,14 +143,14 @@ class AzureOpenAIModel(BaseLLMModel):
             response (Any): Raw Azure OpenAI completion response.
 
         Returns:
-            list[dict[str, Any]]: Tool calls with IDs, function names, and argument mappings.
+            list[ToolCall]: Tool calls with IDs, function names, and argument mappings.
 
         Raises:
             ValueError: If tool-call arguments contain invalid JSON.
             TypeError: If tool-call arguments are not a mapping.
         """
         raw_output = getattr(response, 'output', None) or []
-        result: list[dict[str, Any]] = []
+        result: list[ToolCall] = []
 
         for index, tool_call in enumerate(raw_output):
             if getattr(tool_call, 'type', None) != 'function_call':

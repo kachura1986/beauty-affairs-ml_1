@@ -6,7 +6,7 @@ import weakref
 from pathlib import Path
 from typing import Any
 
-from services.llm import Reply
+from services.llm import Reply, ToolCall
 from .domain import Budget, TerminationReason
 from .tools import ToolResult
 
@@ -161,7 +161,7 @@ class Trace:
             'budget': budget.snapshot(),
         })
 
-    def tool(self, n: int, call: dict, res: ToolResult, ms: int) -> None:
+    def tool(self, n: int, call: ToolCall, res: ToolResult, ms: int) -> None:
         self._write({
             't': 'tool',
             'step': n,

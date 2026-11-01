@@ -1,6 +1,13 @@
 from dataclasses import dataclass, field
+from typing import Any, TypedDict
 
 CANONICAL_ROLES = {'system', 'user', 'assistant', 'tool'}
+
+
+class ToolCall(TypedDict):
+    id: str
+    name: str
+    arguments: dict[str, Any]
 
 
 @dataclass(slots=True)
@@ -11,14 +18,14 @@ class Message:
     Attributes:
         role (str): Logical role of the message author.
         content (str): Text content of the message.
-        tool_calls (list[dict[str, object]] | None): List of tool calls.
+        tool_calls (list[ToolCall] | None): List of tool calls.
         tool_call_id (str | None): ID of the tool call.
         name (str | None): Name of the message author.
     """
 
     role: str
     content: str
-    tool_calls: list[dict[str, object]] | None = None
+    tool_calls: list[ToolCall] | None = None
     tool_call_id: str | None = None
     name: str | None = None
 
@@ -36,7 +43,7 @@ class Reply:
 
     Attributes:
         text (str): Text content of the response.
-        tool_calls (list[dict[str, object]]): Tool calls requested by the model.
+        tool_calls (list[ToolCall]): Tool calls requested by the model.
         model (str): Name of the model that generated the response.
         in_tokens (int): Number of input tokens.
         out_tokens (int): Number of output tokens.
@@ -44,7 +51,7 @@ class Reply:
     """
 
     text: str = ''
-    tool_calls: list[dict[str, object]] = field(default_factory=list)
+    tool_calls: list[ToolCall] = field(default_factory=list)
     model: str = 'fake'
     in_tokens: int = 0
     out_tokens: int = 0

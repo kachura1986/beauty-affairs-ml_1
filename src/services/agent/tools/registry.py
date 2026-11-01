@@ -7,6 +7,8 @@ from typing import Any, Iterable
 
 from pydantic import ValidationError
 
+from services.llm import ToolCall
+
 from .errors import handle_execution_exception, unknown_tool_result, validation_error_result, validation_hint
 from .tool import Tool, ToolResult, ToolStatus
 from .truncation import truncate_for_model
@@ -55,7 +57,7 @@ class ToolRegistry:
         ]
 
     @staticmethod
-    def fingerprint(call: dict[str, Any]) -> str:
+    def fingerprint(call: ToolCall) -> str:
         """
         Return a stable fingerprint for a tool call.
 

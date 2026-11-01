@@ -1,6 +1,7 @@
 from typing import Any
 
 from services.agent.tools import ToolResult
+from services.llm import ToolCall
 
 
 def build_observation_message(text: str) -> dict[str, str]:
@@ -22,7 +23,7 @@ def build_observation_message(text: str) -> dict[str, str]:
     return {'role': 'user', 'content': f'[observation] {text}'}
 
 
-def build_tool_message(call: dict, res: ToolResult) -> dict[str, Any]:
+def build_tool_message(call: ToolCall, res: ToolResult) -> dict[str, Any]:
     """
     Build a tool result message for the model.
 
@@ -30,7 +31,7 @@ def build_tool_message(call: dict, res: ToolResult) -> dict[str, Any]:
     when the call has no explicit ``id``. The content is rendered by :meth:`ToolResult.to_model`.
 
     Args:
-        call (dict): Tool call dictionary containing at least ``name`` and optionally ``id``.
+        call (ToolCall): Tool call dictionary containing at least ``name`` and optionally ``id``.
         res (ToolResult): Result of executing the tool call.
 
     Returns:
