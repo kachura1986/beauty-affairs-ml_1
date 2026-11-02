@@ -17,6 +17,7 @@ from services.agent.agent_graph.routing import (
     route_after_verify,
 )
 from services.agent.agent_graph.state import AgentContext, create_initial_state
+from services.agent.context import AgentContextWindow
 from services.agent.domain import (
     Budget,
     BudgetLimits,
@@ -135,6 +136,10 @@ def make_state(ctx: AgentContext):
     return create_initial_state(ctx.task)
 
 
+def make_context_window(system="sys", messages=None) -> AgentContextWindow:
+    return AgentContextWindow(system=system, messages=messages or [])
+
+
 @pytest.fixture
 def trace(tmp_path: Path):
     t = Trace(tmp_path)
@@ -196,9 +201,13 @@ async def test_request_llm_success(trace):
     ctx = make_context(trace, llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
+    cw = make_context_window(
+        system="custom-system-prompt",
+        messages=[{"role": "user", "content": "hi"}],
+    )
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=cw,
     )
 
     assert reason is None
@@ -208,7 +217,39 @@ async def test_request_llm_success(trace):
     assert budget.cost_usd == pytest.approx(0.001)
     assert llm.calls[0]["tools"] == ctx.tools.schemas()
     assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
-    assert llm.calls[0]["system_prompt"] == "sys"
+    assert llm.calls[0]["messages"] is cw.messages
+    assert llm.calls[0]["system_prompt"] == "custom-system-prompt"
+    assert llm.calls[0]["system_prompt"] == cw.system
+
+
+async def test_request_llm_chat_and_trace_get_same_messages_object(trace, monkeypatch):
+    """Инвариант: chat() и trace.step() получают один и тот же объект messages.
+
+    Регрессия: если между вызовами кто-то скопирует/слайснет список,
+    window_hash в trace перестанет соответствовать отправленному в модель.
+    """
+    import services.agent.agent_graph.nodes as nodes_mod
+
+    seen = {}
+    real_step = nodes_mod.Trace.step
+
+    def spy_step(self, n, window, reply, budget, latency_ms, *, system_prompt):
+        seen["window"] = window
+        return real_step(self, n, window, reply, budget, latency_ms, system_prompt=system_prompt)
+
+    monkeypatch.setattr(nodes_mod.Trace, "step", spy_step)
+
+    messages = [{"role": "user", "content": "hi"}]
+    cw = make_context_window(system="custom-system", messages=messages)
+    llm = FakeLLM(reply(text="ok"))
+    ctx = make_context(trace, llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    await _request_llm(llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, context_window=cw)
+
+    assert llm.calls[0]["messages"] is cw.messages
+    assert seen["window"] is cw.messages
+    assert seen["window"] is llm.calls[0]["messages"]
 
 
 async def test_request_llm_timeout_returns_budget_time(trace, monkeypatch):
@@ -231,8 +272,8 @@ async def test_request_llm_timeout_returns_budget_time(trace, monkeypatch):
     monkeypatch.setattr(Budget, "elapsed", lambda self: next(times, 2.0))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert result is None
@@ -247,8 +288,8 @@ async def test_request_llm_llm_error(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert result is None
@@ -262,8 +303,8 @@ async def test_request_llm_error_still_increments_steps(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert budget.steps == 1
@@ -279,8 +320,8 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert result is None
@@ -294,8 +335,8 @@ async def test_request_llm_exceeded_after_successful_call(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1, max_cost_usd=1))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert result is None
@@ -310,8 +351,8 @@ async def test_request_llm_no_steps_left(trace):
     budget.steps = 1
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert result is None
@@ -330,8 +371,8 @@ async def test_request_llm_timeout_capped_by_remaining_budget(trace):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
@@ -351,8 +392,8 @@ async def test_request_llm_timeout_capped_by_default(trace, monkeypatch):
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=300, max_tokens=1000, max_cost_usd=1))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert llm.calls[0]["timeout"] == pytest.approx(5.0, abs=0.1)
@@ -377,8 +418,8 @@ async def test_request_llm_preflight_tokens_below_minimum(trace):
     ))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert result is None
@@ -404,8 +445,8 @@ async def test_request_llm_preflight_tokens_at_boundary_allowed(trace):
     ))
 
     result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     assert reason is None
@@ -432,8 +473,8 @@ async def test_request_llm_preflight_tokens_emits_trace(trace):
     ))
 
     await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, window=[],
-        system_prompt="sys",
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
     )
 
     records = [
@@ -577,6 +618,148 @@ async def test_decide_budget_warning_not_reemitted(trace):
 
     assert result["budget_warning_emitted"] is True
     assert "WARNING: more than 80%" not in llm.calls[0]["system_prompt"]
+
+
+@pytest.mark.parametrize("cost_usd,expected_emitted", [
+    (0.0, False),
+    (0.45, True),
+])
+async def test_decide_context_overflow_preserves_budget_warning_flag(
+        trace, monkeypatch, cost_usd, expected_emitted,
+):
+    """A ContextOverflow becomes a normal termination and preserves the warning flag.
+
+    Two scenarios:
+      - cost_usd = 0.0  -> no soft warning was set up, budget_warning_emitted stays False;
+      - cost_usd = 0.45 -> soft warning was triggered on this same step, so the
+        flag is True and is preserved on the overflow path.
+    """
+    import json
+    import services.agent.context.context_window as cw_mod
+
+    monkeypatch.setattr(cw_mod, "MAX_ESTIMATED_CHARS", 100)
+
+    llm = FakeLLM()
+    ctx = make_context(trace, llm=llm)
+    state = make_state(ctx)
+    state["budget"].cost_usd = cost_usd
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.CONTEXT_OVERFLOW
+    assert result["budget_warning_emitted"] is expected_emitted
+    assert llm.calls == []
+
+    records = [
+        json.loads(line)
+        for line in trace.path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    assert any(r.get("kind") == "context_overflow" for r in records)
+
+
+async def test_decide_calls_build_context_once(trace, monkeypatch):
+    """build_context is invoked exactly once per decide_node call.
+
+    Guards against a future regression that re-splits context assembly
+    into two calls (the footgun the refactor removed).
+    """
+    import services.agent.agent_graph.nodes as nodes_mod
+
+    real_build = nodes_mod.build_context
+    calls = []
+
+    def spy(*args, **kwargs):
+        calls.append((args, kwargs))
+        return real_build(*args, **kwargs)
+
+    monkeypatch.setattr(nodes_mod, "build_context", spy)
+
+    ctx = make_context(trace)
+    state = make_state(ctx)
+
+    await decide_node(state, FakeRuntime(ctx))
+
+    assert len(calls) == 1
+
+
+async def test_decide_passes_history_to_build_context(trace, monkeypatch):
+    """state['history'] reaches build_context by reference, not as a copy.
+
+    build_context is called positionally: (system_prompt, warning, history).
+    """
+    import services.agent.agent_graph.nodes as nodes_mod
+
+    real_build = nodes_mod.build_context
+    calls = []
+
+    def spy(*args, **kwargs):
+        calls.append((args, kwargs))
+        return real_build(*args, **kwargs)
+
+    monkeypatch.setattr(nodes_mod, "build_context", spy)
+
+    ctx = make_context(trace)
+    state = make_state(ctx)
+
+    await decide_node(state, FakeRuntime(ctx))
+
+    assert len(calls) == 1
+    args, _ = calls[0]
+    assert args[2] is state["history"]
+
+
+async def test_decide_skips_build_context_when_steps_exhausted(trace, monkeypatch):
+    """When the step budget is exhausted, build_context is not called at all.
+
+    No wasted work: the short-circuit in _check_budget fires before context
+    assembly.
+    """
+    import services.agent.agent_graph.nodes as nodes_mod
+
+    called = []
+    monkeypatch.setattr(nodes_mod, "build_context", lambda *a, **kw: called.append(1))
+
+    ctx = make_context(trace, max_steps=1)
+    state = make_state(ctx)
+    state["budget"].steps = 1
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_STEPS
+    assert called == []
+
+
+async def test_decide_forwards_context_window_to_request_llm(trace, monkeypatch):
+    """build_context output is forwarded to _request_llm unchanged.
+
+    Regression guard: after the refactor, the effective system prompt
+    (task prompt + optional budget warning) must travel through
+    ``context_window.system`` rather than being reconstructed inside
+    ``_request_llm``. If someone re-introduces ``chat(..., system_prompt=ctx.task.system_prompt)``,
+    the warning is silently lost — this test catches that.
+    """
+    import services.agent.agent_graph.nodes as nodes_mod
+
+    real_request = nodes_mod._request_llm
+    seen = {}
+
+    async def spy(*, llm, tools, trace, budget, context_window):
+        seen["cw"] = context_window
+        return await real_request(
+            llm=llm, tools=tools, trace=trace, budget=budget, context_window=context_window,
+        )
+
+    monkeypatch.setattr(nodes_mod, "_request_llm", spy)
+
+    ctx = make_context(trace)
+    state = make_state(ctx)
+    state["budget"].cost_usd = 0.45  # 90% of the default 0.50 cost budget -> soft warning
+
+    await decide_node(state, FakeRuntime(ctx))
+
+    assert isinstance(seen["cw"], AgentContextWindow)
+    assert "WARNING: more than 80%" in seen["cw"].system
 
 
 # ---------------------------------------------------------------------------
