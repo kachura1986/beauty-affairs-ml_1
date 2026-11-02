@@ -52,3 +52,8 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "regression: regression tests for previously fixed bugs",
+    "invariant: property-style invariant checks",
+    "integration: touches real filesystem / structlog configuration",
+]

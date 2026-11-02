@@ -80,6 +80,12 @@ def make_window(
 # ---------------------------------------------------------------------------
 
 def test_empty_history_returns_system_only():
+    """An empty history yields the system prompt unchanged and no messages.
+
+    This covers both the "no warning" and "no history" aspects that used to
+    live in two identical tests: without a warning the effective system is
+    exactly the input prompt, and the window is empty.
+    """
     effective, budget = _prepare_context(SYSTEM, None)
     assert effective == SYSTEM
     assert _build_window([], history_budget_chars=budget) == []
@@ -89,12 +95,6 @@ def test_empty_history_with_warning():
     effective, budget = _prepare_context(SYSTEM, "careful")
     assert "helpful" in effective
     assert "careful" in effective
-    assert _build_window([], history_budget_chars=budget) == []
-
-
-def test_empty_history_without_warning():
-    effective, budget = _prepare_context(SYSTEM, None)
-    assert effective == SYSTEM
     assert _build_window([], history_budget_chars=budget) == []
 
 

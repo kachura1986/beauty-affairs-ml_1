@@ -18,6 +18,8 @@ from core.logger import (
     setup_logging,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -80,6 +82,14 @@ def clean_logging():
         root.setLevel(saved_level)
         structlog.reset_defaults()
         logger_mod.get_logger.cache_clear()
+
+
+@pytest.fixture
+def last_record(tmp_path):
+    def _get():
+        return _read_jsonl(tmp_path / 'app.log')[-1]
+
+    return _get
 
 
 # ---------------------------------------------------------------------------

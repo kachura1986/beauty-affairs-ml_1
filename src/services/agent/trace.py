@@ -108,6 +108,14 @@ class Trace:
     def closed(self) -> bool:
         return self._closed
 
+    def records(self) -> list[dict[str, Any]]:
+        """Read back all JSONL records. Helper for post-mortem and tests."""
+        return [
+            json.loads(line)
+            for line in self.path.read_text(encoding='utf-8').splitlines()
+            if line.strip()
+        ]
+
     def __enter__(self) -> 'Trace':
         return self
 

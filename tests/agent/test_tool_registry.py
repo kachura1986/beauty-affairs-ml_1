@@ -19,11 +19,21 @@ class EchoArgs(BaseModel):
 # ToolRegistry.invoke: per-tool timeouts
 # ---------------------------------------------------------------------------
 
-async def test_per_tool_cap_triggers_temporary_failure():
-    """A tool exceeding its per-tool cap yields TEMPORARY_FAILURE, retryable=True.
+@pytest.mark.parametrize("tool_timeout, caller_timeout", [
+    (0.05, None),
+    (0.05, 10.0),
+    (10.0, 0.05),
+], ids=["per_tool_only", "per_tool_dominates", "caller_dominates"])
+async def test_timeout_dominance(tool_timeout, caller_timeout):
+    """The effective timeout is the minimum of the applicable ceilings.
 
-    ``asyncio.wait_for`` raises TimeoutError on the per-tool ceiling; the
-    registry classifies it as a temporary failure via errors.py.
+    Three scenarios, sharing the same assert set because the observable
+    outcome is identical — the tool must not run longer than the tightest
+    applicable timeout and must surface as a temporary failure:
+
+      - per_tool_only:    only the per-tool cap applies (caller passes None).
+      - per_tool_dominates: per-tool cap (0.05s) < caller (10s); min wins.
+      - caller_dominates:  caller (0.05s) < per-tool cap (10s); min wins.
     """
 
     async def hanging_fn(**kwargs):
@@ -36,76 +46,18 @@ async def test_per_tool_cap_triggers_temporary_failure():
                 description="",
                 fn=hanging_fn,
                 args_model=EchoArgs,
-                timeout_seconds=0.05,
+                timeout_seconds=tool_timeout,
             ),
         ],
         default_timeout_seconds=30.0,
         max_output_chars=15000,
     )
 
-    res = await registry.invoke({"name": "hang", "arguments": {}})
+    res = await registry.invoke({"name": "hang", "arguments": {}}, timeout=caller_timeout)
 
     assert res.status is ToolStatus.ERROR
     assert res.error.error_code is ToolErrorCode.TEMPORARY_FAILURE
     assert res.retryable is True
-
-
-async def test_per_tool_cap_dominates_caller_timeout():
-    """The per-tool ceiling wins when it is smaller than the caller timeout.
-
-    A tool declared with timeout_seconds=0.05 must not run for 10s just
-    because the caller allowed it: min(0.05, 10) == 0.05.
-    """
-
-    async def hanging_fn(**kwargs):
-        await asyncio.sleep(10)
-
-    registry = ToolRegistry(
-        [
-            Tool(
-                name="hang",
-                description="",
-                fn=hanging_fn,
-                args_model=EchoArgs,
-                timeout_seconds=0.05,
-            ),
-        ],
-        default_timeout_seconds=30.0,
-        max_output_chars=15000,
-    )
-
-    res = await registry.invoke({"name": "hang", "arguments": {}}, timeout=10.0)
-
-    assert res.error.error_code is ToolErrorCode.TEMPORARY_FAILURE
-
-
-async def test_caller_timeout_dominates_per_tool_cap():
-    """The caller timeout wins when it is smaller than the per-tool ceiling.
-
-    A tool declared with timeout_seconds=10 must still be capped at 0.05s
-    when the caller only has 0.05s of budget left: min(10, 0.05) == 0.05.
-    """
-
-    async def hanging_fn(**kwargs):
-        await asyncio.sleep(10)
-
-    registry = ToolRegistry(
-        [
-            Tool(
-                name="hang",
-                description="",
-                fn=hanging_fn,
-                args_model=EchoArgs,
-                timeout_seconds=10.0,
-            ),
-        ],
-        default_timeout_seconds=30.0,
-        max_output_chars=15000,
-    )
-
-    res = await registry.invoke({"name": "hang", "arguments": {}}, timeout=0.05)
-
-    assert res.error.error_code is ToolErrorCode.TEMPORARY_FAILURE
 
 
 async def test_quick_call_completes_within_per_tool_cap():
