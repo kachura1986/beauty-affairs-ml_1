@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any
 
 # --- Limits ---------------------------------------------------------------
@@ -8,37 +9,56 @@ MAX_MESSAGES = 40
 MAX_ESTIMATED_CHARS = 60_000
 RESERVED_OUTPUT_CHARS = 8_000  # room for the model's reply
 
-# Only ``tool`` outputs are trimmed in place (head + tail). They are the main size driver, and
-# their first line (call_id / exit code) and last line (error / final value) are the useful parts.
-# Cutting user/assistant text can silently destroy meaning (reviewer note #5), so those are kept
-# whole — if they don't fit, the whole turn is dropped.
+# Only ``tool`` outputs are trimmed in place (head + tail). They are the main size driver, and their first 
+# line (call_id / exit code) and last line (error / final value) are the useful parts. Cutting user/assistant text can 
+# silently destroy meaning (reviewer note #5), so those are kept whole — if they don't fit, the whole turn is dropped.
 PER_TOOL_MSG_LIMIT = 4_000
 
 # Approximate char cost of a non-text multimodal part (image, audio, ...).
 MULTIMODAL_PART_WEIGHT = 1_000
 
 
+@dataclass(frozen=True)
+class AgentContextWindow:
+    """
+    Ready context for a single LLM step.
+
+    ``system`` and ``messages`` are separate provider channels: ``system`` is sent via ``chat(..., system_prompt=...)``
+    / Responses API ``instructions``, ``messages`` — via ``input``.
+
+    ``messages`` is not copied: the same object is passed to both ``chat`` and ``trace.step``, so ``window_hash``
+    / ``window_msgs`` in the trace reflect exactly what was sent to the model.
+    """
+
+    system: str
+    messages: list[dict[str, Any]]
+
+
 class ContextOverflow(Exception):
     """
     System prompt + pinned turns or the current request alone exceed the budget.
 
-    Raised only by ``prepare_context`` and ``build_window``, both called
-    exclusively from ``decide_node``. ``decide_node`` MUST catch it and return
-    ``TerminationReason.CONTEXT_OVERFLOW``; the run then terminates normally
-    through ``finish_node`` and is reported to the caller via
-    ``AgentResult.reason`` / ``ChatResponse.termination_reason``.
+    Raised only by ``build_context`` (and the private helpers it calls), called exclusively from ``decide_node``.
+    ``decide_node`` MUST catch it and return ``TerminationReason.CONTEXT_OVERFLOW``; the run then terminates normally
+    through ``finish_node`` and is reported to the caller via ``AgentResult.reason`` / ``ChatResponse.termination_reason``.
     """
 
 
 # --- Helpers --------------------------------------------------------------
-def _size(msg: dict[str, Any]) -> int:
+def _size(message: dict[str, Any]) -> int:
     """
     Approximate size of a message in characters.
 
     Multimodal (list) content sums text parts and assigns a fixed weight to every non-text part,
     so images cannot bypass the budget by hiding inside ``content``.
+    
+    Args:
+        message (dict[str, Any]): The message to measure.
+    
+    Returns:
+        The size of the message in characters.
     """
-    content = msg.get("content")
+    content = message.get('content')
     if isinstance(content, str):
         return len(content)
 
@@ -48,8 +68,8 @@ def _size(msg: dict[str, Any]) -> int:
             if not isinstance(part, dict):
                 continue
 
-            if part.get("type") == "text":
-                total += len(part.get("text") or "")
+            if part.get('type') == 'text':
+                total += len(part.get('text') or '')
             else:
                 total += MULTIMODAL_PART_WEIGHT
 
@@ -58,31 +78,37 @@ def _size(msg: dict[str, Any]) -> int:
     return 0
 
 
-def _truncate_tool(msg: dict[str, Any]) -> dict[str, Any]:
+def _truncate_tool(message: dict[str, Any]) -> dict[str, Any]:
     """
     Trim a ``tool`` message to ``PER_TOOL_MSG_LIMIT``, keeping head + tail.
 
     Head is favoured (2/3) — call_id / exit code live there; tail (1/3) keeps the final error line or result value.
     Other roles are returned untouched — that is a deliberate trade-off, see module docstring.
+    
+    Args:
+        message (dict[str, Any]): The message to truncate.
+    
+    Returns:
+        The truncated message.
     """
-    if msg.get("role") != "tool":
-        return msg
-    if _size(msg) <= PER_TOOL_MSG_LIMIT:
-        return msg
+    if message.get('role') != 'tool':
+        return message
+    if _size(message) <= PER_TOOL_MSG_LIMIT:
+        return message
 
-    content = msg.get("content")
+    content = message.get('content')
     if not isinstance(content, str):
-        return msg
+        return message
 
     head = PER_TOOL_MSG_LIMIT * 2 // 3
     tail = PER_TOOL_MSG_LIMIT // 3
     trimmed = (
-        f"{content[:head]}\n"
-        f"…[truncated {len(content) - head - tail} chars]…\n"
-        f"{content[-tail:]}"
+        f'{content[:head]}\n'
+        f'…[truncated {len(content) - head - tail} chars]…\n'
+        f'{content[-tail:]}'
     )
 
-    return {**msg, "content": trimmed}
+    return {**message, 'content': trimmed}
 
 
 def _group_turns(messages: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
@@ -93,11 +119,17 @@ def _group_turns(messages: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     the matching ``assistant(tool_calls)``, otherwise the provider API rejects the request.
     If the history does not start with ``user`` (e.g. it is already a tail of a longer session),
     the first group is simply the earliest available context and is treated as such.
+    
+    Args:
+        messages (list[dict[str, Any]]): The messages to group.
+    
+    Returns:
+        list[list[dict[str, Any]]]: The grouped messages.
     """
     turns: list[list[dict[str, Any]]] = []
     current: list[dict[str, Any]] = []
     for msg in messages:
-        if msg.get("role") == "user" and current:
+        if msg.get('role') == 'user' and current:
             turns.append(current)
             current = []
         current.append(msg)
@@ -108,13 +140,12 @@ def _group_turns(messages: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     return turns
 
 
-def prepare_context(system_prompt: str, warning: str | None) -> tuple[str, int]:
+def _prepare_context(system_prompt: str, warning: str | None) -> tuple[str, int]:
     """
     Combine the task system prompt with an optional soft-budget warning
     and compute the character budget available for history messages.
 
-    The returned ``history_budget_chars`` ALREADY EXCLUDES
-    ``RESERVED_OUTPUT_CHARS`` — do not subtract it again in ``build_window``.
+    The returned ``history_budget_chars`` is already net of ``RESERVED_OUTPUT_CHARS`` and the system part.
 
     Args:
         system_prompt (str): Task-level system prompt.
@@ -128,29 +159,25 @@ def prepare_context(system_prompt: str, warning: str | None) -> tuple[str, int]:
     """
     effective_system = system_prompt.strip()
     if warning:
-        effective_system = f"{effective_system}\n\n{warning.strip()}"
+        effective_system = f'{effective_system}\n\n{warning.strip()}'
 
     history_budget = MAX_ESTIMATED_CHARS - RESERVED_OUTPUT_CHARS - len(effective_system)
     if history_budget <= 0:
-        raise ContextOverflow("system prompt alone exceeds budget")
+        raise ContextOverflow('System prompt alone exceeds budget')
 
     return effective_system, history_budget
 
 
-# Build window
-def build_window(
+def _build_window(
         history: list[dict[str, Any]],
-        *,
         history_budget_chars: int,
-        max_messages: int = MAX_MESSAGES,
+        max_messages: int = MAX_MESSAGES
 ) -> list[dict[str, Any]]:
     """
     Pack ``history`` into a list of ``input`` messages under ``history_budget_chars``.
 
-    ``system_prompt`` is NOT part of the window — it goes to
-    ``chat(system_prompt=...)``. ``history_budget_chars`` is expected to ALREADY
-    EXCLUDE the output reserve (see ``prepare_context``); it is NOT re-subtracted
-    here.
+    ``system_prompt`` is NOT part of the window — it goes to ``chat(system_prompt=...)``. ``history_budget_chars`` is 
+    expected to ALREADY EXCLUDE the output reserve (see ``_prepare_context``); it is NOT re-subtracted here.
 
     Rules (in priority order):
       1. Client-supplied ``system`` messages are dropped (never part of ``input``).
@@ -167,9 +194,6 @@ def build_window(
 
     Pinning: only turn 0 and the last turn are pinned — this is a server-side decision. The client cannot
     influence pinning (a hostile client must not be able to pin everything and force a ``ContextOverflow``).
-
-    Client history cannot contain ``system`` messages, and any ``pinned``
-    flags are ignored: pinning is a server concern, not a client one.
 
     Args:
         history (list[dict[str, Any]]): Conversation history to pack.
@@ -196,11 +220,11 @@ def build_window(
     pinned_msgs = sum(len(turns[i]) for i in pinned_idx)
 
     if pinned_msgs > max_messages:
-        raise ContextOverflow("pinned turns exceed message limit")
+        raise ContextOverflow("Pinned turns exceed message limit")
 
     if pinned_chars > history_budget_chars:
         # Includes the "current request alone is too large" case — this is a deliberate, documented contract.
-        raise ContextOverflow("mandatory turns exceed budget")
+        raise ContextOverflow("Mandatory turns exceed budget")
 
     budget = history_budget_chars - pinned_chars
     keep: set[int] = set(pinned_idx)
@@ -230,3 +254,34 @@ def build_window(
         window.extend(turns[i])
 
     return window
+
+
+def build_context(
+        system_prompt: str,
+        warning: str | None,
+        history: list[dict[str, Any]],
+        max_messages: int = MAX_MESSAGES,
+) -> AgentContextWindow:
+    """
+    Assemble the context for a single LLM step: effective system prompt plus the packed history.
+
+    ``system`` and ``messages`` in the result go to different provider channels — see :class:`AgentContextWindow`.
+
+    ``max_messages`` exists for testability; in production the default``MAX_MESSAGES`` is always used.
+
+    Args:
+        system_prompt (str): Task-level system prompt.
+        warning (str | None): Optional soft-budget warning to append.
+        history (list[dict[str, Any]]): Conversation history to pack.
+        max_messages (int, optional): Maximum number of messages in the window.
+
+    Returns:
+        AgentContextWindow: System prompt and packed history, kept separately.
+
+    Raises:
+        ContextOverflow: If the system part or the pinned turns do not fit the budget.
+    """
+    effective_system, history_budget = _prepare_context(system_prompt, warning)
+    messages = _build_window(history=history, history_budget_chars=history_budget, max_messages=max_messages)
+
+    return AgentContextWindow(system=effective_system, messages=messages)
