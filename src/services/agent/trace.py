@@ -108,6 +108,11 @@ class Trace:
     def closed(self) -> bool:
         return self._closed
 
+    @property
+    def run_id(self) -> str:
+        """Public run identifier; matches the trace file stem."""
+        return self._run_id
+
     def records(self) -> list[dict[str, Any]]:
         """Read back all JSONL records. Helper for post-mortem and tests."""
         return [

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .reason import TerminationReason
 
@@ -8,6 +8,7 @@ class AgentResult(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    run_id: str = Field(description="Run identifier; matches the trace file stem.")
     reason: TerminationReason
     answer: str | None = None
     steps: int

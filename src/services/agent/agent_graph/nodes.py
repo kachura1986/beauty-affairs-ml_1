@@ -477,6 +477,7 @@ def finish_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
     runtime.context.trace.finish(reason, state['budget'], answer)
 
     result = AgentResult(
+        run_id=runtime.context.trace.run_id,
         reason=reason,
         answer=answer,
         steps=state['budget'].steps,

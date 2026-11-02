@@ -22,6 +22,7 @@ async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_a
     result = await agent_service.run(request.messages)
 
     return ChatResponse(
+        run_id=result.run_id,
         role='assistant',
         content=result.answer,
         termination_reason=result.reason,

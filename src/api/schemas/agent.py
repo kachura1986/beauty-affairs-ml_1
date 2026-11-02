@@ -22,6 +22,7 @@ class ChatUsage(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    run_id: str = Field(description="Run identifier; matches the trace file stem.")
     role: Literal['assistant']
     content: str | None
     termination_reason: TerminationReason
