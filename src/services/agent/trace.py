@@ -13,6 +13,14 @@ from .tools import ToolResult
 # How many trace files to keep in RUNS_DIR.
 MAX_TRACE_FILES = 500
 
+# Hard cap on a single trace file. Once exceeded, further records are dropped
+# and a single `truncated_at_bytes` marker is written. Bounds disk usage per run.
+MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# Trace files older than this are removed on every new trace creation,
+# in addition to the MAX_TRACE_FILES count cap. Bounds disk usage over time.
+TRACE_TTL_DAYS = 7
+
 
 # TODO code refactoring
 class Trace:
@@ -28,6 +36,20 @@ class Trace:
         - If the trace is garbage-collected without being closed, a ``ResourceWarning``
           is emitted via :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee).
         - Old trace files are pruned on every new trace creation, keeping at most ``MAX_TRACE_FILES`` most recent files.
+
+    PII and retention:
+        - Tool arguments are recorded as ``args_hash`` + ``args_keys``, never as raw values:
+          arguments may contain user text (queries, identifiers) and trace files are retained on disk.
+        - User / assistant message text is never written: ``step()`` records ``window_hash``
+          and ``window_msgs``; ``finish()`` records only ``answer_chars``.
+        - ``error()`` ``message`` is expected to be a machine-readable code
+          (``type(exc).__name__``, reason string), not ``str(exc)`` from a tool/user-facing exception.
+        - The single exception is ``__exit__``, which writes a truncated ``str(exc)`` for
+          *unhandled* exceptions that escaped the agent loop. That is diagnostic only,
+          fires on an exceptional path, and is capped to 500 chars. Do not promote this
+          pattern to a general error path — use ``error()`` with a machine-readable code.
+        - A single file is capped at ``MAX_FILE_BYTES``; the directory is pruned by
+          ``MAX_TRACE_FILES`` count and ``TRACE_TTL_DAYS`` age on every new trace creation.
     """
 
     def __init__(self, runs_dir: Path) -> None:
@@ -45,6 +67,8 @@ class Trace:
 
         self._closed = False
         self._fh = self.path.open('a', encoding='utf-8')
+        self._bytes_written = self.path.stat().st_size
+        self._capped = False
 
         self._finalizer = weakref.finalize(self, self._warn_unclosed, self.path)
 
@@ -72,17 +96,28 @@ class Trace:
 
     def _prune_old_runs(self) -> None:
         """
-        Keep only the most recent ``MAX_TRACE_FILES`` trace files. Best-effort: any failure
-        (including permission errors while deleting a stale file) must not affect the current run.
+        Keep only the most recent ``MAX_TRACE_FILES`` trace files and drop files older than ``TRACE_TTL_DAYS``.
+        Best-effort: any failure (including permission errors while deleting a stale file) must not affect the current run.
+
+        Notes:
+            - TTL is based on ``st_mtime``, not on the timestamp embedded in ``run_id``:
+              a file restored from backup may have a fresh ``mtime`` and therefore survive
+              past ``TRACE_TTL_DAYS``. Accepted as an edge case for the minimal policy.
+            - Prune is not synchronized across processes. ``unlink()`` on an open file is
+              safe on POSIX (the descriptor stays valid) and raises ``PermissionError`` on
+              Windows, which is swallowed by ``except OSError`` below.
         """
         try:
             files = sorted(self._runs_dir.glob('*.jsonl'), key=lambda p: p.stat().st_mtime, reverse=True)
         except OSError:
             return
 
-        for stale in files[MAX_TRACE_FILES:]:
+        cutoff = time.time() - TRACE_TTL_DAYS * 86400
+
+        for i, stale in enumerate(files):
             try:
-                stale.unlink()
+                if i >= MAX_TRACE_FILES or stale.stat().st_mtime < cutoff:
+                    stale.unlink()
             except OSError:
                 pass
 
@@ -114,7 +149,12 @@ class Trace:
         return self._run_id
 
     def records(self) -> list[dict[str, Any]]:
-        """Read back all JSONL records. Helper for post-mortem and tests."""
+        """
+        Read back all JSONL records. Helper for post-mortem and tests.
+
+        Not for hot-path production use: reads the entire file into memory (up to roughly ``MAX_FILE_BYTES``;
+        the trailing ``truncated_at_bytes`` marker may push the file a few bytes past the limit).
+        """
         return [
             json.loads(line)
             for line in self.path.read_text(encoding='utf-8').splitlines()
@@ -129,6 +169,10 @@ class Trace:
         # but never let the write itself mask the original exception
         if exc_type is not None and not self._closed:
             try:
+                # `str(exc)` here is diagnostic only: it fires solely on unhandled
+                # exceptions that escaped the agent loop and is truncated to 500 chars.
+                # Do not promote this to a general error path — `error()` is the place
+                # for machine-readable codes (type names, reason strings).
                 self._write({
                     't': 'unexpected_error',
                     'kind': exc_type.__name__,
@@ -143,13 +187,33 @@ class Trace:
         if self._closed:
             return
 
+        if self._capped:
+            return
+
         rec = {
             'run_id': self._run_id,
             'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             **rec,
         }
 
-        self._fh.write(json.dumps(rec, ensure_ascii=False, default=str) + '\n')
+        line = json.dumps(rec, ensure_ascii=False, default=str) + '\n'
+        line_bytes = len(line.encode())
+
+        # Hard size cap: once exceeded, drop records and emit a single marker.
+        if self._bytes_written + line_bytes > MAX_FILE_BYTES:
+            self._capped = True
+            marker = {
+                'run_id': self._run_id,
+                'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                't': 'truncated_at_bytes',
+                'limit_bytes': MAX_FILE_BYTES,
+            }
+            self._fh.write(json.dumps(marker, ensure_ascii=False) + '\n')
+            self._fh.flush()
+            return
+
+        self._bytes_written += line_bytes
+        self._fh.write(line)
         self._fh.flush()
 
     @staticmethod
@@ -190,11 +254,18 @@ class Trace:
         })
 
     def tool(self, n: int, call: ToolCall, res: ToolResult, ms: int) -> None:
+        # Tool arguments are recorded as a hash + the list of argument names,
+        # never raw values: arguments can contain PII (user queries, identifiers),
+        # and trace files are retained on disk. `args_hash` correlates identical
+        # calls across steps but CANNOT be reversed back to the original arguments —
+        # that is a deliberate trade-off.
+        args = call.get('arguments', {})
         self._write({
             't': 'tool',
             'step': n,
             'tool': call['name'],
-            'args': call.get('arguments', {}),
+            'args_hash': self._hash(args),
+            'args_keys': sorted(args.keys()) if isinstance(args, dict) else [],
             'status': res.status.value,
 
             'error_code': res.error.error_code.value if res.error else None,
@@ -209,6 +280,8 @@ class Trace:
         })
 
     def error(self, step: int, kind: str, message: str, latency_ms: int, budget: Budget) -> None:
+        # `message` must stay a machine-readable code (type name, reason string),
+        # never `str(exc)` from a tool/user-facing exception: it may contain PII.
         self._write({
             't': 'error',
             'step': step,
