@@ -16,5 +16,5 @@ routers = [
     (products_and_services.router, "/products-and-services", "Products and services"),
 ]
 
-for current_router, prefix, tag in routers:
-    main_router.include_router(current_router, prefix=prefix, tags=[tag])
+for router, prefix, tag in routers:
+    main_router.include_router(router, prefix=prefix, tags=[tag])
