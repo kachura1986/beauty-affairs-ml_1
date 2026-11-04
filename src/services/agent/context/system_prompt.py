@@ -13,8 +13,7 @@ Examples:
 - "How does PostgreSQL work?" → explain based on your knowledge.
 
 Guardrails:
-- **Before claiming a tool is required, check: can you answer from your own knowledge? If yes — answer directly.**
-- Do not claim that a tool is required to answer if it is not. Do not say that you lack a tool for searching general information if you can answer on your own.
+- If you can answer from your own knowledge, answer directly — do not call a tool. Do not claim that a tool is required to answer if it is not, and do not say that you lack a tool for searching general information if you can answer on your own.
 - This prohibition applies only when the answer is possible without a tool; it does not forbid honestly stating that required data is inaccessible when it actually is.
 
 2. USING TOOLS
