@@ -62,6 +62,10 @@ async def _request_llm(
     """
     Execute exactly one LLM decision step.
 
+    Preconditions:
+        ``budget.can_start_step()`` is True. This is guaranteed by the only caller, :func:`decide_node`,
+        via :func:`_check_budget`. The step budget is intentionally not re-checked here to keep a single enforcement point.
+
     Args:
         llm (LLMModel): LLM to use for the request.
         tools (ToolRegistry): Tool registry for the request.
@@ -72,11 +76,14 @@ async def _request_llm(
     Returns:
         tuple[Reply | None, TerminationReason | None]: Tuple of (reply, termination reason).
     """
-    # Do not start an LLM step when the step budget is exhausted
-    if not budget.can_start_step():
-        return None, TerminationReason.BUDGET_STEPS
+    # Fail loud if the precondition is violated. Under `python -O` this assert is
+    # stripped; the docstring precondition above remains the authoritative contract.
+    assert budget.can_start_step(), (
+        "precondition violated: _request_llm called with exhausted step budget"
+    )
 
-    # Limit the request by the remaining wall-clock budget
+    # TOCTOU guard: build_context() runs between _check_budget() and this call, so the wall-clock budget may have
+    # expired in the meantime. Limit the request by the remaining wall-clock budget.
     remaining = budget.remaining_seconds()
 
     if remaining <= 0:
