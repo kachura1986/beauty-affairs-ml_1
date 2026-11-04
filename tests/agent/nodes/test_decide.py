@@ -370,6 +370,7 @@ async def test_decide_returns_budget_steps_when_no_steps_left(trace, make_contex
     result = await decide_node(state, FakeRuntime(ctx))
 
     assert result["termination_reason"] == TerminationReason.BUDGET_STEPS
+    assert result.get("needs_finalization") is not True
     assert llm.calls == []
 
 
