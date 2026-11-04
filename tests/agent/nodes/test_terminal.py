@@ -16,6 +16,7 @@ from services.agent.agent_graph.state import create_initial_state
 from services.agent.domain import (
     AgentResult,
     BudgetLimits,
+    Finalization,
     Task,
     TerminationReason,
 )
@@ -156,6 +157,7 @@ def test_finish_creates_agent_result(trace, make_context, make_state):
     assert agent_result.reason == TerminationReason.DONE
     assert agent_result.answer == "final"
     assert agent_result.trace == str(ctx.trace.path)
+    assert agent_result.finalization == Finalization.NONE
 
 
 def test_finish_result_numeric_fields(trace, make_context, make_state):
@@ -190,9 +192,11 @@ def test_finish_missing_answer_returns_none(trace, make_context, make_state):
     result = finish_node(state, FakeRuntime(ctx))
 
     assert result["result"].answer is None
+    assert result["result"].finalization == Finalization.NONE
     records = ctx.trace.records()
     assert records[-1]["t"] == "finish"
     assert records[-1]["answer_chars"] == 0
+    assert records[-1]["finalization"] == "none"
 
 
 def test_finish_uses_answer_from_budget_branch(trace, make_context, make_state):
@@ -228,6 +232,7 @@ def test_finish_trace_finish_recorded(trace, make_context, make_state):
     finish = [r for r in ctx.trace.records() if r["t"] == "finish"]
     assert len(finish) == 1
     assert finish[0]["reason"] == "done_unverified"
+    assert finish[0]["finalization"] == "none"
 
 
 # ---------------------------------------------------------------------------
@@ -236,10 +241,19 @@ def test_finish_trace_finish_recorded(trace, make_context, make_state):
 
 @pytest.mark.parametrize("state,expected", [
     ({"termination_reason": TerminationReason.DONE}, "finish"),
+    ({"needs_finalization": True}, "finalize"),
+    ({"needs_finalization": True, "termination_reason": TerminationReason.BUDGET_STEPS}, "finalize"),
     ({"pending_tool_calls": [{"name": "x"}]}, "execute"),
     ({"pending_answer": "a"}, "verify"),
     ({}, "decide"),
-], ids=["done_to_finish", "tool_calls_to_execute", "answer_to_verify", "default_to_decide"])
+], ids=[
+    "done_to_finish",
+    "needs_finalization_to_finalize",
+    "needs_finalization_overrides_termination",
+    "tool_calls_to_execute",
+    "answer_to_verify",
+    "default_to_decide",
+])
 def test_route_after_decide(state, expected):
     assert route_after_decide(state) == expected
 
@@ -275,3 +289,43 @@ def test_create_initial_state_copies_history():
     assert state["history"] == task.initial_messages
     assert state["history"] is not task.initial_messages
     assert state["budget"].limits.max_steps == task.budget_limits.max_steps
+
+
+# ---------------------------------------------------------------------------
+# AgentResult: finalization enum contract
+# ---------------------------------------------------------------------------
+
+def test_agent_result_finalization_enum():
+    """Finalization.LLM/FALLBACK/NONE serialize to 'llm'/'fallback'/'none' (StrEnum)."""
+    for value, expected in [
+        (Finalization.LLM, "llm"),
+        (Finalization.FALLBACK, "fallback"),
+        (Finalization.NONE, "none"),
+    ]:
+        r = AgentResult(
+            run_id="r1",
+            reason=TerminationReason.BUDGET_STEPS,
+            answer="x",
+            steps=1,
+            tokens=1,
+            cost_usd=0.0,
+            seconds=0.1,
+            history_len=1,
+            trace="/tmp/t",
+            finalization=value,
+        )
+        assert r.model_dump(mode="json")["finalization"] == expected
+
+    # Default is NONE.
+    r = AgentResult(
+        run_id="r1",
+        reason=TerminationReason.DONE,
+        answer="x",
+        steps=1,
+        tokens=1,
+        cost_usd=0.0,
+        seconds=0.1,
+        history_len=1,
+        trace="/tmp/t",
+    )
+    assert r.finalization == Finalization.NONE

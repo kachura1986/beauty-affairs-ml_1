@@ -11,7 +11,10 @@ class BudgetLimits(BaseModel):
     Resource limits for an agent_graph run.
 
     Attributes:
-        max_steps (int): Maximum number of LLM decision steps allowed.
+        max_steps (int): Maximum number of LLM decision steps allowed. Once the limit is reached, the graph may perform
+            one additional finalization LLM call (with tools disabled) to synthesize a final answer from the collected
+            history, provided ``AgentPolicy.finalize_on_max_steps`` is enabled and the remaining wall-clock and
+            token budgets allow it. This extra call does not increment the step counter.
         max_seconds (float): Maximum wall-clock time allowed for the run, in seconds.
         max_tokens (int): Token budget for LLM input and output tokens.
         max_cost_usd (float): Cost budget for LLM usage, in USD. A value of ``0`` means
@@ -21,7 +24,13 @@ class BudgetLimits(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    max_steps: int = Field(gt=0, description="Maximum number of LLM decision steps.")
+    max_steps: int = Field(
+        gt=0,
+        description=(
+            "Maximum number of LLM decision steps. When the limit is reached, one additional finalization call"
+            "(tools disabled) may be made if allowed by policy and remaining wall-clock / token budgets."
+        ),
+    )
     max_seconds: float = Field(gt=0, description="Maximum wall-clock time in seconds.")
     max_tokens: int = Field(gt=0, description="Token budget for LLM input and output.")
     max_cost_usd: float = Field(

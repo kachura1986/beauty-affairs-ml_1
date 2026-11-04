@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
 from services.llm import LLMModel, ToolCall
-from ..domain import AgentPolicy, AgentResult, Budget, Task, TerminationReason
+from ..domain import AgentPolicy, AgentResult, Budget, Finalization, Task, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace
 
@@ -44,6 +44,11 @@ class GraphState(TypedDict, total=False):
     consecutive_empty_steps: int
     budget_warning_emitted: bool
 
+    # Content of the most recent successful tool result; set by execute_node when a ToolResult has status ToolStatus.OK.
+    # Used by finalize_node as a deterministic fallback source, so the fallback does not rely on a
+    # textual heuristic over tool message content.
+    last_tool_ok: str | None
+
     # Graph-local pending values
     pending_tool_calls: list[ToolCall]
     pending_answer: str | None
@@ -52,6 +57,11 @@ class GraphState(TypedDict, total=False):
     termination_reason: TerminationReason | None
     answer: str | None
     result: AgentResult
+
+    # Finalization after max_steps: needs_finalization is set by decide_node only for BUDGET_STEPS, consumed and
+    # reset by finalize_node. finalization is set by finalize_node and read by finish_node.
+    needs_finalization: bool
+    finalization: Finalization
 
 
 def create_initial_state(task: Task) -> GraphState:
@@ -79,6 +89,9 @@ def create_initial_state(task: Task) -> GraphState:
         'consecutive_empty_steps': 0,
         'budget_warning_emitted': False,
 
+        # Most recent successful tool result
+        'last_tool_ok': None,
+
         # Graph-local pending values
         'pending_tool_calls': [],
         'pending_answer': None,
@@ -86,4 +99,8 @@ def create_initial_state(task: Task) -> GraphState:
         # Terminal state
         'termination_reason': None,
         'answer': None,
+
+        # Finalization after max_steps
+        'needs_finalization': False,
+        'finalization': Finalization.NONE,
     }

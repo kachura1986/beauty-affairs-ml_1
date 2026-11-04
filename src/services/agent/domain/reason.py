@@ -35,3 +35,14 @@ class TerminationReason(StrEnum):
     # The context (system prompt + pinned turns) exceeded the configured budget;
     # the request must be retried with a shorter dialog
     CONTEXT_OVERFLOW = 'context_overflow'
+
+
+class Finalization(StrEnum):
+    # The model produced a final answer in finalize_node.
+    LLM = 'llm'
+
+    # Deterministic fallback from the last successful tool result.
+    FALLBACK = 'fallback'
+
+    # No finalization was attempted (normal path or finalize_on_max_steps=False).
+    NONE = 'none'

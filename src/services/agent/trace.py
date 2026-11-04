@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from services.llm import Reply, ToolCall
-from .domain import Budget, TerminationReason
+from .domain import Budget, Finalization, TerminationReason
 from .tools import ToolResult
 
 # How many trace files to keep in RUNS_DIR.
@@ -285,10 +285,18 @@ class Trace:
             'budget': budget.snapshot(),
         })
 
-    def finish(self, reason: TerminationReason, budget: Budget, answer: str | None) -> None:
+    def finish(
+            self,
+            reason: TerminationReason,
+            budget: Budget,
+            answer: str | None,
+            *,
+            finalization: Finalization = Finalization.NONE,
+    ) -> None:
         self._write({
             't': 'finish',
             'reason': reason.value,
             'budget': budget.snapshot(),
             'answer_chars': len(answer or ''),
+            'finalization': finalization.value,
         })

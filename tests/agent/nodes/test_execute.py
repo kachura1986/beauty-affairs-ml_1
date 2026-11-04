@@ -438,3 +438,52 @@ async def test_regression_skipped_message_carries_reason(trace, make_context, ma
     assert skipped["tool_call_id"] == "c3"
     assert "repeated_action" in skipped["content"]
     assert "was not executed" in skipped["content"]
+
+
+# ---------------------------------------------------------------------------
+# last_tool_ok: explicit tracking of the most recent successful tool result
+# ---------------------------------------------------------------------------
+
+async def test_execute_sets_last_tool_ok_on_success(trace, make_context, make_state):
+    """A successful tool call records its rendered result in last_tool_ok.
+
+    ``last_tool_ok`` is the explicit source used by ``finalize_node`` for the
+    deterministic fallback (Defect E): no heuristic over message content.
+    """
+    call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
+    ctx = make_context()
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [call]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["last_tool_ok"] is not None
+    assert "hi" in result["last_tool_ok"]
+
+
+async def test_execute_keeps_last_tool_ok_on_subsequent_error(trace, make_context, make_state, make_registry):
+    """A later failed round must not overwrite an earlier successful result.
+
+    The fallback in ``finalize_node`` must still see the most recent *successful*
+    tool result even if the final round only produced errors — otherwise the
+    fallback silently degrades to an error explanation instead of the useful
+    data the user actually asked for.
+    """
+    ok_call = {"id": "c1", "name": "echo", "arguments": {"value": "saved"}}
+    bad_call = {"id": "c2", "name": "failing", "arguments": {}}
+    registry = make_registry(failing_tool())
+    ctx = make_context(tools=registry)
+    state = make_state(ctx)
+
+    # Round 1: successful call records last_tool_ok.
+    state["pending_tool_calls"] = [ok_call]
+    first = await execute_node(state, FakeRuntime(ctx))
+    assert first["last_tool_ok"] is not None
+    assert "saved" in first["last_tool_ok"]
+
+    # Round 2: only errors — last_tool_ok must carry over unchanged.
+    state["pending_tool_calls"] = [bad_call]
+    state["last_tool_ok"] = first["last_tool_ok"]
+    second = await execute_node(state, FakeRuntime(ctx))
+
+    assert second["last_tool_ok"] == first["last_tool_ok"]
