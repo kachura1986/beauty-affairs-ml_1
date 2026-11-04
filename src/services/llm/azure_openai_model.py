@@ -268,23 +268,14 @@ class AzureOpenAIModel(BaseLLMModel):
 
                 formatted_tools.append(formatted_tool)
 
-        if system_prompt:
-            request = self._client.responses.create(
-                model=self._model_name,
-                input=formatted_messages,
-                tools=formatted_tools,
-                temperature=self._temperature,
-                max_output_tokens=self._max_tokens,
-                instructions=system_prompt,
-            )
-        else:
-            request = self._client.responses.create(
-                model=self._model_name,
-                input=formatted_messages,
-                tools=formatted_tools,
-                temperature=self._temperature,
-                max_output_tokens=self._max_tokens,
-            )
+        request = self._client.responses.create(
+            model=self._model_name,
+            input=formatted_messages,
+            tools=formatted_tools,
+            temperature=self._temperature,
+            max_output_tokens=self._max_tokens,
+            instructions=system_prompt or None,
+        )
 
         if timeout is None:
             raise ValueError(f"{self.__class__.__name__}: timeout is required.")
