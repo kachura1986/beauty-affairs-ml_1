@@ -194,20 +194,29 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
         if warning:
             budget_warning_emitted = True
 
-    # Context assembly: the system prompt goes to the model through a dedicated
-    # channel (`system_prompt` / Responses API `instructions`); `context_window.messages`
-    # contains only the history. `ContextOverflow` is caught here and translated
-    # into a normal TerminationReason so the run terminates through `finish_node`.
+    # System prompt goes via its own channel; `messages` holds only history.
+    # `ContextOverflow` → normal TerminationReason, finished via `finish_node`.
     try:
         context_window = build_context(ctx.task.system_prompt, warning, state['history'])
     except ContextOverflow as exc:
+        # trace.error records exc.code; str(exc) goes to the logger (diagnostics only).
+        # Alert on trace.error(kind='context_overflow'), not on this log line.
+        logger.info(
+            'Context overflow: %s (step=%s): %s',
+            exc.code,
+            budget.steps,
+            str(exc),
+            extra={'step': budget.steps, 'context_overflow_code': exc.code},
+        )
+
         ctx.trace.error(
             step=budget.steps,
             kind='context_overflow',
-            message=str(exc)[:500],
+            message=exc.code,
             latency_ms=0,
             budget=budget,
         )
+
         return {
             'budget': budget,
             'budget_warning_emitted': budget_warning_emitted,
@@ -342,10 +351,8 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
 
             continue  # remaining calls are handled by branch (1)
 
-        # Step 4. Pre-flight: do not start a tool call when the run budget has already expired.
-        # Between _request_llm and this point some time passed, so remaining may now be <= 0.
-        # `remaining` is computed once here and passed straight to invoke() below: the operations between this check
-        # and invoke() are microseconds (t0 = time.monotonic()), so a second recomputation would be noise, not precision.
+        # Step 4. Pre-flight: budget may have expired since _request_llm.
+        # `remaining` is computed once and reused for invoke() — no recomputation.
         remaining = budget.remaining_seconds()
         if remaining <= 0:
             termination_reason = TerminationReason.BUDGET_TIME

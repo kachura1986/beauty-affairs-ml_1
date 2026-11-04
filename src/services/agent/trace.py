@@ -169,10 +169,8 @@ class Trace:
         # but never let the write itself mask the original exception
         if exc_type is not None and not self._closed:
             try:
-                # `str(exc)` here is diagnostic only: it fires solely on unhandled
-                # exceptions that escaped the agent loop and is truncated to 500 chars.
-                # Do not promote this to a general error path — `error()` is the place
-                # for machine-readable codes (type names, reason strings).
+                # Diagnostic only: unhandled exception escaped the agent loop, capped at 500 chars.
+                # General error paths must use `error()` with a machine-readable code.
                 self._write({
                     't': 'unexpected_error',
                     'kind': exc_type.__name__,
@@ -232,10 +230,8 @@ class Trace:
             *,
             system_prompt: str,
     ) -> None:
-        # `system_hash` / `system_chars` capture the effective system prompt
-        # (task prompt + optional budget warning) that was sent this step.
-        # The warning is emitted at most once per run (budget_warning_emitted),
-        # so `system_hash` changes at most once — enough for post-hoc debugging.
+        # Effective system prompt (task + optional budget warning) sent this step.
+        # Warning is emitted at most once per run, so `system_hash` changes at most once.
         self._write({
             't': 'step',
             'step': n,
@@ -254,11 +250,8 @@ class Trace:
         })
 
     def tool(self, n: int, call: ToolCall, res: ToolResult, ms: int) -> None:
-        # Tool arguments are recorded as a hash + the list of argument names,
-        # never raw values: arguments can contain PII (user queries, identifiers),
-        # and trace files are retained on disk. `args_hash` correlates identical
-        # calls across steps but CANNOT be reversed back to the original arguments —
-        # that is a deliberate trade-off.
+        # Args stored as hash + keys, never raw values (PII; files retained on disk).
+        # `args_hash` correlates identical calls but CANNOT be reversed — deliberate.
         args = call.get('arguments', {})
         self._write({
             't': 'tool',
@@ -280,8 +273,9 @@ class Trace:
         })
 
     def error(self, step: int, kind: str, message: str, latency_ms: int, budget: Budget) -> None:
-        # `message` must stay a machine-readable code (type name, reason string),
-        # never `str(exc)` from a tool/user-facing exception: it may contain PII.
+        # `message` must be a machine-readable code (type name, reason string, or ``ContextOverflow.code``),
+        # never ``str(exc)`` (may contain PII). Only carve-out: ``__exit__`` (unhandled, diagnostic only).
+        # Catch -> pass code, log the detail separately.
         self._write({
             't': 'error',
             'step': step,

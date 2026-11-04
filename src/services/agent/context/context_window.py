@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
+import re
 
 # --- Limits ---------------------------------------------------------------
 # NB: sizes are measured in *characters*, not tokens. This is a cheap approximation: the chars/tokens ratio varies
@@ -9,13 +10,16 @@ MAX_MESSAGES = 40
 MAX_ESTIMATED_CHARS = 60_000
 RESERVED_OUTPUT_CHARS = 8_000  # room for the model's reply
 
-# Only ``tool`` outputs are trimmed in place (head + tail). They are the main size driver, and their first 
-# line (call_id / exit code) and last line (error / final value) are the useful parts. Cutting user/assistant text can 
+# Only ``tool`` outputs are trimmed in place (head + tail). They are the main size driver, and their first 6 lines
+# (call_id / exit code) and last line (error / final value) are the useful parts. Cutting user/assistant text can
 # silently destroy meaning (reviewer note #5), so those are kept whole — if they don't fit, the whole turn is dropped.
 PER_TOOL_MSG_LIMIT = 4_000
 
 # Approximate char cost of a non-text multimodal part (image, audio, ...).
 MULTIMODAL_PART_WEIGHT = 1_000
+
+# Machine-readable codes of ContextOverflow are snake_case, lowercase, ASCII.
+_CODE_RE = re.compile(r'[a-z0-9_]+')
 
 
 @dataclass(frozen=True)
@@ -41,7 +45,27 @@ class ContextOverflow(Exception):
     Raised only by ``build_context`` (and the private helpers it calls), called exclusively from ``decide_node``.
     ``decide_node`` MUST catch it and return ``TerminationReason.CONTEXT_OVERFLOW``; the run then terminates normally
     through ``finish_node`` and is reported to the caller via ``AgentResult.reason`` / ``ChatResponse.termination_reason``.
+
+    Attributes:
+        code: Machine-readable, PII-free identifier of the overflow subtype.
+            Codes follow a snake_case, lowercase, ASCII convention and match ``[a-z0-9_]+``.
+            This is what ``Trace.error(message=...)`` records.
+        message: Human-readable detail (``str(exc)``). Intended for logs only, never for trace.
+
+    Both arguments are required. The first positional argument is the **code**, not the
+    message — passing a free-form human string raises ``ValueError``, which is deliberate:
+    the contract is self-enforcing rather than relying on convention.
     """
+
+    def __init__(self, code: str, message: str) -> None:
+        if not _CODE_RE.fullmatch(code):
+            raise ValueError(
+                f"ContextOverflow code must match [a-z0-9_]+, got {code!r}. "
+                f"Human-readable text belongs in the second positional argument."
+            )
+
+        super().__init__(message)
+        self.code = code
 
 
 # --- Helpers --------------------------------------------------------------
@@ -51,10 +75,10 @@ def _size(message: dict[str, Any]) -> int:
 
     Multimodal (list) content sums text parts and assigns a fixed weight to every non-text part,
     so images cannot bypass the budget by hiding inside ``content``.
-    
+
     Args:
         message (dict[str, Any]): The message to measure.
-    
+
     Returns:
         The size of the message in characters.
     """
@@ -84,10 +108,10 @@ def _truncate_tool(message: dict[str, Any]) -> dict[str, Any]:
 
     Head is favoured (2/3) — call_id / exit code live there; tail (1/3) keeps the final error line or result value.
     Other roles are returned untouched — that is a deliberate trade-off, see module docstring.
-    
+
     Args:
         message (dict[str, Any]): The message to truncate.
-    
+
     Returns:
         The truncated message.
     """
@@ -119,10 +143,10 @@ def _group_turns(messages: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     the matching ``assistant(tool_calls)``, otherwise the provider API rejects the request.
     If the history does not start with ``user`` (e.g. it is already a tail of a longer session),
     the first group is simply the earliest available context and is treated as such.
-    
+
     Args:
         messages (list[dict[str, Any]]): The messages to group.
-    
+
     Returns:
         list[list[dict[str, Any]]]: The grouped messages.
     """
@@ -163,7 +187,7 @@ def _prepare_context(system_prompt: str, warning: str | None) -> tuple[str, int]
 
     history_budget = MAX_ESTIMATED_CHARS - RESERVED_OUTPUT_CHARS - len(effective_system)
     if history_budget <= 0:
-        raise ContextOverflow('System prompt alone exceeds budget')
+        raise ContextOverflow('system_prompt_too_large',"System prompt alone exceeds budget")
 
     return effective_system, history_budget
 
@@ -176,7 +200,7 @@ def _build_window(
     """
     Pack ``history`` into a list of ``input`` messages under ``history_budget_chars``.
 
-    ``system_prompt`` is NOT part of the window — it goes to ``chat(system_prompt=...)``. ``history_budget_chars`` is 
+    ``system_prompt`` is NOT part of the window — it goes to ``chat(system_prompt=...)``. ``history_budget_chars`` is
     expected to ALREADY EXCLUDE the output reserve (see ``_prepare_context``); it is NOT re-subtracted here.
 
     Rules (in priority order):
@@ -220,11 +244,11 @@ def _build_window(
     pinned_msgs = sum(len(turns[i]) for i in pinned_idx)
 
     if pinned_msgs > max_messages:
-        raise ContextOverflow("Pinned turns exceed message limit")
+        raise ContextOverflow('pinned_turns_too_many',"Pinned turns exceed message limit")
 
     if pinned_chars > history_budget_chars:
         # Includes the "current request alone is too large" case — this is a deliberate, documented contract.
-        raise ContextOverflow("Mandatory turns exceed budget")
+        raise ContextOverflow('pinned_turns_too_large',"Mandatory turns exceed budget")
 
     budget = history_budget_chars - pinned_chars
     keep: set[int] = set(pinned_idx)
