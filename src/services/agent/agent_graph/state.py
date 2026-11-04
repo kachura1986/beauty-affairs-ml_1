@@ -44,6 +44,11 @@ class GraphState(TypedDict, total=False):
     consecutive_empty_steps: int
     budget_warning_emitted: bool
 
+    # Content of the most recent successful tool result; set by execute_node when a ToolResult has status ToolStatus.OK.
+    # Used by finalize_node as a deterministic fallback source, so the fallback does not rely on a
+    # textual heuristic over tool message content.
+    last_tool_ok: str | None
+
     # Graph-local pending values
     pending_tool_calls: list[ToolCall]
     pending_answer: str | None
@@ -53,7 +58,8 @@ class GraphState(TypedDict, total=False):
     answer: str | None
     result: AgentResult
 
-    # Finalization after max_steps: set by decide_node only for BUDGET_STEPS, consumed and reset to False by finalize_node.
+    # Finalization after max_steps: needs_finalization is set by decide_node only for BUDGET_STEPS, consumed and
+    # reset by finalize_node. finalization is set by finalize_node and read by finish_node.
     needs_finalization: bool
     finalization: Finalization
 
@@ -82,6 +88,9 @@ def create_initial_state(task: Task) -> GraphState:
         'failed_actions': [],
         'consecutive_empty_steps': 0,
         'budget_warning_emitted': False,
+
+        # Most recent successful tool result
+        'last_tool_ok': None,
 
         # Graph-local pending values
         'pending_tool_calls': [],
