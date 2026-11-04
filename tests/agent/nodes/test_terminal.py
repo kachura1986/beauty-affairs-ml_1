@@ -195,6 +195,27 @@ def test_finish_missing_answer_returns_none(trace, make_context, make_state):
     assert records[-1]["answer_chars"] == 0
 
 
+def test_finish_uses_answer_from_budget_branch(trace, make_context, make_state):
+    """End-to-end: answer set by decide_node on a budget reason reaches
+    AgentResult and trace.finish with non-zero answer_chars.
+
+    The `reason` check pins that the *budget* termination is carried through
+    to AgentResult, not silently rewritten into DONE/DONE_UNVERIFIED.
+    """
+    ctx = make_context()
+    state = make_state(ctx)
+    state["termination_reason"] = TerminationReason.BUDGET_TOKENS
+    state["answer"] = "kept"
+
+    result = finish_node(state, FakeRuntime(ctx))
+
+    assert result["result"].reason == TerminationReason.BUDGET_TOKENS
+    assert result["result"].answer == "kept"
+    records = ctx.trace.records()
+    assert records[-1]["t"] == "finish"
+    assert records[-1]["answer_chars"] == len("kept")
+
+
 def test_finish_trace_finish_recorded(trace, make_context, make_state):
     """FINISH writes the final record to the trace file."""
     ctx = make_context()

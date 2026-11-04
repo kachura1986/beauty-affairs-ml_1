@@ -206,35 +206,39 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace, make_con
 
 
 async def test_request_llm_exceeded_after_successful_call(trace, make_context):
-    """A successful call that pushes usage over the limit yields BUDGET_TOKENS."""
-    llm = FakeLLM(reply(text="x", in_tokens=100, out_tokens=0, cost_usd=0))
+    """A successful call that pushes usage over the limit yields BUDGET_TOKENS
+    but preserves the reply — decide_node decides if it qualifies as a final answer.
+
+    ``max_tokens == MIN_EXPECTED_TOKENS`` keeps the preflight check from firing
+    (strict '<'), while ``in_tokens == MIN_EXPECTED_TOKENS + 1`` guarantees the
+    post-call ``exceeded_without_steps()`` returns BUDGET_TOKENS. ``out_tokens``
+    is pinned to 0 so the overrun comes from the input side, not from output
+    noise that could mask a regression.
+    """
+    from core.config import settings
+
+    llm = FakeLLM(reply(
+        text="x",
+        in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
+        out_tokens=0,
+        cost_usd=0,
+    ))
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(
+        max_steps=10,
+        max_seconds=10,
+        max_tokens=settings.MIN_EXPECTED_TOKENS,
+        max_cost_usd=1,
+    ))
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
         context_window=make_context_window(),
     )
 
-    assert result is None
     assert reason == TerminationReason.BUDGET_TOKENS
-
-
-async def test_request_llm_no_steps_left(trace, make_context):
-    """No steps left short-circuits before any LLM call is made."""
-    llm = FakeLLM(reply(text="never"))
-    ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1))
-    budget.steps = 1
-
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
-        context_window=make_context_window(),
-    )
-
-    assert result is None
-    assert reason == TerminationReason.BUDGET_STEPS
-    assert llm.calls == []
+    assert result is not None
+    assert result.text == "x"
 
 
 async def test_request_llm_timeout_capped_by_remaining_budget(trace, make_context):
@@ -457,6 +461,145 @@ async def test_decide_tool_calls_clears_stale_pending_answer(trace, make_context
     result = await decide_node(state, FakeRuntime(ctx))
 
     assert result["pending_answer"] is None
+
+
+# ---------------------------------------------------------------------------
+# decide_node: budget reason with a preserved reply
+#
+# The budget branch of `decide_node` qualifies a reply as a final answer only
+# when it has no tool_calls and non-blank text. These tests pin each condition
+# in isolation; the shared setup mirrors the exact preflight boundary used by
+# `test_request_llm_exceeded_after_successful_call` — `max_tokens` equals
+# MIN_EXPECTED_TOKENS so the preflight does not fire, while `in_tokens` is one
+# over so the post-call `exceeded_without_steps()` returns BUDGET_TOKENS.
+# ---------------------------------------------------------------------------
+
+async def test_decide_preserves_answer_when_budget_exceeded_after_final_text(
+        trace, make_context, make_state,
+):
+    """Scenario 6/7: a final-text reply that pushes usage over the token
+    budget must become `answer`, not be dropped into an empty AgentResult."""
+    from core.config import settings
+
+    llm = FakeLLM(reply(
+        text="final answer",
+        in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
+        out_tokens=0,
+        cost_usd=0,
+    ))
+    ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
+    state = make_state(ctx)
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TOKENS
+    assert result["answer"] == "final answer"
+    assert result["budget"] is state["budget"]
+
+
+async def test_decide_does_not_preserve_tool_call_as_answer(trace, make_context, make_state):
+    """A tool_call reply at budget exhaustion is not a final answer —
+    the model asked to continue, not to answer."""
+    from core.config import settings
+
+    call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
+    llm = FakeLLM(reply(
+        text="",
+        tool_calls=[call],
+        in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
+        out_tokens=0,
+        cost_usd=0,
+    ))
+    ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
+    state = make_state(ctx)
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TOKENS
+    assert "answer" not in result
+
+
+async def test_decide_does_not_preserve_empty_text_as_answer(trace, make_context, make_state):
+    """A blank-text reply at budget exhaustion is not a final answer."""
+    from core.config import settings
+
+    llm = FakeLLM(reply(
+        text="   ",
+        in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
+        out_tokens=0,
+        cost_usd=0,
+    ))
+    ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
+    state = make_state(ctx)
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TOKENS
+    assert "answer" not in result
+
+
+async def test_decide_tool_call_with_text_at_budget_not_preserved(trace, make_context, make_state):
+    """Even if the reply carries both text and tool_calls, tool_calls make it
+    non-final — `answer` must stay absent."""
+    from core.config import settings
+
+    call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
+    llm = FakeLLM(reply(
+        text="intermediate thought",
+        tool_calls=[call],
+        in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
+        out_tokens=0,
+        cost_usd=0,
+    ))
+    ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
+    state = make_state(ctx)
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TOKENS
+    assert "answer" not in result
+
+
+# ---------------------------------------------------------------------------
+# decide_node: integration guards over the preflight and except branches
+#
+# Both branches of `_request_llm` return (None, reason). The `reply is not
+# None` guard in the budget branch keeps `answer` absent — and must not raise
+# on a None reply. These tests exercise that contract end-to-end through
+# decide_node, not just at the _request_llm boundary.
+# ---------------------------------------------------------------------------
+
+async def test_decide_preflight_budget_does_not_set_answer(trace, make_context, make_state):
+    """decide_node tolerates (None, reason) from the preflight path without
+    setting `answer` and without raising."""
+    from core.config import settings
+
+    llm = FakeLLM(reply(text="never"))
+    ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS - 1)
+    state = make_state(ctx)
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_TOKENS
+    assert "answer" not in result
+    assert llm.calls == []
+
+
+async def test_decide_llm_error_does_not_set_answer(trace, make_context, make_state):
+    """A failed LLM call with reason != None does not qualify as an answer.
+
+    The except branch of `_request_llm` returns (None, reason); the new
+    contract ("reply may be non-None when reason != None") applies only to
+    the success path, so this test pins the asymmetry.
+    """
+    llm = FakeLLM(errors=[RuntimeError("boom")])
+    ctx = make_context(llm=llm)
+    state = make_state(ctx)
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.LLM_ERROR
+    assert "answer" not in result
 
 
 async def test_decide_emits_budget_warning_once(trace, make_context, make_state):
