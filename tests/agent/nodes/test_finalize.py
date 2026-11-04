@@ -23,8 +23,9 @@ from services.agent.domain import (
     Task,
     TerminationReason,
 )
+from services.agent.tools import Tool
 
-from _testing import FakeLLM, FakeRuntime, failing_tool, reply
+from _testing import EchoArgs, FakeLLM, FakeRuntime, failing_tool, reply
 
 
 # ---------------------------------------------------------------------------
@@ -256,9 +257,20 @@ async def test_finalize_records_overrun_in_trace(trace, make_context):
 
     Termination reason is preserved (BUDGET_STEPS is set before finalize_node
     runs); the overrun is recorded as a diagnostic trace error.
+
+    ``max_tokens`` is set just above ``settings.MIN_EXPECTED_TOKENS`` so the
+    pre-flight passes (``remaining_tokens() >= MIN_EXPECTED_TOKENS``) and the
+    LLM call actually happens; the oversized ``in_tokens`` on the reply then
+    pushes the run over the token budget after ``record_llm``.
     """
+    from core.config import settings
+
     llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost_usd=0.0))
-    ctx = make_context(llm=llm, max_steps=1, max_tokens=100)
+    ctx = make_context(
+        llm=llm,
+        max_steps=1,
+        max_tokens=settings.MIN_EXPECTED_TOKENS + 100,
+    )
     state = _finalize_state(
         ctx,
         history=[{"role": "tool", "content": "ok"}],
@@ -274,6 +286,47 @@ async def test_finalize_records_overrun_in_trace(trace, make_context):
     assert overrun[0]["message"] == TerminationReason.BUDGET_TOKENS.value
     # The termination reason itself is unchanged.
     assert state["termination_reason"] == TerminationReason.BUDGET_STEPS
+
+
+async def test_finalize_does_not_increment_steps(trace, make_context):
+    """The finalization call must not consume a step (contract from BudgetLimits).
+
+    The whole point of the extra call is to bypass ``can_start_step()`` for
+    exactly one call while leaving ``budget.steps`` at ``max_steps``.
+    """
+    llm = FakeLLM(reply(text="final"))
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+    assert state["budget"].steps == 1
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    assert state["budget"].steps == 1  # not 2
+
+
+async def test_finalize_records_llm_usage(trace, make_context):
+    """Tokens and cost of the finalization call are recorded on the budget.
+
+    Without ``record_llm`` the overrun detection (Defect D) would be blind to
+    token and cost overruns, and the trace's ``finish.budget`` snapshot would
+    underreport the true cost of the run.
+    """
+    llm = FakeLLM(reply(text="final", in_tokens=5, out_tokens=3, cost_usd=0.0001))
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    assert state["budget"].tokens == 8
+    assert state["budget"].cost_usd == pytest.approx(0.0001)
 
 
 async def test_finalize_node_resets_needs_finalization(trace, make_context):
@@ -529,6 +582,45 @@ async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
 
     assert result is not None
     assert result.reason == TerminationReason.BUDGET_STEPS
+
+
+async def test_budget_time_with_tool_results_does_not_finalize(trace, make_registry):
+    """Finalization is gated to BUDGET_STEPS; BUDGET_TIME never triggers it.
+
+    When the wall-clock budget is exhausted mid-execute, the termination
+    reason is BUDGET_TIME, not BUDGET_STEPS, so ``decide_node`` is never
+    reached again and finalization is not attempted — even though tool
+    messages are already in history. This pins the decision to gate
+    finalization to step-exhaustion only and prevents a future refactor
+    from silently widening it to time/token/cost exhaustion, where there
+    would be no budget left for the extra call anyway.
+    """
+    import asyncio
+
+    async def slow_fn(**kwargs):
+        # Will be cut by the budget-capped per-call timeout; its only job
+        # is to burn through the remaining wall-clock time.
+        await asyncio.sleep(100)
+        return "unreachable"
+
+    call = {"id": "c1", "name": "slow", "arguments": {}}
+    llm = FakeLLM(reply(text="", tool_calls=[call]))
+    policy = AgentPolicy(empty_limit=3, repeat_limit=3)
+    registry = make_registry(
+        Tool(name="slow", description="", fn=slow_fn, args_model=EchoArgs)
+    )
+
+    result = await run_graph(
+        task=_task(max_steps=5, max_seconds=0.05),
+        tools=registry,
+        llm=llm,
+        trace=trace,
+        policy=policy,
+    )
+
+    assert result.reason == TerminationReason.BUDGET_TIME
+    assert result.answer is None
+    assert result.finalization == Finalization.NONE
 
 
 async def test_finalization_in_trace_finish(trace, make_registry):

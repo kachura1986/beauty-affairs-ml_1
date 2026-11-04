@@ -220,10 +220,19 @@ def test_finish_trace_finish_recorded(trace, make_context, make_state):
 
 @pytest.mark.parametrize("state,expected", [
     ({"termination_reason": TerminationReason.DONE}, "finish"),
+    ({"needs_finalization": True}, "finalize"),
+    ({"needs_finalization": True, "termination_reason": TerminationReason.BUDGET_STEPS}, "finalize"),
     ({"pending_tool_calls": [{"name": "x"}]}, "execute"),
     ({"pending_answer": "a"}, "verify"),
     ({}, "decide"),
-], ids=["done_to_finish", "tool_calls_to_execute", "answer_to_verify", "default_to_decide"])
+], ids=[
+    "done_to_finish",
+    "needs_finalization_to_finalize",
+    "needs_finalization_overrides_termination",
+    "tool_calls_to_execute",
+    "answer_to_verify",
+    "default_to_decide",
+])
 def test_route_after_decide(state, expected):
     assert route_after_decide(state) == expected
 
