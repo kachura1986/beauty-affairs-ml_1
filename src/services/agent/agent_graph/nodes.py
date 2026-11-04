@@ -75,6 +75,9 @@ async def _request_llm(
 
     Returns:
         tuple[Reply | None, TerminationReason | None]: Tuple of (reply, termination reason).
+        When ``reason`` is not ``None``, ``reply`` may still be valid: a completed LLM call that itself
+        pushed the run over a hard budget is preserved so the caller can decide whether it qualifies
+        as a final answer. This is not a contract violation — it is a retained reply, not a missing one.
     """
     # Fail loud if the precondition is violated. Under `python -O` this assert is
     # stripped; the docstring precondition above remains the authoritative contract.
@@ -163,11 +166,12 @@ async def _request_llm(
         system_prompt=context_window.system,
     )
 
-    # A completed LLM call may itself push us over a hard budget
+    # A completed call may push us over budget. Keep the reply — dropping it would turn
+    # a finished step into an empty AgentResult. decide_node decides if it's a final answer.
     reason = budget.exceeded_without_steps()
 
     if reason:
-        return None, reason
+        return reply, reason
 
     return reply, None
 
@@ -247,11 +251,18 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     )
 
     if reason:
-        return {
+        result: dict[str, Any] = {
             'budget': budget,
             'termination_reason': reason,
             'budget_warning_emitted': budget_warning_emitted,
         }
+
+        # Keep the final answer from the last LLM call before the budget was exceeded.
+        # Tool calls don't qualify; postcondition is skipped (run ended on budget, not DONE).
+        if reply is not None and not reply.tool_calls and reply.text.strip():
+            result['answer'] = reply.text
+
+        return result
 
     if reply is None:
         raise RuntimeError('LLM request returned no reply and no termination reason.')
@@ -319,7 +330,7 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
     Tool calls are still executed sequentially, exactly as in the original implementation.
 
     Args:
-        state (GraphState): The current graph state.
+        state (GraphState): The current state of the graph.
         runtime (Runtime[AgentContext]): The runtime environment of the graph.
 
     Returns:
