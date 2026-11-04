@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from .reason import TerminationReason
+from .reason import Finalization, TerminationReason
 
 
 class AgentResult(BaseModel):
@@ -17,3 +17,10 @@ class AgentResult(BaseModel):
     seconds: float
     history_len: int
     trace: str
+    finalization: Finalization = Field(
+        default=Finalization.NONE,
+        description=(
+            "How the final answer was produced. LLM — synthesized by the model  in finalize_node;"
+            "FALLBACK — deterministic fallback from the last tool result; NONE — no finalization was attempted."
+        ),
+    )

@@ -14,12 +14,19 @@ from ..context import (
     build_observation_message,
     build_tool_message,
 )
-from ..domain import AgentResult, Budget, TerminationReason
+from ..domain import AgentResult, Budget, Finalization, TerminationReason
 from ..tools import ToolRegistry, ToolStatus
 from ..tools.errors import already_failed_result, repeated_action_result, skipped_due_to_termination_result
 from ..trace import Trace
 
 logger = logging.getLogger(__name__)
+
+# Appended to the task system prompt for the single finalization LLM call that
+# runs after max_steps has been exhausted. Tools are disabled for this call.
+FINALIZE_ANCHOR = (
+    'You have reached the final step. Provide the best final answer now using '
+    'the information already collected. Do not call any tools.'
+)
 
 
 def _log_internal_exception(message: str, exc: Exception, step: int | None = None) -> None:
@@ -49,6 +56,61 @@ def _check_budget(budget: Budget) -> TerminationReason | None:
         return TerminationReason.BUDGET_STEPS
 
     return budget.exceeded_without_steps()
+
+
+def _has_tool_results(history: list[dict[str, Any]]) -> bool:
+    """
+    Return True if history contains at least one tool message.
+
+    Synthetic error messages (skipped_due_to_termination_result,
+    already_failed_result, repeated_action_result) also count: the model can
+    still synthesize a final answer that explains the failure. Excluding them
+    would silently skip finalization in error scenarios, which is exactly the
+    case the feature is meant to handle. An empty content field is also
+    counted; _deterministic_fallback independently decides whether a usable
+    result is present.
+
+    Args:
+        history (list[dict[str, Any]]): Conversation history.
+
+    Returns:
+        bool: True if at least one tool message is present.
+    """
+    return any(msg.get('role') == 'tool' for msg in history)
+
+
+def _deterministic_fallback(history: list[dict[str, Any]]) -> str | None:
+    """
+    Build a deterministic answer from the most recent successful tool result.
+
+    A tool message is considered successful if its content does not start
+    with 'ERROR ' (heuristic: tool messages carry no structured status field;
+    ToolResult.to_model() renders errors as 'ERROR <code>. ...'). Synthetic
+    error messages (skipped_due_to_termination_result, already_failed_result,
+    repeated_action_result) also start with 'ERROR ', so they are excluded
+    from the fallback source. Returns None when no successful tool message is
+    available, so the caller can leave answer=None and finalization=NONE.
+
+    Args:
+        history (list[dict[str, Any]]): Conversation history.
+
+    Returns:
+        str | None: A deterministic answer, or None if no usable tool result is present.
+    """
+    for msg in reversed(history):
+        if msg.get('role') != 'tool':
+            continue
+
+        content = msg.get('content') or ''
+
+        if not content.startswith('ERROR '):
+            return (
+                'The model could not produce a final answer within the step limit. '
+                'Here is the most recent tool result:\n'
+                f'{content}'
+            )
+
+    return None
 
 
 async def _request_llm(
@@ -179,6 +241,19 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     reason = _check_budget(budget)
 
     if reason:
+        # BUDGET_STEPS with policy enabled and tool results present: hand control to finalize_node so the model can
+        # synthesize an answer from history instead of silently finishing with answer=None.
+        if (
+                reason == TerminationReason.BUDGET_STEPS
+                and ctx.policy.finalize_on_max_steps
+                and _has_tool_results(state['history'])
+        ):
+            return {
+                'budget': budget,
+                'termination_reason': reason,
+                'needs_finalization': True,
+            }
+
         return {
             'termination_reason': reason,
             'budget': budget,
@@ -295,6 +370,120 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     result['pending_answer'] = None
 
     return result
+
+
+async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
+    """
+    Synthesize a final answer after max_steps has been exhausted.
+
+    Preconditions:
+        state['termination_reason'] == TerminationReason.BUDGET_STEPS.
+        state['needs_finalization'] is True (set by decide_node only for BUDGET_STEPS).
+        state['answer'] is None.
+
+    This is the only place where an LLM call may run without can_start_step();
+    the exception is bounded to exactly one call and gated by
+    policy.finalize_on_max_steps and hard-budget checks.
+
+    Every return path resets state['needs_finalization'] to False, so the flag
+    never leaks past this node into finish_node or subsequent debugging.
+
+    Args:
+        state (GraphState): The current graph state.
+        runtime (Runtime[AgentContext]): Runtime for the graph.
+
+    Returns:
+        dict[str, Any]: Result of the node.
+    """
+    if state.get('termination_reason') != TerminationReason.BUDGET_STEPS:
+        raise RuntimeError(
+            "finalize_node requires BUDGET_STEPS termination reason; "
+            f"got {state.get('termination_reason')!r}."
+        )
+
+    if not state.get('needs_finalization'):
+        # Defensive: routing sent us here by mistake.
+        return {
+            'finalization': Finalization.NONE,
+            'needs_finalization': False,
+        }
+
+    ctx = runtime.context
+    budget = state['budget']
+    history = state['history']
+
+    # Hard budget pre-flight: the finalization call must not breach the
+    # remaining wall-clock or token budgets.
+    if budget.remaining_seconds() <= 0 or budget.remaining_tokens() < settings.MIN_EXPECTED_TOKENS:
+        answer = _deterministic_fallback(history)
+
+        return {
+            'answer': answer,
+            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
+            'needs_finalization': False,
+        }
+
+    system_prompt = ctx.task.system_prompt + '\n\n' + FINALIZE_ANCHOR
+
+    # Re-check remaining time to defend against a TOCTOU race between the budget check above and the actual call.
+    remaining = budget.remaining_seconds()
+
+    if remaining <= 0:
+        answer = _deterministic_fallback(history)
+
+        return {
+            'answer': answer,
+            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
+            'needs_finalization': False,
+        }
+
+    timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
+
+    if timeout <= 0:
+        answer = _deterministic_fallback(history)
+
+        return {
+            'answer': answer,
+            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
+            'needs_finalization': False,
+        }
+
+    try:
+        chat = getattr(ctx.llm, 'chat', None)
+
+        if chat is None:
+            raise ValueError(f"{ctx.llm.__class__.__name__} does not support agent chat()")
+
+        reply = await chat(history, [], timeout, system_prompt)
+    except Exception as exc:  # noqa: BLE001
+        # Same helper used by _request_llm so exceptions are not silently swallowed by the fallback path.
+        # step=budget.steps keeps the association with the last executed step.
+        _log_internal_exception('Finalization LLM call failed.', exc, step=budget.steps)
+
+        answer = _deterministic_fallback(history)
+
+        return {
+            'answer': answer,
+            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
+            'needs_finalization': False,
+        }
+
+    # reply.tool_calls is ignored on finalization: the model was given an empty tool list, but the Responses API
+    # does not enforce it. We do not propagate them into pending_tool_calls, to keep the pairing invariant intact.
+    if reply is not None and reply.text.strip() and not reply.tool_calls:
+        return {
+            'answer': reply.text,
+            'finalization': Finalization.LLM,
+            'needs_finalization': False,
+        }
+
+    answer = _deterministic_fallback(history)
+
+    return {
+        'answer': answer,
+        'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
+        'needs_finalization': False,
+    }
 
 
 async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
@@ -481,7 +670,8 @@ def finish_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
         raise RuntimeError('Finish node requires a termination reason.')
 
     answer = state.get('answer')
-    runtime.context.trace.finish(reason, state['budget'], answer)
+    finalization = state.get('finalization', Finalization.NONE)
+    runtime.context.trace.finish(reason, state['budget'], answer, finalization=finalization)
 
     result = AgentResult(
         run_id=runtime.context.trace.run_id,
@@ -493,6 +683,7 @@ def finish_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
         seconds=round(state['budget'].elapsed(), 2),
         history_len=len(state['history']),
         trace=str(runtime.context.trace.path),
+        finalization=finalization,
     )
 
     return {

@@ -3,10 +3,22 @@ from typing import Literal
 from .state import GraphState
 
 
-def route_after_decide(state: GraphState) -> Literal['execute', 'verify', 'finish', 'decide']:
+def route_after_decide(state: GraphState) -> Literal['execute', 'verify', 'finish', 'decide', 'finalize']:
     """
     Decide where the graph goes after an LLM decision.
+
+    ``needs_finalization`` is checked first: it is set only for ``BUDGET_STEPS`` with policy enabled and
+    tool results present, so it takes priority over the generic ``termination_reason`` → ``finish`` branch.
+
+    Args:
+        state (GraphState): The current state of the graph.
+
+    Returns:
+        Literal['execute', 'verify', 'finish', 'decide', 'finalize']
     """
+    if state.get('needs_finalization'):
+        return 'finalize'
+
     if state.get('termination_reason') is not None:
         return 'finish'
 
@@ -23,10 +35,10 @@ def route_after_decide(state: GraphState) -> Literal['execute', 'verify', 'finis
 def route_after_execute(state: GraphState) -> Literal['finish', 'decide']:
     """
     After tool execution.
-        
+
     Args:
         state: Current state of the graph.
-        
+
     Returns:
         "finish" -> Terminal state
         "decide" -> Continue decision
@@ -40,10 +52,10 @@ def route_after_execute(state: GraphState) -> Literal['finish', 'decide']:
 def route_after_verify(state: GraphState) -> Literal['finish', 'decide']:
     """
     After postcondition verification
-    
+
     Args:
         state: Current state of the graph.
-        
+
     Returns:
         "finish" -> Terminal state
         "decide" -> Continue decision
