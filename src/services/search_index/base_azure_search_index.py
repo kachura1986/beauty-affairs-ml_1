@@ -1,3 +1,5 @@
+from typing import Any
+
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import VectorizedQuery
 
@@ -11,6 +13,34 @@ class BaseAzureSearchIndex:
     _vector_fields: list[str] = []
     _text_fields: list[str] = []
     _semantic_config: str | None = None
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """
+        Validate that every concrete index subclass declares the required field configuration.
+
+        Enforces a fail-fast contract at class definition time: a subclass that forgets to
+        declare ``_vector_fields``, ``_text_fields``, or ``_fields_to_embed`` fails on import
+        rather than silently degrading search behavior at runtime.
+
+        ``_semantic_config`` is intentionally not validated: ``None`` is a valid mode that
+        disables semantic re-ranking.
+
+        Args:
+            **kwargs (Any): Passed through to ``super().__init_subclass__``.
+
+        Raises:
+            TypeError: If any required field list is empty or not declared on the subclass.
+        """
+        super().__init_subclass__(**kwargs)
+
+        if not cls._vector_fields:
+            raise TypeError(f"{cls.__name__}: '_vector_fields' must be non-empty.")
+
+        if not cls._text_fields:
+            raise TypeError(f"{cls.__name__}: '_text_fields' must be non-empty.")
+
+        if not cls._fields_to_embed:
+            raise TypeError(f"{cls.__name__}: '_fields_to_embed' must be non-empty.")
 
     def __init__(self, search_client: SearchClient, embedder: Embedder) -> None:
         """

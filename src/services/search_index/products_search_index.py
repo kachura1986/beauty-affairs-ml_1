@@ -23,6 +23,7 @@ from ..embedding import Embedder
 class ProductsSearchIndex(BaseAzureSearchIndex):
     _vector_fields = ['name_vector', 'description_vector']
     _text_fields = ['name', 'category_name', 'subcategory_name', 'description', 'brand_name']
+    _fields_to_embed = ['name', 'description']
     _semantic_config = 'products-semantic-config'
 
     @classmethod
@@ -113,5 +114,3 @@ class ProductsSearchIndex(BaseAzureSearchIndex):
 
     def __init__(self, index_name: str, azure_search_index_manager: AzureSearchIndexManager, embedder: Embedder):
         super().__init__(search_client=azure_search_index_manager.get_instance_index(index_name), embedder=embedder)
-
-        self._fields_to_embed = ['name', 'description']
