@@ -105,16 +105,16 @@ async def test_request_llm_chat_and_trace_get_same_messages_object(trace, make_c
     Regression: if someone copies or slices the list between the calls,
     the window_hash in the trace no longer matches what was sent to the model.
     """
-    import services.agent.agent_graph.nodes as nodes_mod
+    import services.agent.agent_graph.nodes.decide as decide_mod
 
     seen = {}
-    real_step = nodes_mod.Trace.step
+    real_step = decide_mod.Trace.step
 
     def spy_step(self, n, window, reply, budget, latency_ms, *, system_prompt):
         seen["window"] = window
         return real_step(self, n, window, reply, budget, latency_ms, system_prompt=system_prompt)
 
-    monkeypatch.setattr(nodes_mod.Trace, "step", spy_step)
+    monkeypatch.setattr(decide_mod.Trace, "step", spy_step)
 
     messages = [{"role": "user", "content": "hi"}]
     cw = make_context_window(system="custom-system", messages=messages)
@@ -672,16 +672,17 @@ async def test_decide_calls_build_context_once(trace, make_context, make_state, 
     Guards against a future regression that re-splits context assembly
     into two calls (the footgun the refactor removed).
     """
-    import services.agent.agent_graph.nodes as nodes_mod
+    # FIX: build_context lives in the DECIDE module, not the package.
+    import services.agent.agent_graph.nodes.decide as decide_mod
 
-    real_build = nodes_mod.build_context
+    real_build = decide_mod.build_context
     calls = []
 
     def spy(*args, **kwargs):
         calls.append((args, kwargs))
         return real_build(*args, **kwargs)
 
-    monkeypatch.setattr(nodes_mod, "build_context", spy)
+    monkeypatch.setattr(decide_mod, "build_context", spy)
 
     ctx = make_context()
     state = make_state(ctx)
@@ -696,16 +697,16 @@ async def test_decide_passes_history_to_build_context(trace, make_context, make_
 
     build_context is called positionally: (system_prompt, warning, history).
     """
-    import services.agent.agent_graph.nodes as nodes_mod
+    import services.agent.agent_graph.nodes.decide as decide_mod
 
-    real_build = nodes_mod.build_context
+    real_build = decide_mod.build_context
     calls = []
 
     def spy(*args, **kwargs):
         calls.append((args, kwargs))
         return real_build(*args, **kwargs)
 
-    monkeypatch.setattr(nodes_mod, "build_context", spy)
+    monkeypatch.setattr(decide_mod, "build_context", spy)
 
     ctx = make_context()
     state = make_state(ctx)
@@ -723,10 +724,11 @@ async def test_decide_skips_build_context_when_steps_exhausted(trace, make_conte
     No wasted work: the short-circuit in _check_budget fires before context
     assembly.
     """
-    import services.agent.agent_graph.nodes as nodes_mod
+    # FIX: build_context lives in the DECIDE module, not the package.
+    import services.agent.agent_graph.nodes.decide as decide_mod
 
     called = []
-    monkeypatch.setattr(nodes_mod, "build_context", lambda *a, **kw: called.append(1))
+    monkeypatch.setattr(decide_mod, "build_context", lambda *a, **kw: called.append(1))
 
     ctx = make_context(max_steps=1)
     state = make_state(ctx)
