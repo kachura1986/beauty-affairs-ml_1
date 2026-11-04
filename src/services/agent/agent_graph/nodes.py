@@ -206,7 +206,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             exc.code,
             budget.steps,
             str(exc),
-            extra={'step': budget.steps, 'context_overflow_code': exc.code},
+            extra={'step': budget.steps},
         )
 
         ctx.trace.error(
