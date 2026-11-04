@@ -85,13 +85,21 @@ async def _request_llm(
     # Pre-flight for tokens. Strict '<' on purpose: a caller that lands exactly
     # on MIN_EXPECTED_TOKENS is still allowed to try one more call.
     if budget.remaining_tokens() < settings.MIN_EXPECTED_TOKENS:
+        logger.info(
+            'Preflight token check failed | step=%s | remaining=%s | min=%s',
+            budget.steps,
+            budget.remaining_tokens(),
+            settings.MIN_EXPECTED_TOKENS,
+            extra={'step': budget.steps, 'error_code': 'preflight_tokens'},
+        )
         trace.error(
             step=budget.steps,
             kind='preflight_tokens',
-            message=f'remaining={budget.remaining_tokens()}, min={settings.MIN_EXPECTED_TOKENS}',
+            message='budget_tokens',
             latency_ms=0,
             budget=budget,
         )
+
         return None, TerminationReason.BUDGET_TOKENS
 
     budget.steps += 1
