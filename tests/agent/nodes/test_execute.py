@@ -487,3 +487,22 @@ async def test_execute_keeps_last_tool_ok_on_subsequent_error(trace, make_contex
     second = await execute_node(state, FakeRuntime(ctx))
 
     assert second["last_tool_ok"] == first["last_tool_ok"]
+
+
+async def test_execute_handles_missing_last_tool_ok_key(trace, make_context, make_state):
+    """execute_node tolerates a state without the 'last_tool_ok' key.
+
+    GraphState is total=False; a hand-built state (or an older persisted
+    state) may lack the key. execute_node must default to None, not raise
+    KeyError, and must still record a successful result.
+    """
+    call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
+    ctx = make_context()
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [call]
+    del state["last_tool_ok"]  # explicitly simulate the missing key
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["last_tool_ok"] is not None
+    assert "hi" in result["last_tool_ok"]

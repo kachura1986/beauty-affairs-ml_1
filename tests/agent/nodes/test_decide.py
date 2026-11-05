@@ -129,6 +129,45 @@ async def test_request_llm_chat_and_trace_get_same_messages_object(trace, make_c
     assert seen["window"] is llm.calls[0]["messages"]
 
 
+async def test_request_llm_error_path_does_not_copy_messages(trace, make_context, monkeypatch):
+    """On the error path, trace.error receives the same budget and step,
+    and chat() was called with the original messages object.
+
+    After step B (LLMStepService), a common mistake is to snapshot context_window.messages (e.g. list(...))
+    before chat() for "safety". That breaks the chat/trace identity invariant from
+    test_request_llm_chat_and_trace_get_same_messages_object only on the success path — this test covers the error path,
+    where the identity is easy to lose because the trace call is a different one.
+    """
+    llm = FakeLLM(errors=[RuntimeError("boom")])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(
+        max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1,
+    ))
+    messages = [{"role": "user", "content": "hi"}]
+    cw = make_context_window(system="sys", messages=messages)
+
+    seen = {}
+    real_error = type(ctx.trace).error
+
+    def spy_error(self, *, step, kind, message, latency_ms, budget):
+        seen["kind"] = kind
+        seen["step"] = step
+        return real_error(self, step=step, kind=kind, message=message,
+                          latency_ms=latency_ms, budget=budget)
+
+    monkeypatch.setattr(type(ctx.trace), "error", spy_error)
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=cw,
+    )
+
+    assert seen["kind"] == "llm_error"
+    assert seen["step"] == budget.steps  # step was incremented before the call
+    # chat() got the original messages object.
+    assert llm.calls[0]["messages"] is cw.messages
+
+
 async def test_request_llm_timeout_returns_budget_time(trace, make_context, monkeypatch):
     """An LLM exception on an exhausted wall-clock budget yields BUDGET_TIME.
 

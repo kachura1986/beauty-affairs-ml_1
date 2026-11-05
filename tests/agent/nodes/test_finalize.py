@@ -133,6 +133,41 @@ async def test_finalize_skips_llm_when_tokens_below_min(trace, make_context):
     )
 
 
+async def test_finalize_does_not_block_on_cost_exhausted(trace, make_context):
+    """Cost exhaustion is NOT a finalization pre-flight.
+
+    Design decision: remaining_cost_usd() == 0 means the *accumulated* spend
+    reached the limit, not that the next call is impossible. A free/local
+    model can still answer at zero cost. The call proceeds, and an overrun
+    (if any) is recorded as trace.error('finalization_overrun'), not as a
+    pre-flight rejection.
+
+    This test pins that decision so a future "symmetric" cost check does
+    not silently break free-model finalization.
+    """
+    llm = FakeLLM(reply(text="final", in_tokens=0, out_tokens=0, cost_usd=0.0))
+    ctx = make_context(llm=llm, max_steps=1, max_cost_usd=0.0001)
+    state = _finalize_state(
+        ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok",
+    )
+    # Simulate that the accumulated cost already reached the limit before
+    # entering finalize_node.
+    state["budget"].cost_usd = 0.0001
+
+    result = await finalize_node(state, FakeRuntime(ctx))
+
+    # LLM was called despite cost exhaustion.
+    assert len(llm.calls) == 1
+    assert result["answer"] == "final"
+    assert result["finalization"] == Finalization.LLM
+
+    # And no pre-flight rejection was recorded.
+    assert not any(
+        r.get("kind") == "finalization_fallback" and r.get("message") == "budget_exhausted"
+        for r in trace.records()
+    )
+
+
 async def test_finalize_llm_returns_tool_calls(trace, make_context):
     """tool_calls in the finalize reply are ignored; fallback used; no pending_tool_calls."""
     call = {"id": "c1", "name": "echo", "arguments": {}}
@@ -173,6 +208,34 @@ async def test_finalize_llm_returns_empty_text(trace, make_context):
         r.get("kind") == "finalization_fallback" and r.get("message") == "empty_reply"
         for r in trace.records()
     )
+
+
+async def test_finalize_fallback_does_not_record_llm_usage(trace, make_context):
+    """Fallback paths (budget exhausted, empty reply, tool_calls) must not
+    call budget.record_llm — no LLM usage was consumed on those paths.
+
+    Only the success path records tokens and cost (see
+    test_finalize_records_llm_usage). A fallback that increments tokens
+    would corrupt the finish.budget snapshot and break overrun detection.
+    """
+    from core.config import settings
+
+    # Pre-flight rejection: tokens below MIN_EXPECTED_TOKENS.
+    llm = FakeLLM()
+    ctx = make_context(
+        llm=llm, max_steps=1, max_tokens=settings.MIN_EXPECTED_TOKENS - 1,
+    )
+    state = _finalize_state(
+        ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok",
+    )
+    tokens_before = state["budget"].tokens
+    cost_before = state["budget"].cost_usd
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    assert state["budget"].tokens == tokens_before
+    assert state["budget"].cost_usd == cost_before
+    assert llm.calls == []
 
 
 async def test_finalize_rejects_non_budget_steps(trace, make_context):
@@ -286,6 +349,36 @@ async def test_finalize_records_overrun_in_trace(trace, make_context):
     assert overrun[0]["message"] == TerminationReason.BUDGET_TOKENS.value
     # The termination reason itself is unchanged.
     assert state["termination_reason"] == TerminationReason.BUDGET_STEPS
+
+
+async def test_finalize_overrun_does_not_rewrite_termination_reason(trace, make_context):
+    """Overrun on finalize keeps BUDGET_STEPS as the termination reason.
+
+    The overrun is diagnostic only: trace.error('finalization_overrun') is
+    written, but state['termination_reason'] must remain BUDGET_STEPS so
+    finish_node reports the original reason and the AgentResult reflects
+    that the run ended on step exhaustion, not on a token overrun during
+    finalization.
+    """
+    from core.config import settings
+
+    llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost_usd=0.0))
+    ctx = make_context(
+        llm=llm, max_steps=1, max_tokens=settings.MIN_EXPECTED_TOKENS + 100,
+    )
+    state = _finalize_state(
+        ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok",
+    )
+    reason_before = state["termination_reason"]
+
+    result = await finalize_node(state, FakeRuntime(ctx))
+
+    # Overrun recorded, reason untouched, and the node's return dict does not
+    # carry a termination_reason key (the service must not leak one).
+    assert result["finalization"] == Finalization.LLM
+    assert "termination_reason" not in result
+    assert state["termination_reason"] == reason_before
+    assert any(r.get("kind") == "finalization_overrun" for r in trace.records())
 
 
 async def test_finalize_does_not_increment_steps(trace, make_context):
@@ -560,8 +653,6 @@ async def test_finalize_not_called_without_tool_results(trace, make_registry):
 
 async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
     """Explicit regression guard: max_steps=1 + tool_call does not trip recursion_limit."""
-    from langgraph.errors import GraphRecursionError
-
     call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
     llm = FakeLLM(
         reply(text="", tool_calls=[call]),
@@ -569,18 +660,16 @@ async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
     )
     policy = AgentPolicy(empty_limit=3, repeat_limit=3)
 
-    try:
-        result = await run_graph(
-            task=_task(max_steps=1),
-            tools=make_registry(),
-            llm=llm,
-            trace=trace,
-            policy=policy,
-        )
-    except GraphRecursionError:
-        pytest.fail("Graph hit recursion_limit for max_steps=1")
+    # GraphRecursionError must NOT escape: max_steps=1 + finalize fits
+    # well within the configured recursion_limit (max(64, 1*4+16) = 64).
+    result = await run_graph(
+        task=_task(max_steps=1),
+        tools=make_registry(),
+        llm=llm,
+        trace=trace,
+        policy=policy,
+    )
 
-    assert result is not None
     assert result.reason == TerminationReason.BUDGET_STEPS
 
 
@@ -598,10 +687,8 @@ async def test_budget_time_with_tool_results_does_not_finalize(trace, make_regis
     import asyncio
 
     async def slow_fn(**kwargs):
-        # Will be cut by the budget-capped per-call timeout; its only job
-        # is to burn through the remaining wall-clock time.
-        await asyncio.sleep(100)
-        return "unreachable"
+        await asyncio.Event().wait()
+        return "unreachable"  # pragma: no cover
 
     call = {"id": "c1", "name": "slow", "arguments": {}}
     llm = FakeLLM(reply(text="", tool_calls=[call]))
