@@ -26,6 +26,7 @@ async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_a
         role='assistant',
         content=result.answer,
         termination_reason=result.reason,
+        finalization=result.finalization,
         usage=ChatUsage(
             steps=result.steps,
             tokens=result.tokens,

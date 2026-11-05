@@ -396,6 +396,33 @@ async def test_request_llm_preflight_tokens_emits_trace(trace, make_context):
     assert any(r.get("kind") == "preflight_tokens" for r in trace.records())
 
 
+async def test_request_llm_precondition_raises_on_exhausted_steps(trace, make_context):
+    """LLMStepService.run raises RuntimeError (not AssertionError) when steps are exhausted.
+
+    Explicit raise, not assert: under `python -O` an assert would be stripped
+    and the violation would pass silently, breaking the steps <= max_steps
+    invariant. Goes through _request_llm (the thin wrapper) so both the wrapper
+    and the service are covered.
+    """
+    llm = FakeLLM(reply(text="never"))
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(
+        max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1,
+    ))
+    budget.steps = 1  # exhausted
+
+    with pytest.raises(RuntimeError, match='precondition violated'):
+        await _request_llm(
+            llm=ctx.llm,
+            tools=ctx.tools,
+            trace=ctx.trace,
+            budget=budget,
+            context_window=make_context_window(),
+        )
+
+    assert llm.calls == []
+
+
 # ---------------------------------------------------------------------------
 # decide_node
 # ---------------------------------------------------------------------------

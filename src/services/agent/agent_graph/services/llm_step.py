@@ -55,11 +55,10 @@ class LLMStepService:
             pushed the run over a hard budget is preserved so the caller can decide whether it qualifies
             as a final answer. This is not a contract violation — it is a retained reply, not a missing one.
         """
-        # Fail loud if the precondition is violated. Under `python -O` this assert is
-        # stripped; the docstring precondition above remains the authoritative contract.
-        assert budget.can_start_step(), (
-            'precondition violated: LLMStepService.run called with exhausted step budget'
-        )
+        # Fail loud if the precondition is violated. Explicit raise, not assert: under `python -O` an assert is
+        # stripped and the violation would pass silently, breaking the steps <= max_steps invariant.
+        if not budget.can_start_step():
+            raise RuntimeError('precondition violated: LLMStepService.run called with exhausted step budget')
 
         # TOCTOU guard: build_context() runs between _check_budget() and this call, so the wall-clock budget may have
         # expired in the meantime. Limit the request by the remaining wall-clock budget.

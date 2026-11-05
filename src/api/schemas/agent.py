@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from services.agent.domain import TerminationReason
+from services.agent.domain import Finalization, TerminationReason
 
 
 class Message(BaseModel):
@@ -26,4 +26,10 @@ class ChatResponse(BaseModel):
     role: Literal['assistant']
     content: str | None
     termination_reason: TerminationReason
+    finalization: Finalization = Field(
+        description=(
+            "How the answer was produced. LLM — synthesized by the model in finalize_node;  FALLBACK — deterministic "
+            "fallback from the last tool result; NONE — no finalization was attempted."
+        ),
+    )
     usage: ChatUsage
