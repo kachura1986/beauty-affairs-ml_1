@@ -12,28 +12,17 @@ from .._fallback import _deterministic_fallback
 
 class FinalizeService:
     """
-    The single bounded finalization LLM call after max_steps is exhausted.
+    Single bounded finalization LLM call after max_steps is exhausted.
 
-    Preconditions (enforced by ``finalize_node``, not by this service):
-        ``termination_reason == BUDGET_STEPS``, ``needs_finalization is True``,
-        ``answer is None``, ``policy.finalize_on_max_steps is True``.
+    Preconditions (enforced by ``finalize_node``): ``BUDGET_STEPS`` reason,
+    ``needs_finalization`` True, ``answer`` None, policy enabled.
 
-    Returns ``(answer, finalization)``. Does NOT return ``termination_reason`` and
-    does NOT write it to state: an overrun is recorded only as
-    ``trace.error(kind='finalization_overrun')``; the reason remains ``BUDGET_STEPS``
-    as set by ``decide_node``.
+    Returns ``(answer, finalization)``. Does not touch ``termination_reason``
+    (overrun → ``trace.error('finalization_overrun')``, reason stays
+    ``BUDGET_STEPS``) or ``needs_finalization`` — that is the node's contract.
 
-    Does NOT write ``needs_finalization`` — that is the node's contract.
-
-    All hard-budget pre-flight and fallback paths write
-    ``trace.error(kind='finalization_fallback', message=<code>)`` internally.
-    The three budget-exhaustion pre-flight checks (combined time/tokens,
-    TOCTOU re-check, timeout <= 0) are kept as three distinct
-    ``trace.error('finalization_fallback', message='budget_exhausted')`` calls,
-    matching the pre-refactor ``finalize_node`` so that
-    ``test_finalize_skips_llm_when_time_exhausted`` and
-    ``test_finalize_skips_llm_when_tokens_below_min`` (both assert exactly one
-    ``finalization_fallback`` record with ``message='budget_exhausted'``) stay green.
+    Fallbacks write ``trace.error('finalization_fallback', message=<code>)``. The three budget-exhaustion
+    pre-flight checks stay distinct, each emitting exactly one ``message='budget_exhausted'`` record.
     """
 
     def __init__(self, *, llm: LLMModel, trace: Trace, task: Task) -> None:
@@ -53,10 +42,9 @@ class FinalizeService:
         """
         Record a fallback trace error and build the deterministic fallback result.
 
-        Every fallback branch in ``run`` goes through this helper, so the
-        ``trace.error`` shape (kind ``'finalization_fallback'``, machine-readable
-        message) and the ``Finalization`` value are guaranteed identical across
-        all paths.
+        Every fallback branch in ``run`` goes through this helper, so the ``trace.error`` shape (kind
+        ``'finalization_fallback'``, machine-readable message) and the ``Finalization`` value are
+        guaranteed identical across all paths.
 
         Args:
             budget (Budget): Budget for the run (by reference; only read here).

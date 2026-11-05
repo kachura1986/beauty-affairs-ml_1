@@ -45,8 +45,7 @@ async def _request_llm(
     Thin compatibility wrapper around :class:`LLMStepService`.
 
     Preserved because existing tests monkeypatch ``nodes._request_llm``
-    (e.g. ``test_decide_forwards_context_window_to_request_llm``). New code
-    should call ``LLMStepService`` directly.
+    (e.g. ``test_decide_forwards_context_window_to_request_llm``). New code should call ``LLMStepService`` directly.
 
     Args:
         llm (LLMModel): LLM to use for the request.
@@ -165,9 +164,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     if reply is None:
         raise RuntimeError('LLM request returned no reply and no termination reason.')
 
-    # ------------------------------------------------------------
     # Empty response
-    # ------------------------------------------------------------
     if not reply.tool_calls and not reply.text.strip():
         consecutive_empty_steps = (state['consecutive_empty_steps'] + 1)
 
@@ -193,17 +190,13 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
         'budget_warning_emitted': budget_warning_emitted,
     }
 
-    # ------------------------------------------------------------
     # Final answer candidate
-    # ------------------------------------------------------------
     if not reply.tool_calls:
         result['pending_answer'] = reply.text
 
         return result
 
-    # ------------------------------------------------------------
     # Tool calls
-    # ------------------------------------------------------------
     # Preserve the assistant message containing the tool calls
     result['history'] = [
         {

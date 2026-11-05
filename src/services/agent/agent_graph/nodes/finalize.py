@@ -34,8 +34,7 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
     """
     if state.get('termination_reason') != TerminationReason.BUDGET_STEPS:
         raise RuntimeError(
-            "finalize_node requires BUDGET_STEPS termination reason; "
-            f"got {state.get('termination_reason')!r}."
+            "finalize_node requires BUDGET_STEPS termination reason; got {state.get('termination_reason')!r}."
         )
 
     if not state.get('needs_finalization'):

@@ -15,18 +15,14 @@ logger = logging.getLogger(__name__)
 
 class LLMStepService:
     """
-    One bounded LLM decision step with budget pre-flight, error classification,
-    token/cost accounting, and trace recording.
+    One bounded LLM decision step: budget pre-flight, error classification,
+    token/cost accounting, trace recording.
 
-    The service is stateless with respect to its own fields; it mutates the
-    ``budget`` argument by reference (``steps``, ``tokens``, ``cost_usd``)
-    exactly as the pre-refactor ``_request_llm`` did. Callers must pass
-    ``budget=state['budget']``, never a copy.
+    Stateless w.r.t. own fields; mutates ``budget`` by reference (``steps``,
+    ``tokens``, ``cost_usd``). Callers must pass ``budget=state['budget']``, never a copy.
 
-    ``__init__`` accepts a ``ToolRegistry``, not a precomputed schema list, so the
-    schema snapshot is taken inside ``run`` at call time (same as the
-    pre-refactor ``_request_llm``; preserves
-    ``test_request_llm_success``).
+    Takes a ``ToolRegistry`` (not a schema list) and snapshots schemas inside
+    ``run`` at call time, so ``test_request_llm_success`` keeps passing.
     """
 
     def __init__(self, *, llm: LLMModel, tools: ToolRegistry, trace: Trace) -> None:

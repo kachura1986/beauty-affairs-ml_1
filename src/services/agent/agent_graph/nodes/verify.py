@@ -55,9 +55,7 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
             'termination_reason': TerminationReason.POSTCONDITION_ERROR,
         }
 
-    # ------------------------------------------------------------
     # Verification succeeded
-    # ------------------------------------------------------------
     if ok:
         return {
             'answer': answer,
@@ -65,9 +63,7 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
             'termination_reason': TerminationReason.DONE,
         }
 
-    # ------------------------------------------------------------
     # Verification failed: go back to the model with an observation
-    # ------------------------------------------------------------
     return {
         'pending_answer': None,
         'history': [
