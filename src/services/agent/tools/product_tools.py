@@ -1,8 +1,8 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from ...search_index.products_search_index import ProductsSearchIndex
 from .registry import ToolRegistry
 from .tool import Tool
-from ...search_index.products_search_index import ProductsSearchIndex
 
 
 class SearchProductsArgs(BaseModel):

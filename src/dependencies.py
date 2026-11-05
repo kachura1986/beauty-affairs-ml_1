@@ -5,15 +5,15 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from fastapi import Request
 from openai import AsyncOpenAI
 
-from services.agent.config import load_agent_configs
-from services.agent.context import SYSTEM_PROMPT
 from core.config import settings
 from core.logger import get_logger
+from services.agent.config import load_agent_configs
+from services.agent.context import SYSTEM_PROMPT
 from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import AzureOpenAIModel
 from services.search_index import AzureSearchIndexManager, ProductsSearchIndex
-from services.text_normalization.text_normalizer import TextNormalizer
+from services.text_normalization import TextNormalizer
 from use_cases import AgentService, IndexService
 
 

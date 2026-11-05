@@ -10,11 +10,8 @@ import time
 
 import pytest
 
-from services.agent.agent_graph.nodes import (
-    _deterministic_fallback,
-    _has_tool_results,
-    finalize_node,
-)
+from services.agent.agent_graph.nodes import finalize_node
+from services.agent.agent_graph._fallback import _deterministic_fallback, _has_tool_results
 from services.agent.agent_graph.runner import run_graph
 from services.agent.domain import (
     AgentPolicy,

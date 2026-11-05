@@ -1,6 +1,6 @@
+import re
 from dataclasses import dataclass
 from typing import Any
-import re
 
 # --- Limits ---------------------------------------------------------------
 # NB: sizes are measured in *characters*, not tokens. This is a cheap approximation: the chars/tokens ratio varies

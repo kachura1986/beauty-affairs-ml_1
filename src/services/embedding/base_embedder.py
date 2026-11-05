@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from .embedder import Embedder
 from ..text_normalization.text_normalizer import TextNormalizer
+from .embedder import Embedder
 
 
 class BaseEmbedder(Embedder, ABC):

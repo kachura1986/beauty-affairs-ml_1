@@ -5,19 +5,20 @@ from azure.search.documents.indexes.models import (
     SearchField,
     SearchFieldDataType,
     SearchIndex,
-    SimpleField,
-    VectorSearch,
-    VectorSearchProfile,
     SemanticConfiguration,
     SemanticField,
     SemanticPrioritizedFields,
     SemanticSearch,
+    SimpleField,
+    VectorSearch,
+    VectorSearchProfile,
 )
 
 from core.config import settings
+
+from ..embedding import Embedder
 from .azure_search_index_manager import AzureSearchIndexManager
 from .base_azure_search_index import BaseAzureSearchIndex
-from ..embedding import Embedder
 
 
 class ServicesSearchIndex(BaseAzureSearchIndex):

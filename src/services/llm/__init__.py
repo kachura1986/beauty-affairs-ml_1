@@ -1,5 +1,5 @@
-from .base_model import BaseLLMModel
 from .azure_openai_model import AzureOpenAIModel
+from .base_model import BaseLLMModel
 from .model import LLMModel
 from .schemas import CANONICAL_ROLES, Message, Reply, ToolCall, UnknownRoleError
 

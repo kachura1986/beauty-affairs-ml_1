@@ -2,10 +2,10 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
-from .._common import _log_internal_exception
-from ..state import AgentContext, GraphState
 from ...context import build_observation_message
 from ...domain import TerminationReason
+from .._common import _log_internal_exception
+from ..state import AgentContext, GraphState
 
 
 def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:

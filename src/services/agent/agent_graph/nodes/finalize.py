@@ -2,9 +2,9 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
+from ...domain import Finalization, TerminationReason
 from ..services.finalize import FinalizeService
 from ..state import AgentContext, GraphState
-from ...domain import Finalization, TerminationReason
 
 
 async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:

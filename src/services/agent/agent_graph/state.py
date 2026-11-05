@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
 from services.llm import LLMModel, ToolCall
+
 from ..domain import AgentPolicy, AgentResult, Budget, Finalization, Task, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace

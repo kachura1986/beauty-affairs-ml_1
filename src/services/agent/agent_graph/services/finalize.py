@@ -3,6 +3,7 @@ from typing import Any
 
 from core.config import settings
 from services.llm import LLMModel
+
 from ...domain import Budget, Finalization, Task
 from ...trace import Trace
 from .._common import FINALIZE_ANCHOR, _log_internal_exception

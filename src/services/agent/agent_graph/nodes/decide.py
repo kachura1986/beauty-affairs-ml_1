@@ -4,13 +4,14 @@ from typing import Any
 from langgraph.runtime import Runtime
 
 from services.llm import LLMModel, Reply
-from ...context import AgentContextWindow, ContextOverflow, build_observation_message, build_context
+
+from ...context import AgentContextWindow, ContextOverflow, build_context, build_observation_message
 from ...domain import Budget, TerminationReason
-from ..state import AgentContext, GraphState
 from ...tools import ToolRegistry
 from ...trace import Trace
 from .._fallback import _has_tool_results
 from ..services.llm_step import LLMStepService
+from ..state import AgentContext, GraphState
 
 logger = logging.getLogger(__name__)
 

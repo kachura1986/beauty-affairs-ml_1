@@ -1,7 +1,7 @@
 from openai import AsyncOpenAI
 
-from .base_embedder import BaseEmbedder
 from ..text_normalization.text_normalizer import TextNormalizer
+from .base_embedder import BaseEmbedder
 
 
 class AzureOpenAIEmbedder(BaseEmbedder):
