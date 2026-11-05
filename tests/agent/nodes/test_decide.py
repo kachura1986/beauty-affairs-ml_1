@@ -419,11 +419,11 @@ async def test_decide_returns_budget_steps_when_no_steps_left(trace, make_contex
 
 async def test_decide_raises_if_llm_returns_nothing(trace, make_context, make_state, monkeypatch):
     """A (None, None) result from _request_llm is a contract violation."""
-    import services.agent.agent_graph.nodes as nodes_mod
+    import services.agent.agent_graph.nodes.decide as decide_mod
     async def fake_request_llm(**kwargs):
         return None, None
 
-    monkeypatch.setattr(nodes_mod, "_request_llm", fake_request_llm)
+    monkeypatch.setattr(decide_mod, "_request_llm", fake_request_llm)
 
     ctx = make_context()
     state = make_state(ctx)
@@ -788,9 +788,9 @@ async def test_decide_forwards_context_window_to_request_llm(trace, make_context
     ``_request_llm``. If someone re-introduces ``chat(..., system_prompt=ctx.task.system_prompt)``,
     the warning is silently lost — this test catches that.
     """
-    import services.agent.agent_graph.nodes as nodes_mod
+    import services.agent.agent_graph.nodes.decide as decide_mod
 
-    real_request = nodes_mod._request_llm
+    real_request = decide_mod._request_llm
     seen = {}
 
     async def spy(*, llm, tools, trace, budget, context_window):
@@ -799,7 +799,7 @@ async def test_decide_forwards_context_window_to_request_llm(trace, make_context
             llm=llm, tools=tools, trace=trace, budget=budget, context_window=context_window,
         )
 
-    monkeypatch.setattr(nodes_mod, "_request_llm", spy)
+    monkeypatch.setattr(decide_mod, "_request_llm", spy)
 
     ctx = make_context()
     state = make_state(ctx)

@@ -1,23 +1,16 @@
 import logging
-import time
 from typing import Any
 
 from langgraph.runtime import Runtime
 
-from core.config import settings
 from services.llm import LLMModel, Reply
-from ...context import (
-    AgentContextWindow,
-    ContextOverflow,
-    build_context,
-    build_observation_message,
-)
+from ...context import AgentContextWindow, ContextOverflow, build_observation_message, build_context
 from ...domain import Budget, TerminationReason
 from ..state import AgentContext, GraphState
 from ...tools import ToolRegistry
 from ...trace import Trace
-from ._common import _log_internal_exception
-from .finalize import _has_tool_results
+from .._fallback import _has_tool_results
+from ..services.llm_step import LLMStepService
 
 logger = logging.getLogger(__name__)
 
@@ -48,120 +41,23 @@ async def _request_llm(
         context_window: AgentContextWindow,
 ) -> tuple[Reply | None, TerminationReason | None]:
     """
-    Execute exactly one LLM decision step.
+    Thin compatibility wrapper around :class:`LLMStepService`.
 
-    Preconditions:
-        ``budget.can_start_step()`` is True. This is guaranteed by the only caller, :func:`decide_node`,
-        via :func:`_check_budget`. The step budget is intentionally not re-checked here to keep a single enforcement point.
+    Preserved because existing tests monkeypatch ``nodes._request_llm``
+    (e.g. ``test_decide_forwards_context_window_to_request_llm``). New code
+    should call ``LLMStepService`` directly.
 
     Args:
         llm (LLMModel): LLM to use for the request.
         tools (ToolRegistry): Tool registry for the request.
         trace (Trace): Trace for the request.
-        budget (Budget): Budget for the request.
+        budget (Budget): Budget for the request (mutated by reference).
         context_window (AgentContextWindow): Context for the request.
 
     Returns:
         tuple[Reply | None, TerminationReason | None]: Tuple of (reply, termination reason).
-        When ``reason`` is not ``None``, ``reply`` may still be valid: a completed LLM call that itself
-        pushed the run over a hard budget is preserved so the caller can decide whether it qualifies
-        as a final answer. This is not a contract violation — it is a retained reply, not a missing one.
     """
-    # Fail loud if the precondition is violated. Under `python -O` this assert is
-    # stripped; the docstring precondition above remains the authoritative contract.
-    assert budget.can_start_step(), (
-        "precondition violated: _request_llm called with exhausted step budget"
-    )
-
-    # TOCTOU guard: build_context() runs between _check_budget() and this call, so the wall-clock budget may have
-    # expired in the meantime. Limit the request by the remaining wall-clock budget.
-    remaining = budget.remaining_seconds()
-
-    if remaining <= 0:
-        return None, TerminationReason.BUDGET_TIME
-
-    # Pre-flight for tokens. Strict '<' on purpose: a caller that lands exactly
-    # on MIN_EXPECTED_TOKENS is still allowed to try one more call.
-    if budget.remaining_tokens() < settings.MIN_EXPECTED_TOKENS:
-        logger.info(
-            'Preflight token check failed | step=%s | remaining=%s | min=%s',
-            budget.steps,
-            budget.remaining_tokens(),
-            settings.MIN_EXPECTED_TOKENS,
-            extra={'step': budget.steps, 'error_code': 'preflight_tokens'},
-        )
-        trace.error(
-            step=budget.steps,
-            kind='preflight_tokens',
-            message='budget_tokens',
-            latency_ms=0,
-            budget=budget,
-        )
-
-        return None, TerminationReason.BUDGET_TOKENS
-
-    budget.steps += 1
-
-    t0 = time.monotonic()
-
-    try:
-        chat = getattr(llm, 'chat', None)
-
-        if chat is None:
-            raise ValueError(f"{llm.__class__.__name__} does not support agent chat()")
-
-        timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
-        reply = await chat(context_window.messages, tools.schemas(), timeout, context_window.system)
-
-    except Exception as exc:  # noqa: BLE001
-        latency_ms = int((time.monotonic() - t0) * 1000)
-
-        _log_internal_exception("LLM request failed.", exc, step=budget.steps)
-
-        if budget.remaining_seconds() <= 0:
-            trace.error(
-                step=budget.steps,
-                kind='llm_timeout',
-                message=type(exc).__name__,
-                latency_ms=latency_ms,
-                budget=budget,
-            )
-
-            return None, TerminationReason.BUDGET_TIME
-
-        trace.error(
-            step=budget.steps,
-            kind='llm_error',
-            message=type(exc).__name__,
-            latency_ms=latency_ms,
-            budget=budget,
-        )
-
-        return None, TerminationReason.LLM_ERROR
-
-    latency_ms = int((time.monotonic() - t0) * 1000)
-
-    # Account for model usage
-    budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
-
-    # Preserve existing trace format
-    trace.step(
-        budget.steps,
-        context_window.messages,
-        reply,
-        budget,
-        latency_ms,
-        system_prompt=context_window.system,
-    )
-
-    # A completed call may push us over budget. Keep the reply — dropping it would turn
-    # a finished step into an empty AgentResult. decide_node decides if it's a final answer.
-    reason = budget.exceeded_without_steps()
-
-    if reason:
-        return reply, reason
-
-    return reply, None
+    return await LLMStepService(llm=llm, tools=tools, trace=trace).run(budget=budget, context_window=context_window)
 
 
 async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
@@ -179,11 +75,6 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     Returns:
         dict[str, Any]: Result of the node.
     """
-    # Lazy import so a monkeypatch on the package attribute
-    # (monkeypatch.setattr(nodes_mod, '_request_llm', spy)) is picked up at
-    # call time. Resolves to the same function object when unpatched.
-    from . import _request_llm
-
     ctx = runtime.context
     budget = state['budget']
 
