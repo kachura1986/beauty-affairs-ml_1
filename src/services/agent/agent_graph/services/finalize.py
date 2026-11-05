@@ -22,7 +22,9 @@ class FinalizeService:
     ``BUDGET_STEPS``) or ``needs_finalization`` — that is the node's contract.
 
     Fallbacks write ``trace.error('finalization_fallback', message=<code>)``. The three budget-exhaustion
-    pre-flight checks stay distinct, each emitting exactly one ``message='budget_exhausted'`` record.
+    pre-flight checks stay distinct, each emitting exactly one ``message='budget_exhausted'`` record;
+    an LLM exception is classified as ``'llm_timeout'`` when the wall-clock budget is exhausted after
+    the failure, otherwise ``'llm_error'`` (mirrors ``LLMStepService.run``).
 
     A successful call writes ``trace.finalize(...)`` (``t='finalize'``), so post-mortem can
     separate the finalization cost/latency from decision steps (``t='step'``); a hard non-step
@@ -137,9 +139,13 @@ class FinalizeService:
             # step=budget.steps keeps the association with the last executed step.
             _log_internal_exception('Finalization LLM call failed.', exc, step=budget.steps)
 
+            # Distinguish a wall-clock timeout from a real LLM error, mirroring LLMStepService.run: `llm_timeout`
+            # only when the budget is exhausted *after* the exception, not for any TimeoutError.
+            message = 'llm_timeout' if budget.remaining_seconds() <= 0 else 'llm_error'
+
             return self._fallback(
                 budget=budget, history=history, last_tool_ok=last_tool_ok,
-                message='llm_error', latency_ms=latency_ms,
+                message=message, latency_ms=latency_ms,
             )
 
         latency_ms = int((time.monotonic() - t0) * 1000)

@@ -15,6 +15,7 @@ from services.agent.agent_graph._fallback import _deterministic_fallback, _has_t
 from services.agent.agent_graph.runner import run_graph
 from services.agent.domain import (
     AgentPolicy,
+    Budget,
     BudgetLimits,
     Finalization,
     Task,
@@ -310,6 +311,38 @@ async def test_finalize_logs_internal_exception(trace, make_context, caplog):
         r.get("kind") == "finalization_fallback" and r.get("message") == "llm_error"
         for r in trace.records()
     )
+
+
+async def test_finalize_records_llm_timeout_when_budget_exhausted(trace, make_context, monkeypatch):
+    """LLM exception with exhausted wall-clock budget → message='llm_timeout', not 'llm_error'.
+
+    Mirrors `test_request_llm_timeout_returns_budget_time`: the distinction is
+    'budget exhausted after the exception', not 'TimeoutError'. Pins the
+    asymmetry fix between FinalizeService.run and LLMStepService.run.
+
+    Iteration schedule for `Budget.elapsed` (one call per `remaining_seconds()`):
+      1) combined pre-flight  → 0.0s elapsed, remaining 0.001s > 0 → pass;
+      2) TOCTOU re-check     → 0.0s elapsed, remaining 0.001s > 0 → pass;
+      3) `except` branch     → 2.0s elapsed, remaining 0.0s → 'llm_timeout'.
+    `FinalizeService.run` has an extra TOCTOU re-check between pre-flight and
+    `chat()` that `LLMStepService.run` does not, hence three entries, not two.
+    """
+    llm = FakeLLM(errors=[TimeoutError("slow")])
+    ctx = make_context(llm=llm, max_steps=1, max_seconds=0.001)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    times = iter([0.0, 0.0, 2.0])
+    monkeypatch.setattr(Budget, "elapsed", lambda self: next(times, 2.0))
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    errors = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
+    assert len(errors) == 1
+    assert errors[0]["message"] == "llm_timeout"
 
 
 async def test_finalize_records_overrun_in_trace(trace, make_context):
