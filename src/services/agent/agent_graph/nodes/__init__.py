@@ -8,4 +8,4 @@ from .verify import verify_node
 from .decide import _check_budget, _request_llm
 from .finalize import _deterministic_fallback, _has_tool_results
 
-__all__ = ['decide_node', 'decide_node', 'finalize_node', 'finish_node', 'verify_node']
+__all__ = ['decide_node', 'execute_node', 'finalize_node', 'finish_node', 'verify_node']

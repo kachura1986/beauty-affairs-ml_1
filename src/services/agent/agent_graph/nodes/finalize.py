@@ -6,7 +6,7 @@ from langgraph.runtime import Runtime
 from core.config import settings
 from ._common import FINALIZE_ANCHOR, _log_internal_exception
 from ..state import AgentContext, GraphState
-from ...domain import Finalization, TerminationReason
+from ...domain import Budget, Finalization, TerminationReason
 
 
 def _has_tool_results(history: list[dict[str, Any]]) -> bool:
@@ -74,6 +74,52 @@ def _deterministic_fallback(history: list[dict[str, Any]], last_tool_ok: str | N
     return None
 
 
+def _fallback_result(
+        *,
+        ctx: AgentContext,
+        budget: Budget,
+        history: list[dict[str, Any]],
+        last_tool_ok: str | None,
+        trace_kind: str,
+        message: str,
+        latency_ms: int = 0,
+) -> dict[str, Any]:
+    """
+    Record a fallback trace error and build the finalize_node return dict.
+
+    Every fallback branch in finalize_node goes through this helper, so the
+    trace.error shape (kind, machine-readable message) and the
+    needs_finalization reset are guaranteed identical across all paths.
+
+    Args:
+        ctx (AgentContext): Runtime context carrying the trace.
+        budget (Budget): Budget for the run (by reference; only read here).
+        history (list[dict[str, Any]]): Conversation history for the deterministic fallback.
+        last_tool_ok (str | None): Content of the most recent successful tool result, or None.
+        trace_kind (str): trace.error ``kind`` (``'finalization_fallback'``).
+        message (str): Machine-readable code for trace.error ``message``.
+        latency_ms (int): Latency for trace.error (0 for pre-flight branches).
+
+    Returns:
+        dict[str, Any]: Node result with answer, finalization, needs_finalization=False.
+    """
+    ctx.trace.error(
+        step=budget.steps,
+        kind=trace_kind,
+        message=message,
+        latency_ms=latency_ms,
+        budget=budget,
+    )
+
+    answer = _deterministic_fallback(history, last_tool_ok)
+
+    return {
+        'answer': answer,
+        'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
+        'needs_finalization': False,
+    }
+
+
 async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     """
     Synthesize a final answer after max_steps has been exhausted.
@@ -122,21 +168,10 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
 
     # Hard budget pre-flight: the finalization call must not breach the remaining wall-clock or token budgets.
     if budget.remaining_seconds() <= 0 or budget.remaining_tokens() < settings.MIN_EXPECTED_TOKENS:
-        trace.error(
-            step=budget.steps,
-            kind='finalization_fallback',
-            message='budget_exhausted',
-            latency_ms=0,
-            budget=budget,
+        return _fallback_result(
+            ctx=ctx, budget=budget, history=history, last_tool_ok=last_tool_ok,
+            trace_kind='finalization_fallback', message='budget_exhausted',
         )
-
-        answer = _deterministic_fallback(history, last_tool_ok)
-
-        return {
-            'answer': answer,
-            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
-            'needs_finalization': False,
-        }
 
     system_prompt = ctx.task.system_prompt + '\n\n' + FINALIZE_ANCHOR
 
@@ -144,40 +179,18 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
     remaining = budget.remaining_seconds()
 
     if remaining <= 0:
-        trace.error(
-            step=budget.steps,
-            kind='finalization_fallback',
-            message='budget_exhausted',
-            latency_ms=0,
-            budget=budget,
+        return _fallback_result(
+            ctx=ctx, budget=budget, history=history, last_tool_ok=last_tool_ok,
+            trace_kind='finalization_fallback', message='budget_exhausted',
         )
-
-        answer = _deterministic_fallback(history, last_tool_ok)
-
-        return {
-            'answer': answer,
-            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
-            'needs_finalization': False,
-        }
 
     timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
 
     if timeout <= 0:
-        trace.error(
-            step=budget.steps,
-            kind='finalization_fallback',
-            message='budget_exhausted',
-            latency_ms=0,
-            budget=budget,
+        return _fallback_result(
+            ctx=ctx, budget=budget, history=history, last_tool_ok=last_tool_ok,
+            trace_kind='finalization_fallback', message='budget_exhausted',
         )
-
-        answer = _deterministic_fallback(history, last_tool_ok)
-
-        return {
-            'answer': answer,
-            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
-            'needs_finalization': False,
-        }
 
     t0 = time.monotonic()
 
@@ -195,21 +208,11 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
         # step=budget.steps keeps the association with the last executed step.
         _log_internal_exception('Finalization LLM call failed.', exc, step=budget.steps)
 
-        trace.error(
-            step=budget.steps,
-            kind='finalization_fallback',
-            message='llm_error',
+        return _fallback_result(
+            ctx=ctx, budget=budget, history=history, last_tool_ok=last_tool_ok,
+            trace_kind='finalization_fallback', message='llm_error',
             latency_ms=latency_ms,
-            budget=budget,
         )
-
-        answer = _deterministic_fallback(history, last_tool_ok)
-
-        return {
-            'answer': answer,
-            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
-            'needs_finalization': False,
-        }
 
     latency_ms = int((time.monotonic() - t0) * 1000)
 
@@ -220,38 +223,18 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
     # reply.tool_calls is ignored on finalization: the model was given an empty tool list, but the Responses API
     # does not enforce it. We do not propagate them into pending_tool_calls, to keep the pairing invariant intact.
     if reply is None or not reply.text.strip():
-        trace.error(
-            step=budget.steps,
-            kind='finalization_fallback',
-            message='empty_reply',
+        return _fallback_result(
+            ctx=ctx, budget=budget, history=history, last_tool_ok=last_tool_ok,
+            trace_kind='finalization_fallback', message='empty_reply',
             latency_ms=latency_ms,
-            budget=budget,
         )
-
-        answer = _deterministic_fallback(history, last_tool_ok)
-
-        return {
-            'answer': answer,
-            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
-            'needs_finalization': False,
-        }
 
     if reply.tool_calls:
-        trace.error(
-            step=budget.steps,
-            kind='finalization_fallback',
-            message='tool_calls_in_reply',
+        return _fallback_result(
+            ctx=ctx, budget=budget, history=history, last_tool_ok=last_tool_ok,
+            trace_kind='finalization_fallback', message='tool_calls_in_reply',
             latency_ms=latency_ms,
-            budget=budget,
         )
-
-        answer = _deterministic_fallback(history, last_tool_ok)
-
-        return {
-            'answer': answer,
-            'finalization': Finalization.FALLBACK if answer is not None else Finalization.NONE,
-            'needs_finalization': False,
-        }
 
     # A successful finalization may itself push us over a hard budget. Record this for observability without
     # changing the termination reason: BUDGET_STEPS remains the primary reason, and the budget snapshot
