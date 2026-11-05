@@ -23,6 +23,10 @@ class FinalizeService:
 
     Fallbacks write ``trace.error('finalization_fallback', message=<code>)``. The three budget-exhaustion
     pre-flight checks stay distinct, each emitting exactly one ``message='budget_exhausted'`` record.
+
+    A successful call writes ``trace.finalize(...)`` (``t='finalize'``), so post-mortem can
+    separate the finalization cost/latency from decision steps (``t='step'``); a hard non-step
+    budget overrun is additionally logged as ``trace.error('finalization_overrun', ...)``.
     """
 
     def __init__(self, *, llm: LLMModel, trace: Trace, task: Task) -> None:
@@ -80,6 +84,8 @@ class FinalizeService:
 
         All hard-budget pre-flight and fallback paths write
         ``trace.error(kind='finalization_fallback', message=<code>)`` internally.
+        A successful call writes a ``t='finalize'`` record with model, token counts, cost, latency, and
+        ``history_msgs``, so post-mortem can attribute the finalization call separately from decision steps.
 
         Args:
             budget (Budget): Budget for the run (mutated by reference).
@@ -155,6 +161,17 @@ class FinalizeService:
                 budget=budget, history=history, last_tool_ok=last_tool_ok,
                 message='tool_calls_in_reply', latency_ms=latency_ms,
             )
+
+        # Successful finalization: record the call so post-mortem can separate its cost and latency
+        # from decision steps (`t='step'`). Mirrors `Trace.step`, tagged `t='finalize'`.
+        self._trace.finalize(
+            budget.steps,
+            history,
+            reply,
+            budget,
+            latency_ms,
+            system_prompt=system_prompt,
+        )
 
         # A successful finalization may itself push us over a hard budget. Record this for observability without
         # changing the termination reason: BUDGET_STEPS remains the primary reason, and the budget snapshot

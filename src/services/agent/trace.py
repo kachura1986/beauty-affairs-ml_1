@@ -29,6 +29,14 @@ class Trace:
     A trace records the execution of an agent_graph run, including its input, every LLM call,
     and the final result. The trace is stored in a JSON Lines (JSONL) file, one record per line.
 
+    Record kinds (``t``):
+        - ``step`` — one LLM decision step (see :meth:`step`);
+        - ``finalize`` — the single bounded finalization LLM call after max_steps
+          is exhausted (see :meth:`finalize`);
+        - ``tool`` — one tool execution (see :meth:`tool`);
+        - ``error`` — a machine-readable error code (see :meth:`error`);
+        - ``finish`` — the terminal summary (see :meth:`finish`).
+
     Lifecycle:
         - ``run_id`` is generated internally (UTC timestamp + random suffix),
           so file names are unique, ordered by time, and cannot escape RUNS_DIR.
@@ -43,6 +51,8 @@ class Trace:
           arguments may contain user text (queries, identifiers) and trace files are retained on disk.
         - User / assistant message text is never written: ``step()`` records ``window_hash``
           and ``window_msgs``; ``finish()`` records only ``answer_chars``.
+        - ``finalize()`` records ``system_hash``, ``system_chars``, model, token counts, cost,
+          latency, and ``history_msgs`` — but not the history content (same PII policy as ``step()``).
         - ``error()`` ``message`` is expected to be a machine-readable code
           (``type(exc).__name__``, reason string), not ``str(exc)`` from a tool/user-facing exception.
         - The single exception is ``__exit__``, which writes a truncated ``str(exc)`` for
@@ -243,6 +253,36 @@ class Trace:
             'latency_ms': latency_ms,
             'window_hash': self._hash(window),
             'window_msgs': len(window),
+            'system_hash': self._hash(system_prompt),
+            'system_chars': len(system_prompt),
+            'decision': 'tool_call' if reply.tool_calls else ('answer' if reply.text.strip() else 'empty'),
+            'tools': [c['name'] for c in reply.tool_calls],
+            'budget': budget.snapshot(),
+        })
+
+    def finalize(
+            self,
+            n: int,
+            history: list[dict[str, Any]],
+            reply: Reply,
+            budget: Budget,
+            latency_ms: int,
+            *,
+            system_prompt: str,
+    ) -> None:
+        # Records the single bounded finalization LLM call. Mirrors `step`, but tags the record as `t='finalize'`
+        # so post-mortem can separate the finalization call from decision steps (same fields, different `t`).
+        # No `window_hash` because finalization does not use a packed context window — `history` is
+        # sent as-is; only its length is recorded (content is PII-sensitive).
+        self._write({
+            't': 'finalize',
+            'step': n,
+            'model': reply.model,
+            'in_tokens': reply.in_tokens,
+            'out_tokens': reply.out_tokens,
+            'cost_usd': round(reply.cost_usd, 6),
+            'latency_ms': latency_ms,
+            'history_msgs': len(history),
             'system_hash': self._hash(system_prompt),
             'system_chars': len(system_prompt),
             'decision': 'tool_call' if reply.tool_calls else ('answer' if reply.text.strip() else 'empty'),

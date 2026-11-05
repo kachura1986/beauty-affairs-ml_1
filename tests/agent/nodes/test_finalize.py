@@ -419,6 +419,46 @@ async def test_finalize_records_llm_usage(trace, make_context):
     assert state["budget"].cost_usd == pytest.approx(0.0001)
 
 
+async def test_finalize_writes_finalize_record_on_success(trace, make_context):
+    """A successful finalization writes a t='finalize' record with the call's usage.
+
+    This separates the finalization cost/latency from decision steps in the
+    trace (`t='step'` vs `t='finalize'`), so post-mortem can attribute usage
+    without diffing `finish.budget`. No record is written on fallback paths —
+    those are covered by `finalization_fallback` error records.
+    """
+    llm = FakeLLM(reply(
+        text="final answer",
+        in_tokens=10,
+        out_tokens=5,
+        cost_usd=0.001,
+    ))
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "name": "t", "tool_call_id": "c1", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    result = await finalize_node(state, FakeRuntime(ctx))
+
+    assert result["finalization"] == Finalization.LLM
+    assert result["answer"] == "final answer"
+
+    finalize_records = [r for r in trace.records() if r.get("t") == "finalize"]
+    assert len(finalize_records) == 1
+
+    record = finalize_records[0]
+    assert record["model"] == "fake"
+    assert record["in_tokens"] == 10
+    assert record["out_tokens"] == 5
+    assert record["decision"] == "answer"
+    assert record["tools"] == []
+    assert record["history_msgs"] == 1
+    assert "system_hash" in record
+    assert "budget" in record
+
+
 async def test_finalize_node_resets_needs_finalization(trace, make_context):
     """All exit paths reset needs_finalization — the flag never leaks to finish."""
     # Success path
