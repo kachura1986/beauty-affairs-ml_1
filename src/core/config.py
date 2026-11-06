@@ -44,11 +44,12 @@ class Settings(BaseSettings):
 
     # Agent configuration
     AGENTS_CONFIG: Path = Path(__file__).resolve().parents[1] / 'config' / 'agents.yaml'
+    # Maximum number of concurrent agent runs per worker
+    MAX_CONCURRENT_AGENT_RUNS: int = Field(default=4, gt=0)
 
     # Per-operation caps; the run budget remains the outer limit
     LLM_DEFAULT_TIMEOUT_SECONDS: float = 120.0
-    # Pre-flight threshold: do not start an LLM call when remaining tokens
-    # are strictly below this value. Boundary (==) is allowed.
+    # Pre-flight threshold: do not start an LLM call when remaining tokens are strictly below this value
     MIN_EXPECTED_TOKENS: int = 500
     TOOL_DEFAULT_TIMEOUT_SECONDS: float = 30.0
     TOOL_DEFAULT_MAX_OUTPUT_CHARS: int = 15000

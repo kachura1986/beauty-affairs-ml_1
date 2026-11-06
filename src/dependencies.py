@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 
 from azure.core.credentials import AzureKeyCredential
@@ -75,6 +76,7 @@ class PipelineDependencies:
 
             agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
             agent_config = agent_configs['default_agent']
+            agent_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_AGENT_RUNS)
 
             # Use cases
             agent_service = AgentService(
@@ -88,6 +90,7 @@ class PipelineDependencies:
                 runs_dir=settings.RUNS_DIR,
                 policy=agent_config.policy,
                 budget_limits=agent_config.budget,
+                semaphore=agent_semaphore,
             )
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 
