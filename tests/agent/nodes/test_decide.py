@@ -171,18 +171,36 @@ async def test_request_llm_timeout_returns_budget_time(trace, make_context, monk
     ``_request_llm`` re-checks the remaining time after the exception, so a
     raised error must be classified as BUDGET_TIME rather than LLM_ERROR when
     the run has already run out of time during the call.
+
+    The elapsed() call sequence is pinned exactly: previously the iterator
+    used ``next(times, 2.0)``, so any extra call silently produced 2.0 and
+    the test still passed. Now an unexpected extra call is caught by the
+    call-count assert below, instead of being masked by the default.
+
+    Patch the method on the class: Budget uses validate_assignment=True,
+    so an instance-level setattr of a non-field attribute (such as a
+    replacement ``elapsed``) is rejected by Pydantic.
     """
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(
+        max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost_usd=1,
+    ))
 
-    # Emulate that the LLM call took longer than the remaining budget (1.0s).
-    # Use a fallback to prevent StopIteration when budget.snapshot() calls elapsed() again.
-    # Patch the method on the class: Budget uses validate_assignment=True, so an
-    # instance-level setattr of a non-field attribute (such as a replacement
-    # `elapsed`) is rejected by Pydantic. monkeypatch restores it after the test.
-    times = iter([0.0, 2.0])
-    monkeypatch.setattr(Budget, "elapsed", lambda self: next(times, 2.0))
+    # Exactly three elapsed() calls are expected for the timeout path:
+    #   1. _request_llm's TOCTOU guard (remaining_seconds() before the call);
+    #   2. the post-exception re-check (remaining_seconds() in the except block);
+    #   3. trace.error() -> budget.snapshot().
+    # The second call must see elapsed() == 2.0 (>= max_seconds), so
+    # remaining_seconds() clamps to 0.0 and the reason is BUDGET_TIME.
+    elapsed_calls: list[int] = []
+    times = iter([0.0, 2.0, 2.0])
+
+    def fake_elapsed(self):
+        elapsed_calls.append(1)
+        return next(times, 2.0)
+
+    monkeypatch.setattr(Budget, "elapsed", fake_elapsed)
 
     result, reason = await _request_llm(
         llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
@@ -192,6 +210,10 @@ async def test_request_llm_timeout_returns_budget_time(trace, make_context, monk
     assert result is None
     assert reason == TerminationReason.BUDGET_TIME
     assert len(llm.calls) == 1
+    # Regression guard: an extra elapsed() call must not be silently absorbed
+    # by a fallback 2.0. Any refactor that adds a budget check to the except
+    # path must update this count deliberately.
+    assert len(elapsed_calls) == 3
 
 
 async def test_request_llm_llm_error(trace, make_context):

@@ -81,6 +81,8 @@ async def test_finalize_llm_success(trace, make_context):
     assert result["answer"] == "final answer"
     assert result["finalization"] == Finalization.LLM
     assert result["needs_finalization"] is False
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
     assert llm.calls[0]["tools"] == []
     assert "You have reached the final step" in llm.calls[0]["system_prompt"]
 
@@ -102,6 +104,8 @@ async def test_finalize_skips_llm_when_time_exhausted(trace, make_context):
     assert result["answer"] is not None and "ok" in result["answer"]
     assert result["finalization"] == Finalization.FALLBACK
     assert result["needs_finalization"] is False
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
 
     errors = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
     assert len(errors) == 1
@@ -125,6 +129,8 @@ async def test_finalize_skips_llm_when_tokens_below_min(trace, make_context):
     assert llm.calls == []
     assert result["finalization"] == Finalization.FALLBACK
     assert result["answer"] is not None
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
     assert any(
         r.get("kind") == "finalization_fallback" and r.get("message") == "budget_exhausted"
         for r in trace.records()
@@ -183,6 +189,8 @@ async def test_finalize_llm_returns_tool_calls(trace, make_context):
     assert result["answer"] is not None and "ok" in result["answer"]
     assert "pending_tool_calls" not in result
     assert result["needs_finalization"] is False
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
     assert any(
         r.get("kind") == "finalization_fallback" and r.get("message") == "tool_calls_in_reply"
         for r in trace.records()
@@ -202,6 +210,8 @@ async def test_finalize_llm_returns_empty_text(trace, make_context):
     result = await finalize_node(state, FakeRuntime(ctx))
 
     assert result["finalization"] == Finalization.FALLBACK
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
     assert any(
         r.get("kind") == "finalization_fallback" and r.get("message") == "empty_reply"
         for r in trace.records()
@@ -257,6 +267,8 @@ async def test_finalize_defensive_no_needs_finalization(trace, make_context):
 
     assert result["finalization"] == Finalization.NONE
     assert result["needs_finalization"] is False
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
     assert llm.calls == []
 
 
@@ -276,10 +288,17 @@ async def test_finalize_all_error_history_returns_fallback_explanation(trace, ma
     assert "ERROR" in result["answer"]
     assert result["finalization"] == Finalization.FALLBACK
     assert result["needs_finalization"] is False
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
 
 
 async def test_finalize_no_tool_messages_returns_none(trace, make_context):
-    """No tool messages at all → fallback returns None → NONE."""
+    """No tool messages at all → fallback returns None → NONE.
+
+    Also pins that the NONE path does not leak termination_reason back into
+    the node result — the contract is identical on every return path of
+    finalize_node, including the one that leaves answer=None.
+    """
     llm = FakeLLM(reply(text=""))
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(ctx, history=[], last_tool_ok=None)
@@ -289,6 +308,8 @@ async def test_finalize_no_tool_messages_returns_none(trace, make_context):
     assert result["answer"] is None
     assert result["finalization"] == Finalization.NONE
     assert result["needs_finalization"] is False
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
 
 
 async def test_finalize_logs_internal_exception(trace, make_context, caplog):
@@ -307,6 +328,8 @@ async def test_finalize_logs_internal_exception(trace, make_context, caplog):
     assert any("Finalization LLM call failed" in r.message for r in caplog.records)
     assert result["finalization"] == Finalization.FALLBACK
     assert result["answer"] is not None and "ok" in result["answer"]
+    # finalize_node must not overwrite termination_reason set by decide_node.
+    assert "termination_reason" not in result
     assert any(
         r.get("kind") == "finalization_fallback" and r.get("message") == "llm_error"
         for r in trace.records()
@@ -553,6 +576,31 @@ def test_deterministic_fallback_returns_none_when_no_tools():
     assert result is None
 
 
+def test_deterministic_fallback_empty_string_last_tool_ok_takes_success_branch():
+    """Empty-string last_tool_ok is treated as "set" (``is not None``).
+
+    ``_deterministic_fallback`` checks ``last_tool_ok is not None``, so a
+    corrupted or edge-case empty string — e.g. a tool that succeeded with
+    empty content, or a bug that reset the field to "" — produces an answer
+    embedding it verbatim instead of falling through to the error-explanation
+    path.
+
+    This test pins the current boundary. If the implementation is tightened
+    to ``if last_tool_ok:`` (arguably a better fallback), this test must be
+    updated deliberately — the empty string would then take the
+    error-explanation path.
+    """
+    history = [{"role": "tool", "content": "ERROR execution_failed. boom."}]
+
+    result = _deterministic_fallback(history, "")
+
+    assert result is not None
+    assert "Here is the most recent tool result:" in result
+    # The error-explanation path would include the error content; the success
+    # branch must not.
+    assert "ERROR" not in result
+
+
 def test_has_tool_results_counts_synthetic_errors():
     """Synthetic error tool messages count as tool results."""
     history = [
@@ -781,7 +829,14 @@ async def test_budget_time_with_tool_results_does_not_finalize(trace, make_regis
 
 
 async def test_finalization_in_trace_finish(trace, make_registry):
-    """The finish trace record carries finalization='llm' and answer_chars > 0."""
+    """The finish trace record carries finalization='llm' and answer_chars > 0.
+
+    Also asserts that step-record fields do not leak into the finish record:
+    those fields belong to ``t='step'`` and their presence in ``t='finish'``
+    would indicate the two record shapes were accidentally merged in
+    ``Trace.finish`` (regression guard for a "copied step() and forgot to
+    trim window_*" refactor).
+    """
     call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
     llm = FakeLLM(
         reply(text="", tool_calls=[call]),
@@ -801,3 +856,11 @@ async def test_finalization_in_trace_finish(trace, make_registry):
     assert len(finish) == 1
     assert finish[0]["finalization"] == "llm"
     assert finish[0]["answer_chars"] > 0
+
+    for step_field in (
+            "window_hash", "window_msgs", "system_hash", "system_chars",
+            "model", "in_tokens", "out_tokens", "latency_ms", "decision", "tools",
+    ):
+        assert step_field not in finish[0], (
+            f"{step_field!r} leaked from a step record into the finish record"
+        )
