@@ -267,8 +267,7 @@ def test_trace_tool_default_args_keys_is_empty(trace):
 
 
 async def test_trace_tool_does_not_leak_raw_field_names_via_hint(trace):
-    """C.5 / B.3 regression: extra_forbidden puts the raw field name into the model-facing
-    hint; it must not reach the trace."""
+    """Regression: extra_forbidden puts the raw field name into the model-facing hint; it must not reach the trace."""
     registry = _single_tool_registry(_ok_fn)
     call = {'name': 'echo', 'arguments': {'value': 'hi', 'api_token': 'secret-value'}}
     result = await registry.invoke(call)
@@ -286,7 +285,7 @@ async def test_trace_tool_does_not_leak_raw_field_names_via_hint(trace):
 
 
 def test_trace_tool_never_records_raw_argument_values(trace):
-    """C.6: raw argument VALUES must not appear literally in the trace — only args_hash and args_keys."""
+    """Raw argument VALUES must not appear literally in the trace — only args_hash and args_keys."""
     call = {'name': 'echo', 'arguments': {'value': 'RAW-VALUE-MARKER-12345'}}
     trace.tool(1, call, ToolResult(status=ToolStatus.OK, args_keys=('value',)), 100)
 
@@ -295,6 +294,41 @@ def test_trace_tool_never_records_raw_argument_values(trace):
     assert 'RAW-VALUE-MARKER-12345' not in serialized
     assert 'args_hash' in record
     assert record['args_keys'] == ['value']  # key names — yes; values — no
+
+
+def test_trace_tool_args_hash_is_deterministic_and_low_entropy_recoverable(trace):
+    """
+    args_hash is a deterministic SHA-256, not a cryptographic commitment: low-entropy values (top_k, min_price)
+    are recoverable by enumeration. High-entropy values are not. This is a documented trade-off — determinism
+    across runs is required for post-mortem diffing.
+    """
+    import hashlib
+    import json
+
+    def _hash(obj):
+        # Mirrors Trace.tool(): hashes only `arguments`, NOT {'n': ..., 'a': ...}.
+        blob = json.dumps(obj, sort_keys=True, ensure_ascii=False, default=str)
+        return hashlib.sha256(blob.encode()).hexdigest()[:12]
+
+    # Determinism: same args → same hash across calls.
+    call_a = {'name': 'search_products', 'arguments': {'query': 'vitamin c', 'top_k': 10}}
+    call_b = {'name': 'search_products', 'arguments': {'query': 'vitamin c', 'top_k': 10}}
+    trace.tool(1, call_a, ToolResult(status=ToolStatus.OK), 10)
+    trace.tool(2, call_b, ToolResult(status=ToolStatus.OK), 10)
+    records = [r for r in trace.records() if r['t'] == 'tool']
+    assert records[0]['args_hash'] == records[1]['args_hash']
+
+    # Low-entropy recoverable: top_k=10 and top_k=20 produce different hashes,
+    # and each matches the recomputed SHA-256 — enumeration works.
+    call_c = {'name': 'search_products', 'arguments': {'query': 'vitamin c', 'top_k': 20}}
+    trace.tool(3, call_c, ToolResult(status=ToolStatus.OK), 10)
+    records = [r for r in trace.records() if r['t'] == 'tool']
+    assert records[0]['args_hash'] != records[2]['args_hash']
+    assert records[2]['args_hash'] == _hash(call_c['arguments'])
+
+    # Raw values themselves are still absent.
+    serialized = json.dumps(records[0])
+    assert '"top_k": 10' not in serialized
 
 
 def test_tool_result_is_hashable():

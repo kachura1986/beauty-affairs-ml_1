@@ -321,6 +321,13 @@ class Trace:
         already redacted: validation errors and unknown tools yield an empty tuple, so raw key names
         never reach the trace.
 
+        ``args_hash`` is deterministic SHA-256 truncated to 12 hex chars, not a cryptographic
+        commitment. Low-entropy fields (``top_k``, ``min_price``) are effectively recoverable by
+        enumeration; high-entropy secrets are not reversible. This is a conscious trade-off:
+        determinism across runs is required for post-mortem diffing ("same args in step 3 and
+        step 7?"), which an HMAC with a per-process key would destroy. See ``_hash()`` for the
+        same caveat.
+
         ``hint`` is intentionally NOT written: for ``validation`` / ``extra_forbidden`` it embeds the
         raw field name from the model's arguments, which would re-introduce the very leak ``args_keys``
         is designed to prevent. ``error_code`` + ``message`` are sufficient for post-mortem.

@@ -37,6 +37,24 @@ def _is_async_callable(fn: Any) -> bool:
     return call is not None and inspect.iscoroutinefunction(call)
 
 
+def _with_keys(res: ToolResult, keys: tuple[str, ...]) -> ToolResult:
+    """
+    Attach redacted arg key names to a tool result.
+
+    CONTRACT: every error path in ``invoke()`` that reaches the model must carry ``args_keys`` — the trace relies on it
+    to prove raw argument names were not persisted. A third ``return`` path added without this helper would silently
+    emit an empty tuple and break that guarantee.
+
+    Args:
+        res (ToolResult): Tool result returned by an error classifier.
+        keys (tuple[str, ...]): Redacted schema field names from ``safe_keys``.
+
+    Returns:
+        ToolResult: The same result with ``args_keys`` replaced.
+    """
+    return replace(res, args_keys=keys)
+
+
 class ToolRegistry:
     """Registry of tools available to the agent_graph."""
 
@@ -180,7 +198,7 @@ class ToolRegistry:
         try:
             out = tool.fn(**args)
         except Exception as exc:  # noqa: BLE001
-            return replace(handle_execution_exception(name, exc), args_keys=safe_keys)
+            return _with_keys(handle_execution_exception(name, exc), safe_keys)
 
         # Registry guarantees fn is async (see __init__). This is an invariant check, not a fallback.
         if not inspect.isawaitable(out):
@@ -195,7 +213,7 @@ class ToolRegistry:
         try:
             out = await asyncio.wait_for(out, timeout=effective)
         except Exception as exc:  # noqa: BLE001
-            return replace(handle_execution_exception(name, exc), args_keys=safe_keys)
+            return _with_keys(handle_execution_exception(name, exc), safe_keys)
 
         do_truncate = tool.truncate if truncate is None else truncate
         budget = tool.max_output_chars if tool.max_output_chars is not None else self._max_output_chars
