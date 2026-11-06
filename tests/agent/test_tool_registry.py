@@ -25,16 +25,7 @@ class EchoArgs(BaseModel):
     (10.0, 0.05),
 ], ids=["per_tool_only", "per_tool_dominates", "caller_dominates"])
 async def test_timeout_dominance(tool_timeout, caller_timeout):
-    """The effective timeout is the minimum of the applicable ceilings.
-
-    Three scenarios, sharing the same assert set because the observable
-    outcome is identical — the tool must not run longer than the tightest
-    applicable timeout and must surface as a temporary failure:
-
-      - per_tool_only:    only the per-tool cap applies (caller passes None).
-      - per_tool_dominates: per-tool cap (0.05s) < caller (10s); min wins.
-      - caller_dominates:  caller (0.05s) < per-tool cap (10s); min wins.
-    """
+    """The tool must not run longer than the tightest applicable timeout and must surface as a temporary failure."""
 
     async def hanging_fn(**kwargs):
         await asyncio.sleep(10)
@@ -89,12 +80,7 @@ async def test_quick_call_completes_within_per_tool_cap():
 
 
 async def test_cancelled_error_propagates():
-    """CancelledError from the tool is not swallowed by the registry.
-
-    ``asyncio.CancelledError`` is a BaseException, not an Exception, so
-    ``except Exception`` in invoke() must not catch it. External cancellation
-    (FastAPI shutdown, parent coroutine timeout) must propagate.
-    """
+    """External cancellation (shutdown, parent timeout) must propagate, not be swallowed as a tool error."""
 
     async def cancelled_fn(**kwargs):
         raise asyncio.CancelledError()
@@ -122,13 +108,7 @@ async def test_cancelled_error_propagates():
 # ---------------------------------------------------------------------------
 
 def test_registry_rejects_sync_function_at_registration():
-    """A sync callable must fail loud at ToolRegistry construction.
-
-    Regression guard: the registry only supports async tools. If the
-    fail-loud check in __init__ is removed, a sync tool would register
-    silently and hang/misbehave at invoke() time instead of failing
-    at startup.
-    """
+    """A sync tool must fail at construction — otherwise it would silently bypass the per-tool timeout at invoke()."""
 
     def sync_fn(value: str = "ok"):
         return value
@@ -144,12 +124,7 @@ def test_registry_rejects_sync_function_at_registration():
 
 
 def test_registry_rejects_sync_function_even_alongside_async():
-    """A single sync tool must abort registration even if async tools are valid.
-
-    Pins that the fail-loud check runs per-tool during __init__, not
-    lazily at invoke() time, and that a valid async tool earlier in the
-    iterable does not mask the problem.
-    """
+    """The fail-loud check runs per-tool at construction; a valid async tool must not mask a sync one."""
 
     def sync_fn(value: str = "ok"):
         return value
@@ -291,12 +266,7 @@ def test_trace_tool_default_args_keys_is_empty(trace):
 
 
 def test_tool_result_is_hashable():
-    """``ToolResult`` remains hashable — ``tuple`` keeps it ``frozen``-safe.
-
-    ``args_keys: tuple[str, ...]`` (not ``list[str]``) is a deliberate choice:
-    a list would make ``hash(ToolResult(...))`` raise ``TypeError`` at runtime,
-    even though the dataclass is ``frozen=True``.
-    """
+    """A ``list`` would break ``hash(ToolResult(...))`` despite ``frozen=True``; ``tuple`` keeps it hashable."""
     assert isinstance(hash(ToolResult(status=ToolStatus.OK)), int)
     assert isinstance(hash(ToolResult(status=ToolStatus.OK, args_keys=('q', 'r'))), int)
     # Same args_keys ⇒ equal hash (tuple equality).

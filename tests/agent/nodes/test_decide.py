@@ -1,9 +1,4 @@
-"""DECIDE stage tests: _check_budget, _request_llm, decide_node.
-
-Grouped by graph stage: this file maps 1:1 to the DECIDE node and the
-helpers it relies on. EXECUTE lives in test_execute.py, terminal stages
-(VERIFY/FINISH/routing/state) in test_terminal.py.
-"""
+"""DECIDE stage tests: _check_budget, _request_llm, decide_node."""
 import time
 
 import pytest
@@ -33,11 +28,7 @@ def test_check_budget_steps_exhausted():
 
 
 def test_check_budget_time_exceeded():
-    """An expired wall-clock budget yields BUDGET_TIME even when steps remain.
-
-    ``BudgetLimits`` enforces ``max_seconds > 0``, so the budget is expired
-    by shifting its start time into the past instead of setting the limit to zero.
-    """
+    """An expired wall-clock budget yields BUDGET_TIME even when steps remain."""
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=10, max_cost_usd=1))
     budget.started = time.monotonic() - 10
     assert _check_budget(budget) == TerminationReason.BUDGET_TIME
@@ -97,11 +88,7 @@ async def test_request_llm_success(trace, make_context):
 
 
 async def test_request_llm_chat_and_trace_get_same_messages_object(trace, make_context, monkeypatch):
-    """Invariant: chat() and trace.step() receive the same messages object.
-
-    Regression: if someone copies or slices the list between the calls,
-    the window_hash in the trace no longer matches what was sent to the model.
-    """
+    """chat() and trace.step() must receive the same messages object — otherwise window_hash no longer matches what was sent."""
     import services.agent.agent_graph.nodes.decide as decide_mod
 
     seen = {}
@@ -127,14 +114,7 @@ async def test_request_llm_chat_and_trace_get_same_messages_object(trace, make_c
 
 
 async def test_request_llm_error_path_does_not_copy_messages(trace, make_context, monkeypatch):
-    """On the error path, trace.error receives the same budget and step,
-    and chat() was called with the original messages object.
-
-    After step B (LLMStepService), a common mistake is to snapshot context_window.messages (e.g. list(...))
-    before chat() for "safety". That breaks the chat/trace identity invariant from
-    test_request_llm_chat_and_trace_get_same_messages_object only on the success path — this test covers the error path,
-    where the identity is easy to lose because the trace call is a different one.
-    """
+    """The error path must also pass the original messages object to chat() — a defensive copy would break identity."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(
@@ -166,20 +146,10 @@ async def test_request_llm_error_path_does_not_copy_messages(trace, make_context
 
 
 async def test_request_llm_timeout_returns_budget_time(trace, make_context, monkeypatch):
-    """An LLM exception on an exhausted wall-clock budget yields BUDGET_TIME.
+    """An LLM exception on an exhausted wall-clock budget yields BUDGET_TIME, not LLM_ERROR.
 
-    ``_request_llm`` re-checks the remaining time after the exception, so a
-    raised error must be classified as BUDGET_TIME rather than LLM_ERROR when
-    the run has already run out of time during the call.
-
-    The elapsed() call sequence is pinned exactly: previously the iterator
-    used ``next(times, 2.0)``, so any extra call silently produced 2.0 and
-    the test still passed. Now an unexpected extra call is caught by the
-    call-count assert below, instead of being masked by the default.
-
-    Patch the method on the class: Budget uses validate_assignment=True,
-    so an instance-level setattr of a non-field attribute (such as a
-    replacement ``elapsed``) is rejected by Pydantic.
+    The pinned elapsed() call count guards against extra budget checks: a fallback
+    default would silently absorb them, so the count is asserted explicitly.
     """
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(llm=llm)
@@ -187,12 +157,6 @@ async def test_request_llm_timeout_returns_budget_time(trace, make_context, monk
         max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost_usd=1,
     ))
 
-    # Exactly three elapsed() calls are expected for the timeout path:
-    #   1. _request_llm's TOCTOU guard (remaining_seconds() before the call);
-    #   2. the post-exception re-check (remaining_seconds() in the except block);
-    #   3. trace.error() -> budget.snapshot().
-    # The second call must see elapsed() == 2.0 (>= max_seconds), so
-    # remaining_seconds() clamps to 0.0 and the reason is BUDGET_TIME.
     elapsed_calls: list[int] = []
     times = iter([0.0, 2.0, 2.0])
 
@@ -264,15 +228,7 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace, make_con
 
 
 async def test_request_llm_exceeded_after_successful_call(trace, make_context):
-    """A successful call that pushes usage over the limit yields BUDGET_TOKENS
-    but preserves the reply — decide_node decides if it qualifies as a final answer.
-
-    ``max_tokens == MIN_EXPECTED_TOKENS`` keeps the preflight check from firing
-    (strict '<'), while ``in_tokens == MIN_EXPECTED_TOKENS + 1`` guarantees the
-    post-call ``exceeded_without_steps()`` returns BUDGET_TOKENS. ``out_tokens``
-    is pinned to 0 so the overrun comes from the input side, not from output
-    noise that could mask a regression.
-    """
+    """A successful call that pushes usage over the limit yields BUDGET_TOKENS but preserves the reply."""
     from core.config import settings
 
     llm = FakeLLM(reply(
@@ -300,11 +256,7 @@ async def test_request_llm_exceeded_after_successful_call(trace, make_context):
 
 
 async def test_request_llm_timeout_capped_by_remaining_budget(trace, make_context):
-    """The LLM call timeout equals the remaining budget when it is below the cap.
-
-    With the default LLM_DEFAULT_TIMEOUT_SECONDS (120s), a 10s budget must
-    cap the call at ~10s rather than letting it run for the full default.
-    """
+    """The LLM call timeout is capped by the remaining budget when it is below the default."""
     llm = FakeLLM(reply(text="hello"))
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
@@ -318,11 +270,7 @@ async def test_request_llm_timeout_capped_by_remaining_budget(trace, make_contex
 
 
 async def test_request_llm_timeout_capped_by_default(trace, make_context, monkeypatch):
-    """The LLM call timeout equals the default cap when the budget is larger.
-
-    A 300s budget must not force a call to wait the whole 300s when
-    LLM_DEFAULT_TIMEOUT_SECONDS is 5s: min(300, 5) == 5.
-    """
+    """The LLM call timeout is capped by the default when the remaining budget is larger."""
     from core.config import settings
     monkeypatch.setattr(settings, "LLM_DEFAULT_TIMEOUT_SECONDS", 5.0)
 
@@ -339,12 +287,7 @@ async def test_request_llm_timeout_capped_by_default(trace, make_context, monkey
 
 
 async def test_request_llm_preflight_tokens_below_minimum(trace, make_context):
-    """A token budget below MIN_EXPECTED_TOKENS short-circuits before chat().
-
-    The check is strict '<', so a caller that lands exactly on the threshold
-    must still be allowed to try (see the boundary test). A clearly
-    insufficient budget must never reach the LLM.
-    """
+    """A token budget below MIN_EXPECTED_TOKENS short-circuits before chat() (strict '<')."""
     from core.config import settings
 
     llm = FakeLLM(reply(text="never"))
@@ -367,11 +310,7 @@ async def test_request_llm_preflight_tokens_below_minimum(trace, make_context):
 
 
 async def test_request_llm_preflight_tokens_at_boundary_allowed(trace, make_context):
-    """Exactly MIN_EXPECTED_TOKENS remaining is still allowed to call the LLM.
-
-    The pre-flight uses strict '<', so the boundary value must pass through
-    to chat() rather than terminating early.
-    """
+    """Exactly MIN_EXPECTED_TOKENS remaining must pass through to chat() (strict '<')."""
     from core.config import settings
 
     llm = FakeLLM(reply(text="ok"))
@@ -394,11 +333,7 @@ async def test_request_llm_preflight_tokens_at_boundary_allowed(trace, make_cont
 
 
 async def test_request_llm_preflight_tokens_emits_trace(trace, make_context):
-    """The pre-flight rejection is recorded in the trace with kind='preflight_tokens'.
-
-    Parses JSONL via Trace.records() rather than substring-matching, so the
-    check is independent of the trace's separators and field ordering.
-    """
+    """The pre-flight rejection is recorded in the trace with kind='preflight_tokens'."""
     from core.config import settings
 
     llm = FakeLLM(reply(text="never"))
@@ -419,13 +354,7 @@ async def test_request_llm_preflight_tokens_emits_trace(trace, make_context):
 
 
 async def test_request_llm_precondition_raises_on_exhausted_steps(trace, make_context):
-    """LLMStepService.run raises RuntimeError (not AssertionError) when steps are exhausted.
-
-    Explicit raise, not assert: under `python -O` an assert would be stripped
-    and the violation would pass silently, breaking the steps <= max_steps
-    invariant. Goes through _request_llm (the thin wrapper) so both the wrapper
-    and the service are covered.
-    """
+    """LLMStepService raises RuntimeError on exhausted steps — an explicit raise survives ``python -O``, an assert does not."""
     llm = FakeLLM(reply(text="never"))
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(
@@ -551,20 +480,12 @@ async def test_decide_tool_calls_clears_stale_pending_answer(trace, make_context
 
 # ---------------------------------------------------------------------------
 # decide_node: budget reason with a preserved reply
-#
-# The budget branch of `decide_node` qualifies a reply as a final answer only
-# when it has no tool_calls and non-blank text. These tests pin each condition
-# in isolation; the shared setup mirrors the exact preflight boundary used by
-# `test_request_llm_exceeded_after_successful_call` — `max_tokens` equals
-# MIN_EXPECTED_TOKENS so the preflight does not fire, while `in_tokens` is one
-# over so the post-call `exceeded_without_steps()` returns BUDGET_TOKENS.
 # ---------------------------------------------------------------------------
 
 async def test_decide_preserves_answer_when_budget_exceeded_after_final_text(
         trace, make_context, make_state,
 ):
-    """Scenario 6/7: a final-text reply that pushes usage over the token
-    budget must become `answer`, not be dropped into an empty AgentResult."""
+    """A final-text reply that pushes usage over the token budget must become `answer`, not be dropped."""
     from core.config import settings
 
     llm = FakeLLM(reply(
@@ -584,8 +505,7 @@ async def test_decide_preserves_answer_when_budget_exceeded_after_final_text(
 
 
 async def test_decide_does_not_preserve_tool_call_as_answer(trace, make_context, make_state):
-    """A tool_call reply at budget exhaustion is not a final answer —
-    the model asked to continue, not to answer."""
+    """A tool_call reply at budget exhaustion is not a final answer — the model asked to continue."""
     from core.config import settings
 
     call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
@@ -625,8 +545,7 @@ async def test_decide_does_not_preserve_empty_text_as_answer(trace, make_context
 
 
 async def test_decide_tool_call_with_text_at_budget_not_preserved(trace, make_context, make_state):
-    """Even if the reply carries both text and tool_calls, tool_calls make it
-    non-final — `answer` must stay absent."""
+    """Tool_calls make a reply non-final even when it also carries text — `answer` must stay absent."""
     from core.config import settings
 
     call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
@@ -648,16 +567,10 @@ async def test_decide_tool_call_with_text_at_budget_not_preserved(trace, make_co
 
 # ---------------------------------------------------------------------------
 # decide_node: integration guards over the preflight and except branches
-#
-# Both branches of `_request_llm` return (None, reason). The `reply is not
-# None` guard in the budget branch keeps `answer` absent — and must not raise
-# on a None reply. These tests exercise that contract end-to-end through
-# decide_node, not just at the _request_llm boundary.
 # ---------------------------------------------------------------------------
 
 async def test_decide_preflight_budget_does_not_set_answer(trace, make_context, make_state):
-    """decide_node tolerates (None, reason) from the preflight path without
-    setting `answer` and without raising."""
+    """A (None, reason) from the preflight path must leave `answer` absent without raising."""
     from core.config import settings
 
     llm = FakeLLM(reply(text="never"))
@@ -672,12 +585,7 @@ async def test_decide_preflight_budget_does_not_set_answer(trace, make_context, 
 
 
 async def test_decide_llm_error_does_not_set_answer(trace, make_context, make_state):
-    """A failed LLM call with reason != None does not qualify as an answer.
-
-    The except branch of `_request_llm` returns (None, reason); the new
-    contract ("reply may be non-None when reason != None") applies only to
-    the success path, so this test pins the asymmetry.
-    """
+    """A failed LLM call does not qualify as an answer — the preserved-reply contract applies only to the success path."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
     state = make_state(ctx)
@@ -726,13 +634,7 @@ async def test_decide_budget_warning_not_reemitted(trace, make_context, make_sta
 async def test_decide_context_overflow_preserves_budget_warning_flag(
         trace, make_context, make_state, monkeypatch, cost_usd, expected_emitted,
 ):
-    """A ContextOverflow becomes a normal termination and preserves the warning flag.
-
-    Two scenarios:
-      - cost_usd = 0.0  -> no soft warning was set up, budget_warning_emitted stays False;
-      - cost_usd = 0.45 -> soft warning was triggered on this same step, so the
-        flag is True and is preserved on the overflow path.
-    """
+    """A ContextOverflow becomes a normal termination and preserves the warning flag (both pre-set and set on this step)."""
     import services.agent.context.context_window as cw_mod
 
     monkeypatch.setattr(cw_mod, "MAX_ESTIMATED_CHARS", 100)
@@ -752,12 +654,7 @@ async def test_decide_context_overflow_preserves_budget_warning_flag(
 
 
 async def test_decide_calls_build_context_once(trace, make_context, make_state, monkeypatch):
-    """build_context is invoked exactly once per decide_node call.
-
-    Guards against a future regression that re-splits context assembly
-    into two calls (the footgun the refactor removed).
-    """
-    # FIX: build_context lives in the DECIDE module, not the package.
+    """build_context is invoked exactly once per decide_node call — guards against re-splitting context assembly."""
     import services.agent.agent_graph.nodes.decide as decide_mod
 
     real_build = decide_mod.build_context
@@ -778,10 +675,7 @@ async def test_decide_calls_build_context_once(trace, make_context, make_state, 
 
 
 async def test_decide_passes_history_to_build_context(trace, make_context, make_state, monkeypatch):
-    """state['history'] reaches build_context by reference, not as a copy.
-
-    build_context is called positionally: (system_prompt, warning, history).
-    """
+    """state['history'] reaches build_context by reference, not as a copy."""
     import services.agent.agent_graph.nodes.decide as decide_mod
 
     real_build = decide_mod.build_context
@@ -804,12 +698,7 @@ async def test_decide_passes_history_to_build_context(trace, make_context, make_
 
 
 async def test_decide_skips_build_context_when_steps_exhausted(trace, make_context, make_state, monkeypatch):
-    """When the step budget is exhausted, build_context is not called at all.
-
-    No wasted work: the short-circuit in _check_budget fires before context
-    assembly.
-    """
-    # FIX: build_context lives in the DECIDE module, not the package.
+    """The step-budget short-circuit fires before context assembly — build_context is never called."""
     import services.agent.agent_graph.nodes.decide as decide_mod
 
     called = []
@@ -826,14 +715,7 @@ async def test_decide_skips_build_context_when_steps_exhausted(trace, make_conte
 
 
 async def test_decide_forwards_context_window_to_request_llm(trace, make_context, make_state, monkeypatch):
-    """build_context output is forwarded to _request_llm unchanged.
-
-    Regression guard: after the refactor, the effective system prompt
-    (task prompt + optional budget warning) must travel through
-    ``context_window.system`` rather than being reconstructed inside
-    ``_request_llm``. If someone re-introduces ``chat(..., system_prompt=ctx.task.system_prompt)``,
-    the warning is silently lost — this test catches that.
-    """
+    """build_context output is forwarded to _request_llm unchanged — a reconstructed system prompt would silently drop the warning."""
     import services.agent.agent_graph.nodes.decide as decide_mod
 
     real_request = decide_mod._request_llm

@@ -75,12 +75,7 @@ def test_empty_list_stays_empty():
 
 
 def test_list_stays_list_in_fallback():
-    """Regression: the minimal fallback used to return a dict instead of a list.
-
-    The original JSON for range(100) is about 390 characters. The minimal list marker
-    [{"_truncated": true, "total": 100}] is about 36 characters, so with a budget of 40 truncation is
-    guaranteed and the result must remain a list.
-    """
+    """Regression: the minimal fallback used to return a dict instead of a list."""
     content, truncated = truncate_for_model(list(range(100)), 40)
     assert truncated
     assert len(content) <= 40

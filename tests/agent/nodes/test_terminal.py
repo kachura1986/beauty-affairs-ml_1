@@ -1,9 +1,4 @@
-"""Terminal stage tests: verify_node, finish_node, routing, create_initial_state.
-
-Grouped by graph stage: this file covers everything after EXECUTE — the
-VERIFY/FINISH terminal nodes, the routing predicates, and the state factory.
-DECIDE lives in test_decide.py, EXECUTE in test_execute.py.
-"""
+"""Terminal stage tests: verify_node, finish_node, routing, create_initial_state."""
 import pytest
 
 from services.agent.agent_graph.nodes import finish_node, verify_node
@@ -54,11 +49,7 @@ def test_verify_postcondition_ok_done(trace, make_context, make_state):
 
 
 def test_verify_postcondition_fails_adds_observation(trace, make_context, make_state):
-    """A failing postcondition returns to DECIDE with an observation.
-
-    The original answer is not accepted; instead the note from the
-    postcondition is fed back to the model for another attempt.
-    """
+    """A failing postcondition rejects the answer and feeds the note back to DECIDE as an observation."""
     ctx = make_context(postcondition=lambda a: (False, "missing detail"))
     state = make_state(ctx)
     state["pending_answer"] = "bad"
@@ -179,12 +170,7 @@ def test_finish_result_numeric_fields(trace, make_context, make_state):
 
 
 def test_finish_missing_answer_returns_none(trace, make_context, make_state):
-    """FINISH handles a missing answer gracefully.
-
-    The trace record is read via ctx.trace.records() so the assertion does not
-    depend on the JSONL separators or field ordering, and does not rely on the
-    implicit trace fixture -> make_context wiring.
-    """
+    """FINISH handles a missing answer gracefully (answer=None, answer_chars=0)."""
     ctx = make_context()
     state = make_state(ctx)
     state["termination_reason"] = TerminationReason.BUDGET_TIME
@@ -200,12 +186,7 @@ def test_finish_missing_answer_returns_none(trace, make_context, make_state):
 
 
 def test_finish_uses_answer_from_budget_branch(trace, make_context, make_state):
-    """End-to-end: answer set by decide_node on a budget reason reaches
-    AgentResult and trace.finish with non-zero answer_chars.
-
-    The `reason` check pins that the *budget* termination is carried through
-    to AgentResult, not silently rewritten into DONE/DONE_UNVERIFIED.
-    """
+    """A budget termination reason is carried through to AgentResult — not silently rewritten into DONE/DONE_UNVERIFIED."""
     ctx = make_context()
     state = make_state(ctx)
     state["termination_reason"] = TerminationReason.BUDGET_TOKENS

@@ -81,12 +81,7 @@ def make_window(
 # ---------------------------------------------------------------------------
 
 def test_empty_history_returns_system_only():
-    """An empty history yields the system prompt unchanged and no messages.
-
-    This covers both the "no warning" and "no history" aspects that used to
-    live in two identical tests: without a warning the effective system is
-    exactly the input prompt, and the window is empty.
-    """
+    """Without a warning, the effective system equals the input prompt and the window is empty."""
     effective, budget = _prepare_context(SYSTEM, None)
     assert effective == SYSTEM
     assert _build_window([], history_budget_chars=budget) == []
@@ -151,13 +146,7 @@ def test_tool_only_history_is_one_turn():
 # ---------------------------------------------------------------------------
 
 def test_message_limit_keeps_exact_tail():
-    """Only the continuous tail + pinned turns are kept — verify exact content.
-
-    Turn 0 is pinned, turn 9 is pinned (last). ``max_messages=6`` leaves
-    room for exactly one more turn — it must be turn 8 (adjacent to the
-    last turn), never an older small one. Fixes the previous version,
-    which only checked an upper bound.
-    """
+    """Only the continuous tail adjacent to the last turn is kept — not older small turns."""
     history: list[dict[str, Any]] = []
     for i in range(10):
         history.append(user(f"q{i}"))
@@ -191,12 +180,7 @@ def test_single_turn_pinned_once():
 # ---------------------------------------------------------------------------
 
 def test_char_budget_keeps_whole_turns():
-    """Char budget is enforced by dropping whole turns, not partial ones.
-
-    Fixes the previous version, which checked only parity of the message
-    count. Every kept user is paired with its own assistant reply, and
-    the paired messages come from the same turn index.
-    """
+    """Char budget drops whole turns; every kept user is paired with its own assistant reply."""
     history: list[dict[str, Any]] = []
     for i in range(10):
         history.append(user(f"q{i}-" + "x" * 500))
@@ -219,12 +203,7 @@ def test_char_budget_keeps_whole_turns():
 
 
 def test_reserved_output_chars_reduces_budget():
-    """``max_estimated_chars=15_000`` leaves less than ``RESERVED_OUTPUT_CHARS`` for history.
-
-    Two 5000-char messages need 10_000 chars of budget; at 15_000 the
-    leftover after system + reserve is too small → overflow. At 25_000
-    both messages fit.
-    """
+    """At 15_000 leftover after system + reserve is too small; at 25_000 both messages fit."""
     history = [user("x" * 5000), assistant("x" * 5000)]
 
     with pytest.raises(ContextOverflow):
@@ -239,11 +218,7 @@ def test_reserved_output_chars_reduces_budget():
 # ---------------------------------------------------------------------------
 
 def test_first_and_last_turn_fully_kept():
-    """Turn 0 and the last turn are kept whole — both user and assistant.
-
-    Fixes the previous version, which only looked for the `q*` prefix and
-    would pass even if the matching assistant reply was silently dropped.
-    """
+    """Turn 0 and the last turn are kept whole — user and matching assistant both."""
     history: list[dict[str, Any]] = []
     for i in range(20):
         history.append(user(f"q{i}" + "x" * 500))
@@ -297,23 +272,13 @@ def test_continuous_tail_break_on_oversized_turn():
 # ---------------------------------------------------------------------------
 
 def test_overflow_system_alone_too_big():
-    # ``_prepare_context`` derives the budget from the module-level
-    # ``MAX_ESTIMATED_CHARS`` and does not accept a per-call
-    # ``max_estimated_chars``, so the overflow path is exercised with a
-    # system prompt that is too large for any realistic configuration.
+    # A system prompt that is too large for any realistic configuration.
     with pytest.raises(ContextOverflow):
         _prepare_context("x" * 10_000_000, None)
 
 
 def test_overflow_warning_alone_too_big():
-    """A warning participates in the effective system length — overflow with empty history.
-
-    Regression: previously only the system prompt was checked directly;
-    the fact that ``warning`` also participates in the length calculation was
-    only implicit. The value is deliberately oversized because the budget
-    comes from the module-level ``MAX_ESTIMATED_CHARS`` and cannot be injected
-    through ``_prepare_context``.
-    """
+    """The warning participates in the effective system length — overflow with empty history."""
     with pytest.raises(ContextOverflow):
         _prepare_context("small", "w" * 10_000_000)
 
@@ -325,18 +290,14 @@ def test_overflow_pinned_msgs_exceed_max_messages():
 
 
 def test_overflow_current_request_too_big():
-    """Explicit case: last turn alone exceeds the budget."""
+    """The last turn alone exceeds the budget."""
     history = [user("q0"), assistant("a0"), user("x" * 100_000)]
     with pytest.raises(ContextOverflow):
         make_window(history, max_estimated_chars=20_000)
 
 
 def test_overflow_current_request_multi_message():
-    """A multi-message last turn exceeding the budget also overflows.
-
-    Fixes the previous version, which used a single-message last turn and
-    therefore only accidentally matched the contract.
-    """
+    """A multi-message last turn exceeding the budget also overflows."""
     history = [
         user("q0"), assistant("a0"),
         user("q1"), assistant("a1"),
@@ -366,12 +327,7 @@ def test_tool_truncation_preserves_head_and_tail():
 
 
 def test_tool_truncation_marker_reports_correct_count():
-    """The marker reports the exact removed count, and the total size is exact.
-
-    Note: the implementation adds the marker on top of ``head + tail``,
-    so the result is *slightly* over ``PER_TOOL_MSG_LIMIT`` by design.
-    The test pins the exact size instead of pretending a strict ``≤``.
-    """
+    """The marker reports the exact removed count, and the total size is exact."""
     content = "y" * 10_000
     result = _truncate_tool(tool(content))
 
@@ -445,13 +401,7 @@ def test_size(content, expected):
 # ---------------------------------------------------------------------------
 
 def test_multimodal_budget_boundary():
-    """Boundary: exactly one image part fits, two do not.
-
-    Fixes the previous version, which used a budget with a wide margin
-    and did not prove that the multimodal weight itself participates in
-    the calculation. Here the budget is chosen so that a single part
-    hits the limit exactly.
-    """
+    """Boundary: exactly one image part fits, two do not."""
     one = {
         "role": "user",
         "content": [{"type": "image_url", "image_url": {"url": "..."}}],
@@ -479,13 +429,7 @@ def test_multimodal_budget_boundary():
 # ---------------------------------------------------------------------------
 
 def test_history_not_mutated():
-    """``_build_window`` must not mutate the caller's list or its messages.
-
-    ``_truncate_tool`` returns a new dict via ``{**msg, ...}``, and
-    ``_build_window`` collects results into a fresh list. This test
-    locks that contract in — including nested structures such as
-    ``tool_calls``, which shallow copies would share.
-    """
+    """``_build_window`` must not mutate the caller's list or its messages, including nested structures."""
     history = [
         user("q"),
         {**tool("x" * 10_000), "tool_calls": [{"id": "c1", "name": "echo", "arguments": {}}]},
@@ -506,12 +450,7 @@ def test_history_not_mutated():
 # ---------------------------------------------------------------------------
 
 def test_unbalanced_first_turn_kept_whole():
-    """History starting with assistant/tool: the first group is pinned whole.
-
-    ``_group_turns`` handles histories that do not start with ``user``;
-    this verifies that ``_build_window`` also preserves such a group as a
-    complete pinned turn, not just its leading message.
-    """
+    """History starting with assistant/tool: the first group is pinned whole."""
     history = [assistant("hi"), tool("out"), user("q1"), assistant("a1")]
     window = make_window(history, max_estimated_chars=15_000)
     contents = [m["content"] for m in window if m["role"] != "system"]
@@ -549,12 +488,7 @@ def test_build_context_drops_client_system_role():
 
 
 def test_build_context_propagates_system_overflow(monkeypatch):
-    """Trigger overflow in ``_prepare_context`` via monkeypatch on the module constant.
-
-    ``build_context`` does not accept ``max_estimated_chars``, and passing
-    a huge ``system_prompt`` would be less readable than a one-line
-    monkeypatch on ``MAX_ESTIMATED_CHARS``.
-    """
+    """Trigger overflow in ``_prepare_context`` via monkeypatch on the module constant."""
     import services.agent.context.context_window as cw_mod
     monkeypatch.setattr(cw_mod, "MAX_ESTIMATED_CHARS", 100)
 
@@ -574,21 +508,13 @@ def test_build_context_propagates_pinned_overflow():
 
 
 def test_build_context_empty_history():
-    """Separate from ``test_build_context_returns_agent_context_window``.
-
-    That test pins the return type; this one pins the no-overflow contract
-    on empty history.
-    """
+    """Pins the no-overflow contract on empty history (return type is pinned above)."""
     result = build_context("sys", None, [])
     assert result == AgentContextWindow(system="sys", messages=[])
 
 
 def test_build_context_max_messages_exactly_pinned():
-    """Boundary: max_messages == pinned_msgs is allowed, not overflow.
-
-    ``_build_window`` uses ``>``, so exactly-equal must pass. This test pins
-    the boundary — a switch to ``>=`` would break it.
-    """
+    """Boundary: max_messages == pinned_msgs is allowed (``>``, not ``>=``)."""
     history = [user("q0"), assistant("a0")]  # one turn, two messages, both pinned
 
     result = build_context("sys", None, history, max_messages=2)
@@ -599,11 +525,8 @@ def test_build_context_max_messages_exactly_pinned():
 def test_build_context_max_messages_truncates():
     """max_messages truncates while keeping the pinned first and last turns.
 
-    Char-budget here has huge slack (MAX_ESTIMATED_CHARS = 60_000 by default,
-    the whole history is ~16 characters: 8 messages × 2 chars), so truncation
-    is guaranteed to come from max_messages, not from the character budget.
-    This test therefore proves that ``max_messages`` really reaches
-    ``_build_window``, not just that it is validated.
+    Char-budget here has huge slack, so truncation is guaranteed to come from
+    max_messages — proving it really reaches ``_build_window``.
     """
     history = [
         user("u1"), assistant("a1"),
@@ -620,9 +543,8 @@ def test_build_context_max_messages_truncates():
     assert result.messages[1]["content"] == "a1"
     assert result.messages[-2]["content"] == "u4"
     assert result.messages[-1]["content"] == "a4"
-    # Turn 1 (u2, a2) is dropped: walking backwards from turn 3, only turn 2
-    # fits into the 2-message budget left after pinning, then the message
-    # limit stops the walk.
+    # Turn 1 (u2, a2) is dropped: walking backwards from turn 3, only turn 2 fits into the 2-message budget left after
+    # pinning, then the message limit stops the walk.
     assert {"role": "user", "content": "u2"} not in result.messages
     assert {"role": "assistant", "content": "a2"} not in result.messages
     # Turn 2 (u3, a3) is kept as the continuous tail adjacent to the last turn.

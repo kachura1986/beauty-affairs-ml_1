@@ -1,9 +1,4 @@
-"""EXECUTE stage tests: execute_node, pairing invariant, regressions.
-
-Grouped by graph stage: this file maps 1:1 to the EXECUTE node. DECIDE
-lives in test_decide.py, terminal stages (VERIFY/FINISH/routing/state)
-in test_terminal.py.
-"""
+"""EXECUTE stage tests: execute_node, pairing invariant, regressions."""
 import pytest
 
 from services.agent.agent_graph.nodes import execute_node
@@ -51,13 +46,7 @@ async def test_execute_empty_batch_is_noop(trace, make_context, make_state):
 # ---------------------------------------------------------------------------
 
 async def test_execute_irrecoverable_failed_action_skipped(trace, make_context, make_state, make_registry):
-    """A non-retryable failure is recorded, then skipped on the next attempt.
-
-    The second execution must not invoke the tool again; instead it must
-    append a structured already_failed tool message with the matching
-    tool_call_id (an [observation] user message would break the tool_call
-    contract — that was the old, buggy behaviour).
-    """
+    """A non-retryable failure is recorded, then skipped on the next attempt as a paired tool message (not an observation)."""
     call = {"id": "c1", "name": "failing", "arguments": {}}
     registry = make_registry(failing_tool())
     ctx = make_context(tools=registry)
@@ -80,11 +69,7 @@ async def test_execute_irrecoverable_failed_action_skipped(trace, make_context, 
 
 
 async def test_execute_repeated_action_terminates(trace, make_context, make_state):
-    """Exceeding repeat_limit terminates with REPEATED_ACTION without calling the tool.
-
-    The offending call still receives a matching tool message so that the
-    assistant tool_calls stay paired in history; the loop must not `break`.
-    """
+    """Exceeding repeat_limit terminates with REPEATED_ACTION while still emitting a paired tool message (no `break`)."""
     call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
     ctx = make_context(policy=AgentPolicy(empty_limit=3, repeat_limit=2))
     state = make_state(ctx)
@@ -116,11 +101,7 @@ async def test_execute_temporary_failure_does_not_add_to_failed_set(trace, make_
 
 
 async def test_execute_skips_duplicate_failed_action(trace, make_context, make_state, make_registry):
-    """A call whose fingerprint is already in failed_actions is skipped.
-
-    The skipped call must still receive a tool message with the matching
-    tool_call_id so the assistant tool_calls stay paired in history.
-    """
+    """A call whose fingerprint is already in failed_actions is skipped as a paired tool message."""
     call = {"id": "c1", "name": "failing", "arguments": {}}
     registry = make_registry(failing_tool())
     ctx = make_context(tools=registry)
@@ -174,12 +155,7 @@ async def test_execute_multiple_tool_calls_partial_failure(trace, make_context, 
 # ---------------------------------------------------------------------------
 
 async def test_execute_preflight_time_skips_tool(trace, make_context, make_state):
-    """An already-expired wall-clock budget short-circuits before invoke().
-
-    Between the LLM step and execute_node some time may pass, so the budget
-    can expire before the first tool call. The tool must not be invoked, and
-    the skipped call must still receive a paired tool message.
-    """
+    """An already-expired wall-clock budget short-circuits before invoke() while still emitting a paired tool message."""
     import time
 
     call = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
@@ -226,11 +202,7 @@ async def test_execute_stops_after_budget_exceeded_between_calls(trace, make_con
 # ---------------------------------------------------------------------------
 
 async def test_execute_failed_set_persists_across_batches(trace, make_context, make_state, make_registry):
-    """failed_actions recorded in one batch are honoured on the next batch.
-
-    Verifies that the failed-set state is properly threaded through the graph
-    state and produces a synthetic response instead of re-invoking the tool.
-    """
+    """failed_actions recorded in one batch are honoured on the next batch instead of re-invoking the tool."""
     call = {"id": "c1", "name": "failing", "arguments": {}}
     registry = make_registry(failing_tool())
     ctx = make_context(tools=registry)
@@ -287,12 +259,7 @@ async def test_execute_failed_set_persists_across_batches(trace, make_context, m
 async def test_property_pending_calls_are_all_paired(
         trace, make_context, make_state, make_registry, calls, policy_kwargs, extra_tools,
 ):
-    """Every pending call receives exactly one tool message with a matching id.
-
-    This is the invariant that execute_node must preserve on any exit path.
-    A failure here means a future refactor introduced a `break`, an early
-    return, or a plain observation message in place of a tool message.
-    """
+    """Every pending call receives exactly one tool message with a matching id on any exit path — no `break`, no early return, no observation in place of a tool message."""
     registry = make_registry(*extra_tools)
     ctx = make_context(tools=registry, policy=AgentPolicy(**policy_kwargs))
     state = make_state(ctx)
@@ -311,12 +278,7 @@ async def test_property_pending_calls_are_all_paired(
 
 @pytest.mark.regression
 async def test_regression_failed_set_same_batch(trace, make_context, make_state, make_registry):
-    """Two identical failed calls in one batch each get a matching tool message.
-
-    Regression for the bug where a repeated failed call inside the same batch
-    was answered with build_observation_message (role='user') instead of
-    build_tool_message, leaving the assistant tool_calls unpaired.
-    """
+    """Two identical failed calls in one batch each get a matching tool message — the second was once answered with an observation."""
     call1 = {"id": "c1", "name": "failing", "arguments": {}}
     call2 = {"id": "c2", "name": "failing", "arguments": {}}
     registry = make_registry(failing_tool())
@@ -338,12 +300,7 @@ async def test_regression_failed_set_same_batch(trace, make_context, make_state,
 
 @pytest.mark.regression
 async def test_regression_repeated_action_three_calls(trace, make_context, make_state):
-    """Three identical calls with repeat_limit=1 produce three paired tool messages.
-
-    Regression for the bug where exceeding repeat_limit issued a `break`,
-    leaving the remaining calls without tool messages. Expected shape:
-    call1 executes normally, call2 trips the limit, call3 is skipped.
-    """
+    """Three identical calls with repeat_limit=1 produce three paired tool messages — a `break` on trip left the tail unpaired."""
     call1 = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
     call2 = {"id": "c2", "name": "echo", "arguments": {"value": "x"}}
     call3 = {"id": "c3", "name": "echo", "arguments": {"value": "x"}}
@@ -371,12 +328,7 @@ async def test_regression_repeated_action_three_calls(trace, make_context, make_
 
 @pytest.mark.regression
 async def test_regression_budget_exceeded_mid_batch(trace, make_context, make_state, make_registry):
-    """Budget overrun after the first call leaves the remaining calls paired.
-
-    Regression for the bug where hitting a hard budget mid-batch issued a
-    `break`, leaving trailing tool_calls without matching tool messages. The
-    two trailing calls must now carry skipped_due_to_termination results.
-    """
+    """Budget overrun after the first call leaves the trailing calls paired with skipped_due_to_termination results."""
     call1 = {"id": "c1", "name": "slow", "arguments": {}}
     call2 = {"id": "c2", "name": "echo", "arguments": {}}
     call3 = {"id": "c3", "name": "echo", "arguments": {}}
@@ -410,14 +362,7 @@ async def test_regression_budget_exceeded_mid_batch(trace, make_context, make_st
 
 @pytest.mark.regression
 async def test_regression_skipped_message_carries_reason(trace, make_context, make_state):
-    """A call skipped after termination records the reason in its content.
-
-    Together with trace-side visibility, this lets post-mortem and regression
-    tests distinguish a real execution from a synthetic skip. Note that the
-    call which *trips* the limit carries repeated_action_result; only the
-    calls after it go through skipped_due_to_termination_result, which is
-    the message that embeds the termination reason verbatim.
-    """
+    """Skipped calls embed the termination reason — the tripping call carries the repeated_action flavour, not the skip flavour."""
     call1 = {"id": "c1", "name": "echo", "arguments": {"value": "x"}}
     call2 = {"id": "c2", "name": "echo", "arguments": {"value": "x"}}
     call3 = {"id": "c3", "name": "echo", "arguments": {"value": "x"}}
@@ -445,11 +390,7 @@ async def test_regression_skipped_message_carries_reason(trace, make_context, ma
 # ---------------------------------------------------------------------------
 
 async def test_execute_sets_last_tool_ok_on_success(trace, make_context, make_state):
-    """A successful tool call records its rendered result in last_tool_ok.
-
-    ``last_tool_ok`` is the explicit source used by ``finalize_node`` for the
-    deterministic fallback (Defect E): no heuristic over message content.
-    """
+    """A successful tool call records its rendered result in last_tool_ok — the explicit source used by finalize's deterministic fallback."""
     call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
     ctx = make_context()
     state = make_state(ctx)
@@ -462,13 +403,7 @@ async def test_execute_sets_last_tool_ok_on_success(trace, make_context, make_st
 
 
 async def test_execute_keeps_last_tool_ok_on_subsequent_error(trace, make_context, make_state, make_registry):
-    """A later failed round must not overwrite an earlier successful result.
-
-    The fallback in ``finalize_node`` must still see the most recent *successful*
-    tool result even if the final round only produced errors — otherwise the
-    fallback silently degrades to an error explanation instead of the useful
-    data the user actually asked for.
-    """
+    """A failed round must not overwrite an earlier successful result — otherwise the fallback degrades to an error explanation instead of the useful data."""
     ok_call = {"id": "c1", "name": "echo", "arguments": {"value": "saved"}}
     bad_call = {"id": "c2", "name": "failing", "arguments": {}}
     registry = make_registry(failing_tool())
@@ -490,12 +425,7 @@ async def test_execute_keeps_last_tool_ok_on_subsequent_error(trace, make_contex
 
 
 async def test_execute_handles_missing_last_tool_ok_key(trace, make_context, make_state):
-    """execute_node tolerates a state without the 'last_tool_ok' key.
-
-    GraphState is total=False; a hand-built state (or an older persisted
-    state) may lack the key. execute_node must default to None, not raise
-    KeyError, and must still record a successful result.
-    """
+    """execute_node tolerates a state without 'last_tool_ok' (total=False) instead of raising KeyError."""
     call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
     ctx = make_context()
     state = make_state(ctx)

@@ -1,10 +1,4 @@
-"""FINALIZE stage tests: finalize_node, deterministic fallback, end-to-end flow.
-
-Covers unit behavior of finalize_node and its helpers, plus end-to-end
-scenarios through the compiled graph for the "max_steps exhausted with
-tool results in history" case. Existing per-stage tests live in
-test_decide.py, test_execute.py, test_terminal.py.
-"""
+"""FINALIZE stage tests: finalize_node, deterministic fallback, end-to-end flow."""
 import logging
 import time
 
@@ -31,13 +25,7 @@ from _testing import EchoArgs, FakeLLM, FakeRuntime, failing_tool, reply
 # ---------------------------------------------------------------------------
 
 def _finalize_state(ctx, *, history, last_tool_ok=None, steps=1):
-    """
-    Build a pre-finalize state.
-
-    ``state['termination_reason']`` is set to BUDGET_STEPS and
-    ``needs_finalization`` to True — the exact postcondition that
-    ``decide_node`` establishes before routing to ``finalize_node``.
-    """
+    """Build the exact state that decide_node establishes before routing to finalize_node."""
     from services.agent.agent_graph.state import create_initial_state
 
     state = create_initial_state(ctx.task)
@@ -138,17 +126,7 @@ async def test_finalize_skips_llm_when_tokens_below_min(trace, make_context):
 
 
 async def test_finalize_does_not_block_on_cost_exhausted(trace, make_context):
-    """Cost exhaustion is NOT a finalization pre-flight.
-
-    Design decision: remaining_cost_usd() == 0 means the *accumulated* spend
-    reached the limit, not that the next call is impossible. A free/local
-    model can still answer at zero cost. The call proceeds, and an overrun
-    (if any) is recorded as trace.error('finalization_overrun'), not as a
-    pre-flight rejection.
-
-    This test pins that decision so a future "symmetric" cost check does
-    not silently break free-model finalization.
-    """
+    """Cost exhaustion is NOT a pre-flight: a free model can still answer at zero cost, so the call proceeds."""
     llm = FakeLLM(reply(text="final", in_tokens=0, out_tokens=0, cost_usd=0.0))
     ctx = make_context(llm=llm, max_steps=1, max_cost_usd=0.0001)
     state = _finalize_state(
@@ -219,13 +197,7 @@ async def test_finalize_llm_returns_empty_text(trace, make_context):
 
 
 async def test_finalize_fallback_does_not_record_llm_usage(trace, make_context):
-    """Fallback paths (budget exhausted, empty reply, tool_calls) must not
-    call budget.record_llm — no LLM usage was consumed on those paths.
-
-    Only the success path records tokens and cost (see
-    test_finalize_records_llm_usage). A fallback that increments tokens
-    would corrupt the finish.budget snapshot and break overrun detection.
-    """
+    """A fallback that incremented tokens would corrupt the finish.budget snapshot and break overrun detection."""
     from core.config import settings
 
     # Pre-flight rejection: tokens below MIN_EXPECTED_TOKENS.
@@ -293,12 +265,7 @@ async def test_finalize_all_error_history_returns_fallback_explanation(trace, ma
 
 
 async def test_finalize_no_tool_messages_returns_none(trace, make_context):
-    """No tool messages at all → fallback returns None → NONE.
-
-    Also pins that the NONE path does not leak termination_reason back into
-    the node result — the contract is identical on every return path of
-    finalize_node, including the one that leaves answer=None.
-    """
+    """No tool messages → fallback returns None → NONE; the node never leaks termination_reason, even on the answer=None path."""
     llm = FakeLLM(reply(text=""))
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(ctx, history=[], last_tool_ok=None)
@@ -337,12 +304,7 @@ async def test_finalize_logs_internal_exception(trace, make_context, caplog):
 
 
 async def test_finalize_records_llm_timeout_when_budget_exhausted(trace, make_context, monkeypatch):
-    """LLM exception with exhausted wall-clock budget → message='llm_timeout', not 'llm_error'.
-
-    Mirrors `test_request_llm_timeout_returns_budget_time`: the distinction is
-    'budget exhausted after the exception', not 'TimeoutError'. The pinned call
-    count guards against extra budget checks.
-    """
+    """LLM exception with exhausted wall-clock budget → message='llm_timeout', not 'llm_error'. The pinned call count guards against extra budget checks."""
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(llm=llm, max_steps=1, max_seconds=0.001)
     state = _finalize_state(
@@ -369,16 +331,7 @@ async def test_finalize_records_llm_timeout_when_budget_exhausted(trace, make_co
 
 
 async def test_finalize_records_overrun_in_trace(trace, make_context):
-    """Successful finalize that pushes over hard budget records finalization_overrun.
-
-    Termination reason is preserved (BUDGET_STEPS is set before finalize_node
-    runs); the overrun is recorded as a diagnostic trace error.
-
-    ``max_tokens`` is set just above ``settings.MIN_EXPECTED_TOKENS`` so the
-    pre-flight passes (``remaining_tokens() >= MIN_EXPECTED_TOKENS``) and the
-    LLM call actually happens; the oversized ``in_tokens`` on the reply then
-    pushes the run over the token budget after ``record_llm``.
-    """
+    """A successful finalize that pushes over a hard budget records finalization_overrun while preserving BUDGET_STEPS as the reason."""
     from core.config import settings
 
     llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost_usd=0.0))
@@ -405,14 +358,7 @@ async def test_finalize_records_overrun_in_trace(trace, make_context):
 
 
 async def test_finalize_overrun_does_not_rewrite_termination_reason(trace, make_context):
-    """Overrun on finalize keeps BUDGET_STEPS as the termination reason.
-
-    The overrun is diagnostic only: trace.error('finalization_overrun') is
-    written, but state['termination_reason'] must remain BUDGET_STEPS so
-    finish_node reports the original reason and the AgentResult reflects
-    that the run ended on step exhaustion, not on a token overrun during
-    finalization.
-    """
+    """Overrun is diagnostic only — state['termination_reason'] must stay BUDGET_STEPS so AgentResult reports the run ended on step exhaustion."""
     from core.config import settings
 
     llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost_usd=0.0))
@@ -435,11 +381,7 @@ async def test_finalize_overrun_does_not_rewrite_termination_reason(trace, make_
 
 
 async def test_finalize_does_not_increment_steps(trace, make_context):
-    """The finalization call must not consume a step (contract from BudgetLimits).
-
-    The whole point of the extra call is to bypass ``can_start_step()`` for
-    exactly one call while leaving ``budget.steps`` at ``max_steps``.
-    """
+    """The extra call must bypass can_start_step() for exactly one call while leaving budget.steps at max_steps."""
     llm = FakeLLM(reply(text="final"))
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(
@@ -455,12 +397,7 @@ async def test_finalize_does_not_increment_steps(trace, make_context):
 
 
 async def test_finalize_records_llm_usage(trace, make_context):
-    """Tokens and cost of the finalization call are recorded on the budget.
-
-    Without ``record_llm`` the overrun detection (Defect D) would be blind to
-    token and cost overruns, and the trace's ``finish.budget`` snapshot would
-    underreport the true cost of the run.
-    """
+    """Without record_llm, overrun detection would be blind and finish.budget would underreport the true run cost."""
     llm = FakeLLM(reply(text="final", in_tokens=5, out_tokens=3, cost_usd=0.0001))
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(
@@ -476,13 +413,7 @@ async def test_finalize_records_llm_usage(trace, make_context):
 
 
 async def test_finalize_writes_finalize_record_on_success(trace, make_context):
-    """A successful finalization writes a t='finalize' record with the call's usage.
-
-    This separates the finalization cost/latency from decision steps in the
-    trace (`t='step'` vs `t='finalize'`), so post-mortem can attribute usage
-    without diffing `finish.budget`. No record is written on fallback paths —
-    those are covered by `finalization_fallback` error records.
-    """
+    """A t='finalize' record separates finalization cost/latency from decision steps for post-mortem attribution."""
     llm = FakeLLM(reply(
         text="final answer",
         in_tokens=10,
@@ -545,7 +476,7 @@ async def test_finalize_node_resets_needs_finalization(trace, make_context):
 # ---------------------------------------------------------------------------
 
 def test_deterministic_fallback_uses_last_tool_ok():
-    """When last_tool_ok is set, it is used verbatim regardless of history."""
+    """When last_tool_ok is set, it is used verbatim at the end of the answer, not embedded mid-template."""
     history = [
         {"role": "tool", "content": "ERROR execution_failed. boom."},
         {"role": "tool", "content": "older-ok"},
@@ -580,19 +511,7 @@ def test_deterministic_fallback_returns_none_when_no_tools():
 
 
 def test_deterministic_fallback_empty_string_last_tool_ok_takes_success_branch():
-    """Empty-string last_tool_ok is treated as "set" (``is not None``).
-
-    ``_deterministic_fallback`` checks ``last_tool_ok is not None``, so a
-    corrupted or edge-case empty string — e.g. a tool that succeeded with
-    empty content, or a bug that reset the field to "" — produces an answer
-    embedding it verbatim instead of falling through to the error-explanation
-    path.
-
-    This test pins the current boundary. If the implementation is tightened
-    to ``if last_tool_ok:`` (arguably a better fallback), this test must be
-    updated deliberately — the empty string would then take the
-    error-explanation path.
-    """
+    """Empty-string last_tool_ok is treated as "set" (``is not None``) — pins the boundary; tightening to ``if last_tool_ok:`` would flip this path."""
     history = [{"role": "tool", "content": "ERROR execution_failed. boom."}]
 
     result = _deterministic_fallback(history, "")
@@ -773,7 +692,7 @@ async def test_finalize_not_called_without_tool_results(trace, make_registry):
 
 
 async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
-    """Explicit regression guard: max_steps=1 + tool_call does not trip recursion_limit."""
+    """max_steps=1 + tool_call fits within the configured recursion_limit — GraphRecursionError must not escape."""
     call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
     llm = FakeLLM(
         reply(text="", tool_calls=[call]),
@@ -781,8 +700,6 @@ async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
     )
     policy = AgentPolicy(empty_limit=3, repeat_limit=3)
 
-    # GraphRecursionError must NOT escape: max_steps=1 + finalize fits
-    # well within the configured recursion_limit (max(64, 1*4+16) = 64).
     result = await run_graph(
         task=_task(max_steps=1),
         tools=make_registry(),
@@ -795,16 +712,7 @@ async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
 
 
 async def test_budget_time_with_tool_results_does_not_finalize(trace, make_registry):
-    """Finalization is gated to BUDGET_STEPS; BUDGET_TIME never triggers it.
-
-    When the wall-clock budget is exhausted mid-execute, the termination
-    reason is BUDGET_TIME, not BUDGET_STEPS, so ``decide_node`` is never
-    reached again and finalization is not attempted — even though tool
-    messages are already in history. This pins the decision to gate
-    finalization to step-exhaustion only and prevents a future refactor
-    from silently widening it to time/token/cost exhaustion, where there
-    would be no budget left for the extra call anyway.
-    """
+    """Finalization is gated to BUDGET_STEPS — BUDGET_TIME never triggers it, even with tool messages in history and no budget left for an extra call."""
     import asyncio
 
     async def slow_fn(**kwargs):
@@ -832,14 +740,7 @@ async def test_budget_time_with_tool_results_does_not_finalize(trace, make_regis
 
 
 async def test_finalization_in_trace_finish(trace, make_registry):
-    """The finish trace record carries finalization='llm' and answer_chars > 0.
-
-    Also asserts that step-record fields do not leak into the finish record:
-    those fields belong to ``t='step'`` and their presence in ``t='finish'``
-    would indicate the two record shapes were accidentally merged in
-    ``Trace.finish`` (regression guard for a "copied step() and forgot to
-    trim window_*" refactor).
-    """
+    """finish record carries finalization='llm' and answer_chars > 0; step-only fields must not leak into it."""
     call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
     llm = FakeLLM(
         reply(text="", tool_calls=[call]),
