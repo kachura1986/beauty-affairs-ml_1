@@ -155,36 +155,6 @@ class Budget(BaseModel):
 
         return None
 
-    def exceeded(self) -> TerminationReason | None:
-        """
-        Check whether any budget limit has been reached or exceeded.
-
-        Limits are checked in the following order: steps, time, tokens, and cost.
-        The first reached limit determines the returned reason.
-
-        ``max_cost_usd == 0`` means a free model and free tools: the run proceeds as long as
-        no nonzero cost is recorded, and terminates as soon as any nonzero cost is reported.
-
-        Returns:
-            TerminationReason | None: A budget reason if a limit has been reached or exceeded, otherwise ``None``.
-        """
-        if self.steps >= self.limits.max_steps:
-            return TerminationReason.BUDGET_STEPS
-
-        if self.elapsed() >= self.limits.max_seconds:
-            return TerminationReason.BUDGET_TIME
-
-        if self.tokens >= self.limits.max_tokens:
-            return TerminationReason.BUDGET_TOKENS
-
-        if self.limits.max_cost_usd > 0:
-            if self.cost_usd >= self.limits.max_cost_usd:
-                return TerminationReason.BUDGET_COST
-        elif self.cost_usd > 0:
-            return TerminationReason.BUDGET_COST
-
-        return None
-
     def record_llm(self, in_tokens: int, out_tokens: int, cost_usd: float) -> None:
         """
         Record resource usage for a completed LLM call.
