@@ -340,15 +340,8 @@ async def test_finalize_records_llm_timeout_when_budget_exhausted(trace, make_co
     """LLM exception with exhausted wall-clock budget → message='llm_timeout', not 'llm_error'.
 
     Mirrors `test_request_llm_timeout_returns_budget_time`: the distinction is
-    'budget exhausted after the exception', not 'TimeoutError'. Pins the
-    asymmetry fix between FinalizeService.run and LLMStepService.run.
-
-    Iteration schedule for `Budget.elapsed` (one call per `remaining_seconds()`):
-      1) combined pre-flight  → 0.0s elapsed, remaining 0.001s > 0 → pass;
-      2) TOCTOU re-check     → 0.0s elapsed, remaining 0.001s > 0 → pass;
-      3) `except` branch     → 2.0s elapsed, remaining 0.0s → 'llm_timeout'.
-    `FinalizeService.run` has an extra TOCTOU re-check between pre-flight and
-    `chat()` that `LLMStepService.run` does not, hence three entries, not two.
+    'budget exhausted after the exception', not 'TimeoutError'. The pinned call
+    count guards against extra budget checks.
     """
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(llm=llm, max_steps=1, max_seconds=0.001)
@@ -358,14 +351,21 @@ async def test_finalize_records_llm_timeout_when_budget_exhausted(trace, make_co
         last_tool_ok="ok",
     )
 
-    times = iter([0.0, 0.0, 2.0])
-    monkeypatch.setattr(Budget, "elapsed", lambda self: next(times, 2.0))
+    elapsed_calls: list[int] = []
+    times = iter([0.0, 0.0, 2.0, 2.0])
+
+    def fake_elapsed(self):
+        elapsed_calls.append(1)
+        return next(times)
+
+    monkeypatch.setattr(Budget, "elapsed", fake_elapsed)
 
     await finalize_node(state, FakeRuntime(ctx))
 
     errors = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
     assert len(errors) == 1
     assert errors[0]["message"] == "llm_timeout"
+    assert len(elapsed_calls) == 4
 
 
 async def test_finalize_records_overrun_in_trace(trace, make_context):
@@ -553,7 +553,10 @@ def test_deterministic_fallback_uses_last_tool_ok():
     result = _deterministic_fallback(history, '{"id": 1, "name": "ok"}')
 
     assert result is not None
-    assert '{"id": 1, "name": "ok"}' in result
+    assert result.startswith(
+        "The model could not produce a final answer within the step limit."
+    )
+    assert result.endswith('\n{"id": 1, "name": "ok"}')
 
 
 def test_deterministic_fallback_returns_error_explanation_when_all_errors():

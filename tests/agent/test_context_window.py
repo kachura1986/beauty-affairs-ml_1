@@ -1,3 +1,4 @@
+import copy
 from typing import Any
 
 import pytest
@@ -482,16 +483,22 @@ def test_history_not_mutated():
 
     ``_truncate_tool`` returns a new dict via ``{**msg, ...}``, and
     ``_build_window`` collects results into a fresh list. This test
-    locks that contract in.
+    locks that contract in — including nested structures such as
+    ``tool_calls``, which shallow copies would share.
     """
-    history = [user("q"), tool("x" * 10_000), user("q2")]
-    snapshot = [dict(m) for m in history]
+    history = [
+        user("q"),
+        {**tool("x" * 10_000), "tool_calls": [{"id": "c1", "name": "echo", "arguments": {}}]},
+        user("q2"),
+    ]
+    snapshot = copy.deepcopy(history)
 
     make_window(history)
 
     assert history == snapshot
     # The original tool message still holds its full content.
     assert history[1]["content"] == "x" * 10_000
+    assert history[1]["tool_calls"] == [{"id": "c1", "name": "echo", "arguments": {}}]
 
 
 # ---------------------------------------------------------------------------
