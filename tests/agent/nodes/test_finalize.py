@@ -125,6 +125,40 @@ async def test_finalize_skips_llm_when_tokens_below_min(trace, make_context):
     )
 
 
+async def test_finalize_service_does_not_call_chat_when_remaining_seconds_is_zero(trace, make_context):
+    """C.7: direct FinalizeService test — remaining_seconds() == 0 short-circuits before chat()."""
+    from services.agent.agent_graph.services.finalize import FinalizeService
+
+    llm = FakeLLM()
+    ctx = make_context(llm=llm, max_steps=1, max_seconds=0.001)
+    state = _finalize_state(ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok")
+    state["budget"].started = time.monotonic() - 10  # remaining_seconds() == 0 (clamped)
+
+    service = FinalizeService(llm=llm, trace=trace, task=ctx.task)
+    answer, finalization = await service.run(
+        budget=state["budget"], history=state["history"], last_tool_ok="ok",
+    )
+
+    assert llm.calls == []
+    assert finalization == Finalization.FALLBACK
+    assert answer is not None and "ok" in answer
+
+
+async def test_finalize_service_timeout_passed_to_chat_is_positive(trace, make_context):
+    """C.7: whenever chat() is called, timeout is guaranteed > 0 — no second `<= 0` check needed."""
+    from services.agent.agent_graph.services.finalize import FinalizeService
+
+    llm = FakeLLM(reply(text="final"))
+    ctx = make_context(llm=llm, max_steps=1, max_seconds=300)
+    state = _finalize_state(ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok")
+
+    service = FinalizeService(llm=llm, trace=trace, task=ctx.task)
+    await service.run(budget=state["budget"], history=state["history"], last_tool_ok="ok")
+
+    assert len(llm.calls) == 1
+    assert llm.calls[0]["timeout"] > 0
+
+
 async def test_finalize_does_not_block_on_cost_exhausted(trace, make_context):
     """Cost exhaustion is NOT a pre-flight: a free model can still answer at zero cost, so the call proceeds."""
     llm = FakeLLM(reply(text="final", in_tokens=0, out_tokens=0, cost_usd=0.0))

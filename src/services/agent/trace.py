@@ -321,6 +321,10 @@ class Trace:
         already redacted: validation errors and unknown tools yield an empty tuple, so raw key names
         never reach the trace.
 
+        ``hint`` is intentionally NOT written: for ``validation`` / ``extra_forbidden`` it embeds the
+        raw field name from the model's arguments, which would re-introduce the very leak ``args_keys``
+        is designed to prevent. ``error_code`` + ``message`` are sufficient for post-mortem.
+
         Args:
             n (int): Step number the tool belongs to.
             call (ToolCall): Tool call (name + arguments).
@@ -339,7 +343,6 @@ class Trace:
             'error_code': res.error.error_code.value if res.error else None,
             'message': res.error.message if res.error else None,
             'retryable': res.error.retryable if res.error else None,
-            'hint': res.error.hint if res.error else None,
             'retry_after': res.error.retry_after if res.error else None,
 
             'truncated': res.truncated,
