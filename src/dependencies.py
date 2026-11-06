@@ -67,7 +67,6 @@ class PipelineDependencies:
 
             azure_search_index_manager = AzureSearchIndexManager(search_index_client=azure_search_index_client)
 
-            # TODO: Create products and services search index for both centers
             products_index = ProductsSearchIndex(
                 index_name='products_test',
                 azure_search_index_manager=azure_search_index_manager,
