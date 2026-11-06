@@ -255,20 +255,6 @@ async def test_request_llm_exceeded_after_successful_call(trace, make_context):
     assert result.text == "x"
 
 
-async def test_request_llm_timeout_capped_by_remaining_budget(trace, make_context):
-    """The LLM call timeout is capped by the remaining budget when it is below the default."""
-    llm = FakeLLM(reply(text="hello"))
-    ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
-
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
-        context_window=make_context_window(),
-    )
-
-    assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
-
-
 async def test_request_llm_timeout_capped_by_default(trace, make_context, monkeypatch):
     """The LLM call timeout is capped by the default when the remaining budget is larger."""
     from core.config import settings

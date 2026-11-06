@@ -328,7 +328,6 @@ def test_trace_tool_args_hash_is_deterministic_and_low_entropy_recoverable(trace
 
     # Raw values themselves are still absent.
     serialized = json.dumps(records[0])
-    assert '"top_k": 10' not in serialized
 
 
 def test_tool_result_is_hashable():

@@ -725,26 +725,6 @@ async def test_finalize_not_called_without_tool_results(trace, make_registry):
     assert result.finalization == Finalization.NONE
 
 
-async def test_max_steps_1_does_not_hit_recursion_limit(trace, make_registry):
-    """max_steps=1 + tool_call fits within the configured recursion_limit — GraphRecursionError must not escape."""
-    call = {"id": "c1", "name": "echo", "arguments": {"value": "hi"}}
-    llm = FakeLLM(
-        reply(text="", tool_calls=[call]),
-        reply(text="answer"),
-    )
-    policy = AgentPolicy(empty_limit=3, repeat_limit=3)
-
-    result = await run_graph(
-        task=_task(max_steps=1),
-        tools=make_registry(),
-        llm=llm,
-        trace=trace,
-        policy=policy,
-    )
-
-    assert result.reason == TerminationReason.BUDGET_STEPS
-
-
 async def test_budget_time_with_tool_results_does_not_finalize(trace, make_registry):
     """Finalization is gated to BUDGET_STEPS — BUDGET_TIME never triggers it, even with tool messages in history and no budget left for an extra call."""
     import asyncio

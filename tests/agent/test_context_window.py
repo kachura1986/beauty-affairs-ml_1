@@ -464,12 +464,6 @@ def test_unbalanced_first_turn_kept_whole():
 # Public API: build_context
 # ---------------------------------------------------------------------------
 
-def test_build_context_returns_agent_context_window():
-    result = build_context("sys", None, [])
-    assert isinstance(result, AgentContextWindow)
-    assert result.system == "sys"
-    assert result.messages == []
-
 
 def test_build_context_appends_warning():
     without = build_context("sys", None, [])
@@ -508,7 +502,7 @@ def test_build_context_propagates_pinned_overflow():
 
 
 def test_build_context_empty_history():
-    """Pins the no-overflow contract on empty history (return type is pinned above)."""
+    """Pins the no-overflow contract and the return type on empty history."""
     result = build_context("sys", None, [])
     assert result == AgentContextWindow(system="sys", messages=[])
 

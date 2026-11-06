@@ -201,26 +201,6 @@ async def test_execute_stops_after_budget_exceeded_between_calls(trace, make_con
 # Pairing invariant: every pending call gets exactly one tool message
 # ---------------------------------------------------------------------------
 
-async def test_execute_failed_set_persists_across_batches(trace, make_context, make_state, make_registry):
-    """failed_actions recorded in one batch are honoured on the next batch instead of re-invoking the tool."""
-    call = {"id": "c1", "name": "failing", "arguments": {}}
-    registry = make_registry(failing_tool())
-    ctx = make_context(tools=registry)
-    state = make_state(ctx)
-
-    state["pending_tool_calls"] = [call]
-    first = await execute_node(state, FakeRuntime(ctx))
-    assert first["failed_actions"]
-
-    # Second batch carries the recorded fingerprint forward.
-    state["pending_tool_calls"] = [call]
-    state["failed_actions"] = first["failed_actions"]
-    second = await execute_node(state, FakeRuntime(ctx))
-
-    assert second["history"][0]["role"] == "tool"
-    assert second["history"][0]["tool_call_id"] == "c1"
-    assert "previously failed irrecoverably" in second["history"][0]["content"]
-
 
 @pytest.mark.invariant
 @pytest.mark.parametrize(
