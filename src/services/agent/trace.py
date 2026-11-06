@@ -37,6 +37,9 @@ class Trace:
     PII and retention:
         - Tool arguments are recorded as ``args_hash`` + ``args_keys``, never raw values
           (arguments may contain user text; traces are retained on disk).
+        - ``args_keys`` is supplied by :class:`ToolRegistry.invoke` via ``ToolResult.args_keys`` and is
+          already redacted: validation errors and unknown tools yield an empty tuple, so raw key names
+          never reach the trace.
         - User / assistant message text is never written: ``step()`` records ``window_hash`` and
           ``window_msgs``; ``finish()`` records only ``answer_chars``.
         - ``error()`` ``message`` must be a machine-readable code (``type(exc).__name__``, reason
@@ -236,6 +239,13 @@ class Trace:
         """
         Return a short stable hash of a JSON-serializable object.
 
+        Known limitation (not a confidentiality guarantee): deterministic, unsalted SHA-256 truncated to
+        12 hex chars (48 bits). For low-entropy fields (``top_k``, ``min_price``) the hash is effectively
+        equivalent to the value — an adversary with a small candidate set can recover it by enumeration.
+        For high-entropy secrets (API keys, tokens) the hash is not reversible. Treat ``args_hash`` as an
+        anti-PII measure for free-text user data, not as a cryptographic commitment; do not rely on it to
+        hide low-entropy structured arguments.
+
         Args:
             obj (Any): Object to hash; serialized with sorted keys and ``default=str``.
 
@@ -285,17 +295,52 @@ class Trace:
             'budget': budget.snapshot(),
         })
 
+    def finalize(
+            self,
+            n: int,
+            history: list[dict[str, Any]],
+            reply: Reply,
+            budget: Budget,
+            latency_ms: int,
+            *,
+            system_prompt: str,
+    ) -> None:
+        # Records the single bounded finalization LLM call. Mirrors `step`, but tags the record as `t='finalize'`
+        # so post-mortem can separate the finalization call from decision steps (same fields, different `t`).
+        # No `window_hash` because finalization does not use a packed context window — `history` is
+        # sent as-is; only its length is recorded (content is PII-sensitive).
+        self._write({
+            't': 'finalize',
+            'step': n,
+            'model': reply.model,
+            'in_tokens': reply.in_tokens,
+            'out_tokens': reply.out_tokens,
+            'cost_usd': round(reply.cost_usd, 6),
+            'latency_ms': latency_ms,
+            'history_msgs': len(history),
+            'system_hash': self._hash(system_prompt),
+            'system_chars': len(system_prompt),
+            'decision': 'tool_call' if reply.tool_calls else ('answer' if reply.text.strip() else 'empty'),
+            'tools': [c['name'] for c in reply.tool_calls],
+            'budget': budget.snapshot(),
+        })
+
     def tool(self, n: int, call: ToolCall, res: ToolResult, ms: int) -> None:
         """
         Record one tool invocation.
 
-        Args are stored as ``args_hash`` + ``args_keys`` only — never raw values (PII;
-        files are retained on disk). The hash correlates identical calls but cannot be reversed.
+        Args are stored as ``args_hash`` + ``args_keys`` only — never raw values (PII; files are retained on disk).
+        The hash correlates identical calls but cannot be reversed for high-entropy inputs (see :meth:`_hash`).
+
+        ``args_keys`` is supplied by :class:`ToolRegistry.invoke` via
+        ``ToolResult.args_keys`` and is already redacted: validation errors yield an empty tuple (raw key names are
+        never written), and unknown tools yield an empty tuple because there is no ``args_model`` to intersect with —
+        the tool is not registered, so no schema exists to filter against.
 
         Args:
             n (int): Step number the tool belongs to.
             call (ToolCall): Tool call (name + arguments).
-            res (ToolResult): Tool result (status, error fields, truncation).
+            res (ToolResult): Tool result (status, error fields, truncation, redacted arg keys).
             ms (int): Duration in milliseconds.
         """
         args = call.get('arguments', {})
@@ -304,7 +349,7 @@ class Trace:
             'step': n,
             'tool': call['name'],
             'args_hash': self._hash(args),
-            'args_keys': sorted(args.keys()) if isinstance(args, dict) else [],
+            'args_keys': list(res.args_keys),
             'status': res.status.value,
 
             'error_code': res.error.error_code.value if res.error else None,

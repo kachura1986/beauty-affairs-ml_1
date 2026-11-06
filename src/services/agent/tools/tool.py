@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -56,6 +56,8 @@ class ToolResult:
     content: str = ''
     error: ToolError | None = None
     truncated: bool = False
+    # Key names for tracing; already redacted by ToolRegistry.invoke. Empty on validation errors and unknown tools.
+    args_keys: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         if not isinstance(self.status, ToolStatus):

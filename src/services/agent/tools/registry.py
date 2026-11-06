@@ -3,6 +3,7 @@ import hashlib
 import inspect
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any, Iterable
 
 from pydantic import ValidationError
@@ -171,10 +172,18 @@ class ToolRegistry:
                 validation_hint(exc.errors()),
             )
 
+        # Arguments passed schema validation; only schema key names are safe to record in the trace.
+        # Intersection is defence-in-depth: extra='forbid' makes it equal to args.keys() today,
+        # but a future schema relaxation must not leak unknown key names into the trace.
+        # NOTE: ``model_dump()`` is called without ``by_alias=True`` on purpose — ``model_fields``
+        # contains field names, not aliases. Adding ``by_alias=True`` (or ``mode='json'`` with aliases)
+        # would silently make this intersection empty for aliased fields.
+        safe_keys = tuple(sorted(set(args) & set(tool.args_model.model_fields)))
+
         try:
             out = tool.fn(**args)
         except Exception as exc:  # noqa: BLE001
-            return handle_execution_exception(name, exc)
+            return replace(handle_execution_exception(name, exc), args_keys=safe_keys)
 
         # Registry guarantees fn is async (see __init__). This is an invariant check, not a fallback:
         # if it ever fires, the per-tool timeout and run budget would be silently bypassed — fail loud instead.
@@ -190,7 +199,7 @@ class ToolRegistry:
         try:
             out = await asyncio.wait_for(out, timeout=effective)
         except Exception as exc:  # noqa: BLE001
-            return handle_execution_exception(name, exc)
+            return replace(handle_execution_exception(name, exc), args_keys=safe_keys)
 
         do_truncate = tool.truncate if truncate is None else truncate
         budget = tool.max_output_chars if tool.max_output_chars is not None else self._max_output_chars
@@ -201,4 +210,5 @@ class ToolRegistry:
             status=ToolStatus.OK,
             content=content,
             truncated=was_truncated,
+            args_keys=safe_keys,
         )
