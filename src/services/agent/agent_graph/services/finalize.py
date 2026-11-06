@@ -21,10 +21,10 @@ class FinalizeService:
     (overrun → ``trace.error('finalization_overrun')``, reason stays
     ``BUDGET_STEPS``) or ``needs_finalization`` — that is the node's contract.
 
-    Fallbacks write ``trace.error('finalization_fallback', message=<code>)``. The three budget-exhaustion
-    pre-flight checks stay distinct, each emitting exactly one ``message='budget_exhausted'`` record;
-    an LLM exception is classified as ``'llm_timeout'`` when the wall-clock budget is exhausted after
-    the failure, otherwise ``'llm_error'`` (mirrors ``LLMStepService.run``).
+    Fallbacks write ``trace.error('finalization_fallback', message=<code>)``. The pre-flight check covers
+    wall-clock and token budgets and emits at most one ``message='budget_exhausted'`` record; an LLM
+    exception is classified as ``'llm_timeout'`` when the wall-clock budget is exhausted after the failure,
+    otherwise ``'llm_error'`` (mirrors ``LLMStepService.run``).
 
     A successful call writes ``trace.finalize(...)`` (``t='finalize'``), so post-mortem can
     separate the finalization cost/latency from decision steps (``t='step'``); a hard non-step
@@ -84,10 +84,11 @@ class FinalizeService:
         """
         Perform the single bounded finalization LLM call.
 
-        All hard-budget pre-flight and fallback paths write
-        ``trace.error(kind='finalization_fallback', message=<code>)`` internally.
-        A successful call writes a ``t='finalize'`` record with model, token counts, cost, latency, and
-        ``history_msgs``, so post-mortem can attribute the finalization call separately from decision steps.
+        All hard-budget pre-flight and fallback paths write ``trace.error(kind='finalization_fallback', message=<code>)``
+        internally. The wall-clock and token budgets are checked once before the call; no second re-check is
+        needed because no I/O occurs between the check and the call. A successful call writes a ``t='finalize'``
+        record with model, token counts, cost, latency, and ``history_msgs``, so post-mortem can attribute
+        the finalization call separately from decision steps.
 
         Args:
             budget (Budget): Budget for the run (mutated by reference).
@@ -106,22 +107,9 @@ class FinalizeService:
 
         system_prompt = self._task.system_prompt + '\n\n' + FINALIZE_ANCHOR
 
-        # Re-check remaining time to defend against a TOCTOU race between the budget check above and the actual call.
-        remaining = budget.remaining_seconds()
-
-        if remaining <= 0:
-            return self._fallback(
-                budget=budget, history=history, last_tool_ok=last_tool_ok,
-                message='budget_exhausted',
-            )
-
-        timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
-
-        if timeout <= 0:
-            return self._fallback(
-                budget=budget, history=history, last_tool_ok=last_tool_ok,
-                message='budget_exhausted',
-            )
+        # Cap the call by the remaining wall-clock budget. No second `<= 0` check: the pre-flight above
+        # already guarantees remaining > 0, and no I/O or await happens between that check and this line.
+        timeout = min(budget.remaining_seconds(), settings.LLM_DEFAULT_TIMEOUT_SECONDS)
 
         t0 = time.monotonic()
 
