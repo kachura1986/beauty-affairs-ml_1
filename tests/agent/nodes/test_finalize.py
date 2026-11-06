@@ -802,3 +802,37 @@ async def test_finalization_in_trace_finish(trace, make_registry):
         assert step_field not in finish[0], (
             f"{step_field!r} leaked from a step record into the finish record"
         )
+
+
+async def test_e2e_trace_jsonl_contains_no_raw_keys_after_validation_error(trace, make_registry):
+    """Full run_graph with a validation-error tool call must not write raw keys
+    anywhere in the JSONL trace — not in tool, step, error, or finish records."""
+    call = {"id": "c1", "name": "echo", "arguments": {"value": "hi", "api_token": "secret-value"}}
+    llm = FakeLLM(
+        reply(text="", tool_calls=[call]),
+        reply(text="done"),  # second step: text answer after the validation error
+    )
+    policy = AgentPolicy(empty_limit=3, repeat_limit=3)
+
+    result = await run_graph(
+        task=_task(max_steps=3),
+        tools=make_registry(),
+        llm=llm,
+        trace=trace,
+        policy=policy,
+    )
+
+    # Sanity: the run completed normally and the validation error was actually recorded.
+    assert result.reason == TerminationReason.DONE_UNVERIFIED
+    assert result.answer == "done"
+
+    tool_records = [r for r in trace.records() if r["t"] == "tool"]
+    assert len(tool_records) == 1
+    assert tool_records[0]["error_code"] == "validation"
+    assert tool_records[0]["args_keys"] == []  # validation → empty tuple by contract
+    assert "args_hash" in tool_records[0]  # raw args were hashed, not omitted
+
+    # The entire JSONL file — every record, every field — must be free of raw keys/values.
+    raw = trace.path.read_text(encoding="utf-8")
+    for forbidden in ("api_token", "secret-value"):
+        assert forbidden not in raw, f"{forbidden!r} leaked into trace JSONL: {raw}"
