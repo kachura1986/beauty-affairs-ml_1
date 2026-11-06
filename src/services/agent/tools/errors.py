@@ -236,9 +236,11 @@ def execution_failed_result(tool_name: str) -> ToolResult:
 def temporary_failure_result(tool_name: str, retry_after: float | None) -> ToolResult:
     """
     Create a result for a temporary tool failure.
+
     Args:
         tool_name (str): Name of the temporarily unavailable tool.
         retry_after (float): Delay before retrying in seconds, if available.
+
     Returns:
         ToolResult: Structured temporary failure result.
     """

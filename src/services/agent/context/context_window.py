@@ -3,16 +3,15 @@ from dataclasses import dataclass
 from typing import Any
 
 # --- Limits ---------------------------------------------------------------
-# NB: sizes are measured in *characters*, not tokens. This is a cheap approximation: the chars/tokens ratio varies
-# by language and content, so treat ``max_estimated_chars`` as an upper-bound estimator, NOT a hard guarantee that
-# the request fits the model's context. The ``RESERVED_OUTPUT_CHARS`` buffer absorbs the typical error.
+# Sizes are in *characters*, not tokens: an upper-bound estimator, not a hard guarantee that the
+# request fits the model's context. RESERVED_OUTPUT_CHARS absorbs the typical error.
 MAX_MESSAGES = 40
 MAX_ESTIMATED_CHARS = 60_000
-RESERVED_OUTPUT_CHARS = 8_000  # room for the model's reply
+RESERVED_OUTPUT_CHARS = 8_000
 
-# Only ``tool`` outputs are trimmed in place (head + tail). They are the main size driver, and their first 6 lines
-# (call_id / exit code) and last line (error / final value) are the useful parts. Cutting user/assistant text can
-# silently destroy meaning (reviewer note #5), so those are kept whole — if they don't fit, the whole turn is dropped.
+# Only tool outputs are trimmed in place (head 2/3 + tail 1/3): they are the main size driver, and their
+# first lines (call_id / exit code) and last line (error / final value) carry the useful info. User/assistant
+# text is never split — cutting it silently destroys meaning; whole turns are dropped instead.
 PER_TOOL_MSG_LIMIT = 4_000
 
 # Approximate char cost of a non-text multimodal part (image, audio, ...).
@@ -25,13 +24,10 @@ _CODE_RE = re.compile(r'[a-z0-9_]+')
 @dataclass(frozen=True)
 class AgentContextWindow:
     """
-    Ready context for a single LLM step.
+    Ready context for a single LLM step; ``system`` and ``messages`` go to separate provider channels.
 
-    ``system`` and ``messages`` are separate provider channels: ``system`` is sent via ``chat(..., system_prompt=...)``
-    / Responses API ``instructions``, ``messages`` — via ``input``.
-
-    ``messages`` is not copied: the same object is passed to both ``chat`` and ``trace.step``, so ``window_hash``
-    / ``window_msgs`` in the trace reflect exactly what was sent to the model.
+    CONTRACT: ``messages`` is not copied — the same object is passed to both ``chat`` and ``trace.step``,
+    so the trace's ``window_hash`` / ``window_msgs`` reflect exactly what was sent to the model.
     """
 
     system: str
@@ -42,19 +38,14 @@ class ContextOverflow(Exception):
     """
     System prompt + pinned turns or the current request alone exceed the budget.
 
-    Raised only by ``build_context`` (and the private helpers it calls), called exclusively from ``decide_node``.
-    ``decide_node`` MUST catch it and return ``TerminationReason.CONTEXT_OVERFLOW``; the run then terminates normally
-    through ``finish_node`` and is reported to the caller via ``AgentResult.reason`` / ``ChatResponse.termination_reason``.
+    CONTRACT: raised only by ``build_context`` (called exclusively from ``decide_node``). ``decide_node``
+    MUST catch it and terminate with ``TerminationReason.CONTEXT_OVERFLOW``; the run then finishes normally
+    through ``finish_node``. The first positional argument is the **code** (must match ``[a-z0-9_]+``) —
+    that is what ``Trace.error(message=...)`` records; the second is human-readable text for logs only.
 
     Attributes:
         code: Machine-readable, PII-free identifier of the overflow subtype.
-            Codes follow a snake_case, lowercase, ASCII convention and match ``[a-z0-9_]+``.
-            This is what ``Trace.error(message=...)`` records.
-        message: Human-readable detail (``str(exc)``). Intended for logs only, never for trace.
-
-    Both arguments are required. The first positional argument is the **code**, not the
-    message — passing a free-form human string raises ``ValueError``, which is deliberate:
-    the contract is self-enforcing rather than relying on convention.
+        message: Human-readable detail (``str(exc)``). Logs only, never trace.
     """
 
     def __init__(self, code: str, message: str) -> None:
@@ -73,8 +64,8 @@ def _size(message: dict[str, Any]) -> int:
     """
     Approximate size of a message in characters.
 
-    Multimodal (list) content sums text parts and assigns a fixed weight to every non-text part,
-    so images cannot bypass the budget by hiding inside ``content``.
+    CONTRACT: multimodal (list) content sums text parts and assigns ``MULTIMODAL_PART_WEIGHT`` to every
+    non-text part — otherwise images could bypass the budget by hiding inside ``content``.
 
     Args:
         message (dict[str, Any]): The message to measure.
@@ -106,8 +97,8 @@ def _truncate_tool(message: dict[str, Any]) -> dict[str, Any]:
     """
     Trim a ``tool`` message to ``PER_TOOL_MSG_LIMIT``, keeping head + tail.
 
-    Head is favoured (2/3) — call_id / exit code live there; tail (1/3) keeps the final error line or result value.
-    Other roles are returned untouched — that is a deliberate trade-off, see module docstring.
+    CONTRACT: only ``role='tool'`` with string content is touched; every other role is returned as-is
+    (splitting user/assistant text would silently corrupt meaning — see module comment).
 
     Args:
         message (dict[str, Any]): The message to truncate.
@@ -139,10 +130,9 @@ def _group_turns(messages: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     """
     Group messages into turns; every ``user`` message opens a new turn.
 
-    ``tool`` messages do not open turns — they belong to the preceding assistant turn and must stay grouped with
-    the matching ``assistant(tool_calls)``, otherwise the provider API rejects the request.
-    If the history does not start with ``user`` (e.g. it is already a tail of a longer session),
-    the first group is simply the earliest available context and is treated as such.
+    CONTRACT: ``tool`` messages never open a turn — they belong to the preceding assistant turn and must
+    stay grouped with the matching ``assistant(tool_calls)``, otherwise the provider API rejects the request.
+    A history not starting with ``user`` groups the leading block as its own first turn.
 
     Args:
         messages (list[dict[str, Any]]): The messages to group.
@@ -187,7 +177,7 @@ def _prepare_context(system_prompt: str, warning: str | None) -> tuple[str, int]
 
     history_budget = MAX_ESTIMATED_CHARS - RESERVED_OUTPUT_CHARS - len(effective_system)
     if history_budget <= 0:
-        raise ContextOverflow('system_prompt_too_large',"System prompt alone exceeds budget")
+        raise ContextOverflow('system_prompt_too_large', "System prompt alone exceeds budget")
 
     return effective_system, history_budget
 
@@ -200,35 +190,23 @@ def _build_window(
     """
     Pack ``history`` into a list of ``input`` messages under ``history_budget_chars``.
 
-    ``system_prompt`` is NOT part of the window — it goes to ``chat(system_prompt=...)``. ``history_budget_chars`` is
-    expected to ALREADY EXCLUDE the output reserve (see ``_prepare_context``); it is NOT re-subtracted here.
-
-    Rules (in priority order):
-      1. Client-supplied ``system`` messages are dropped (never part of ``input``).
-      2. The earliest available turn is kept as the best available context (usually the task description,
-         but the code does not assume it).
-      3. The last turn is always kept — it is the current request; without it a reply would be meaningless.
-         If it does not fit — overflow.
-      4. Remaining turns are added newest-to-oldest until either ``max_messages`` or ``history_budget_chars``
-         is hit. Iteration stops on the first turn that does not fit (``break``, not ``continue``):
-         we keep a *continuous* recent tail. Skipping an oversized middle turn would create a gap in the
-         reasoning chain, which is worse for multi-step tasks than losing older context.
-      5. Oversized ``tool`` outputs are trimmed head + tail before grouping. User/assistant messages are
-         kept whole.
-
-    Pinning: only turn 0 and the last turn are pinned — this is a server-side decision. The client cannot
-    influence pinning (a hostile client must not be able to pin everything and force a ``ContextOverflow``).
+    ``system_prompt`` is NOT part of the window — it goes to ``chat(system_prompt=...)``.
+    CONTRACT: ``history_budget_chars`` is expected to ALREADY EXCLUDE the output reserve (see
+    ``_prepare_context``); it is NOT re-subtracted here. Pinning is server-side only — a client
+    ``pinned`` flag is ignored so a hostile client cannot force an overflow by pinning everything.
+    Remaining turns are added newest-to-oldest with ``break`` (not ``continue``): a *continuous*
+    recent tail is kept; skipping an oversized middle turn would open a gap in the reasoning chain.
 
     Args:
         history (list[dict[str, Any]]): Conversation history to pack.
-        history_budget_chars (int): Character budget for the packed history,
-            already net of ``RESERVED_OUTPUT_CHARS`` and the system part.
+        history_budget_chars (int): Character budget for the packed history, already net of
+            ``RESERVED_OUTPUT_CHARS`` and the system part.
         max_messages (int, optional): Maximum number of messages in the window.
 
     Raises:
-        ContextOverflow: If pinned turns alone exceed the message or character budget.
+        ContextOverflow: If pinned turns alone exceed the message or character budget
+            (includes the "current request alone is too large" case).
     """
-    # Step 1. sanitize history
     # Drop client system messages; trim only tool outputs (see _truncate_tool).
     messages = [_truncate_tool(m) for m in history if m.get("role") != "system"]
     if not messages:
@@ -236,28 +214,24 @@ def _build_window(
 
     turns = _group_turns(messages)
 
-    # Step 2. Pin the earliest and the last turn
-    # Server-side pinning only. A client ``pinned`` flag is ignored.
+    # Pin earliest + last turn (server-side only; client ``pinned`` flag is ignored).
     pinned_idx: set[int] = {0, len(turns) - 1}
 
     pinned_chars = sum(_size(m) for i in pinned_idx for m in turns[i])
     pinned_msgs = sum(len(turns[i]) for i in pinned_idx)
 
     if pinned_msgs > max_messages:
-        raise ContextOverflow('pinned_turns_too_many',"Pinned turns exceed message limit")
+        raise ContextOverflow('pinned_turns_too_many', "Pinned turns exceed message limit")
 
     if pinned_chars > history_budget_chars:
-        # Includes the "current request alone is too large" case — this is a deliberate, documented contract.
-        raise ContextOverflow('pinned_turns_too_large',"Mandatory turns exceed budget")
+        raise ContextOverflow('pinned_turns_too_large', "Mandatory turns exceed budget")
 
     budget = history_budget_chars - pinned_chars
     keep: set[int] = set(pinned_idx)
     kept_msgs = pinned_msgs
     used = 0
 
-    # Step 3. Extend with a continuous recent tail
-    # Walk backwards so newest turns win. ``break`` is intentional — see docstring step 4. A hostile/oversized
-    # middle turn is not replaced by an older small one: continuity of the recent tail matters more.
+    # Extend with a continuous recent tail. ``break`` is intentional — see docstring.
     for i in range(len(turns) - 2, 0, -1):
         if i in keep:
             continue
@@ -272,7 +246,6 @@ def _build_window(
         used += turn_size
         kept_msgs += turn_len
 
-    # Step 4: restore chronological order
     window: list[dict[str, Any]] = []
     for i in sorted(keep):
         window.extend(turns[i])
@@ -289,9 +262,9 @@ def build_context(
     """
     Assemble the context for a single LLM step: effective system prompt plus the packed history.
 
-    ``system`` and ``messages`` in the result go to different provider channels — see :class:`AgentContextWindow`.
-
-    ``max_messages`` exists for testability; in production the default``MAX_MESSAGES`` is always used.
+    ``system`` and ``messages`` in the result go to different provider channels — see
+    :class:`AgentContextWindow`. ``max_messages`` exists for testability; production always uses
+    the ``MAX_MESSAGES`` default.
 
     Args:
         system_prompt (str): Task-level system prompt.

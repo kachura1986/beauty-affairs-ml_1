@@ -26,29 +26,21 @@ class Trace:
     """
     Records an agent_graph run (input, every LLM call, final result) as JSONL, one record per line.
 
-    Lifecycle:
-        - ``run_id`` is generated internally (UTC timestamp + random suffix); file names are unique,
-          time-ordered, and cannot escape RUNS_DIR.
-        - Close via :meth:`close` or as a context manager; calling ``close()`` twice is safe.
-        - If garbage-collected without being closed, a ``ResourceWarning`` is emitted via
-          :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee).
-        - Old trace files are pruned on every new trace creation (at most ``MAX_TRACE_FILES`` most recent).
-
-    PII and retention:
-        - Tool arguments are recorded as ``args_hash`` + ``args_keys``, never raw values
-          (arguments may contain user text; traces are retained on disk).
-        - ``args_keys`` is supplied by :class:`ToolRegistry.invoke` via ``ToolResult.args_keys`` and is
-          already redacted: validation errors and unknown tools yield an empty tuple, so raw key names
-          never reach the trace.
-        - User / assistant message text is never written: ``step()`` records ``window_hash`` and
+    CONTRACT (PII and retention):
+        - Tool arguments are recorded as ``args_hash`` + ``args_keys``, never raw values.
+        - User / assistant message text is never written: ``step()`` records ``window_hash`` /
           ``window_msgs``; ``finish()`` records only ``answer_chars``.
         - ``error()`` ``message`` must be a machine-readable code (``type(exc).__name__``, reason
-          string), not ``str(exc)`` from a tool/user-facing exception.
-        - Single exception: ``__exit__`` writes a truncated (≤500 chars) ``str(exc)`` for *unhandled*
-          exceptions that escaped the agent loop — diagnostic only, on an exceptional path. Do not
-          promote this pattern to a general error path; use ``error()`` with a machine-readable code.
-        - A single file is capped at ``MAX_FILE_BYTES``; the directory is pruned by ``MAX_TRACE_FILES``
-          count and ``TRACE_TTL_DAYS`` age on every new trace creation.
+          string), never ``str(exc)`` from a tool/user-facing exception.
+        - Single carve-out: ``__exit__`` writes a truncated (≤500 chars) ``str(exc)`` for *unhandled*
+          exceptions that escaped the agent loop — diagnostic only. Do not promote this pattern to a
+          general error path; use ``error()`` with a machine-readable code.
+        - Bounds: one file ≤ ``MAX_FILE_BYTES``; the directory is pruned by ``MAX_TRACE_FILES`` count
+          and ``TRACE_TTL_DAYS`` age on every new trace creation.
+
+    Lifecycle: ``run_id`` is generated internally (UTC timestamp + random suffix); close via
+    :meth:`close` (idempotent) or as a context manager; an unclosed trace emits a ``ResourceWarning``
+    via :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee).
     """
 
     def __init__(self, runs_dir: Path) -> None:
@@ -101,15 +93,11 @@ class Trace:
     def _prune_old_runs(self) -> None:
         """
         Keep only the most recent ``MAX_TRACE_FILES`` trace files and drop files older than ``TRACE_TTL_DAYS``.
-        Best-effort: any failure (including permission errors while deleting a stale file) must not affect the current run.
 
-        Notes:
-            - TTL is based on ``st_mtime``, not on the timestamp embedded in ``run_id``:
-              a file restored from backup may have a fresh ``mtime`` and therefore survive
-              past ``TRACE_TTL_DAYS``. Accepted as an edge case for the minimal policy.
-            - Prune is not synchronized across processes. ``unlink()`` on an open file is
-              safe on POSIX (the descriptor stays valid) and raises ``PermissionError`` on
-              Windows, which is swallowed by ``except OSError`` below.
+        CONTRACT: best-effort — any failure while pruning must not affect the current run.
+        TTL is based on ``st_mtime`` (not the timestamp in ``run_id``): a file restored from backup may
+        survive past ``TRACE_TTL_DAYS``. Not synchronized across processes; ``unlink()`` on a file open in
+        another process is safe on POSIX and raises ``PermissionError`` on Windows (swallowed).
         """
         try:
             files = sorted(self._runs_dir.glob('*.jsonl'), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -129,7 +117,7 @@ class Trace:
         """
         Close the underlying file handle.
 
-        Idempotent. Never raises: a failure to close the file handle must not mask the original error from the agent run.
+        CONTRACT: idempotent and never raises — a close failure must not mask the original agent error.
         """
         if self._closed:
             return
@@ -157,8 +145,8 @@ class Trace:
         """
         Read back all JSONL records. Helper for post-mortem and tests.
 
-        Not for hot-path production use: reads the entire file into memory (up to roughly ``MAX_FILE_BYTES``;
-        the trailing ``truncated_at_bytes`` marker may push the file a few bytes past the limit).
+        CONTRACT: not for hot-path production use — reads the entire file (up to roughly
+        ``MAX_FILE_BYTES``; the trailing ``truncated_at_bytes`` marker may push it a few bytes past).
 
         Returns:
             list[dict[str, Any]]: Parsed records in file order.
@@ -177,7 +165,8 @@ class Trace:
         """
         Close the trace on context exit; record unhandled exceptions best-effort.
 
-        The diagnostic write never masks the original exception. Returning None propagates the exception unchanged.
+        CONTRACT: the diagnostic write never masks the original exception. Returning None propagates
+        the exception unchanged.
         """
         if exc_type is not None and not self._closed:
             try:
@@ -196,7 +185,7 @@ class Trace:
         """
         Append one record as a JSONL line, enforcing the per-file size cap.
 
-        No-op when the trace is closed or already capped. On overflow, writes a single
+        CONTRACT: no-op when closed or already capped. On overflow, writes a single
         ``truncated_at_bytes`` marker and drops all further records.
 
         Args:
@@ -239,12 +228,10 @@ class Trace:
         """
         Return a short stable hash of a JSON-serializable object.
 
-        Known limitation (not a confidentiality guarantee): deterministic, unsalted SHA-256 truncated to
-        12 hex chars (48 bits). For low-entropy fields (``top_k``, ``min_price``) the hash is effectively
-        equivalent to the value — an adversary with a small candidate set can recover it by enumeration.
-        For high-entropy secrets (API keys, tokens) the hash is not reversible. Treat ``args_hash`` as an
-        anti-PII measure for free-text user data, not as a cryptographic commitment; do not rely on it to
-        hide low-entropy structured arguments.
+        CONTRACT: deterministic, unsalted SHA-256 truncated to 12 hex chars (48 bits) — anti-PII
+        measure for free-text user data, NOT a cryptographic commitment. Low-entropy fields
+        (``top_k``, ``min_price``) are effectively recoverable by enumeration; high-entropy secrets
+        (API keys, tokens) are not reversible. Do not rely on this to hide low-entropy arguments.
 
         Args:
             obj (Any): Object to hash; serialized with sorted keys and ``default=str``.
@@ -329,13 +316,10 @@ class Trace:
         """
         Record one tool invocation.
 
-        Args are stored as ``args_hash`` + ``args_keys`` only — never raw values (PII; files are retained on disk).
-        The hash correlates identical calls but cannot be reversed for high-entropy inputs (see :meth:`_hash`).
-
-        ``args_keys`` is supplied by :class:`ToolRegistry.invoke` via
-        ``ToolResult.args_keys`` and is already redacted: validation errors yield an empty tuple (raw key names are
-        never written), and unknown tools yield an empty tuple because there is no ``args_model`` to intersect with —
-        the tool is not registered, so no schema exists to filter against.
+        CONTRACT: args are stored as ``args_hash`` + ``args_keys`` only — never raw values.
+        ``args_keys`` is supplied by :class:`ToolRegistry.invoke` via ``ToolResult.args_keys`` and is
+        already redacted: validation errors and unknown tools yield an empty tuple, so raw key names
+        never reach the trace.
 
         Args:
             n (int): Step number the tool belongs to.
@@ -367,9 +351,9 @@ class Trace:
         """
         Record a non-fatal error event.
 
-        ``message`` must be a machine-readable code (type name, reason string, or ``ContextOverflow.code``), never
-        ``str(exc)`` — that may contain PII. The only carve-out is ``__exit__`` (unhandled, diagnostic only).
-        Log the detail separately.
+        CONTRACT: ``message`` must be a machine-readable code (type name, reason string, or
+        ``ContextOverflow.code``), never ``str(exc)`` — that may contain PII. The only carve-out is
+        ``__exit__`` (unhandled, diagnostic only). Log the detail separately.
 
         Args:
             step (int): Step number when the error occurred.
@@ -398,10 +382,13 @@ class Trace:
         """
         Record the terminal run record.
 
+        CONTRACT: only the answer's length (``answer_chars``) is stored — the answer text is not
+        written to disk.
+
         Args:
             reason (TerminationReason): Why the run ended.
             budget (Budget): Final budget snapshot.
-            answer (str | None): Final answer; only its length is stored (``answer_chars``).
+            answer (str | None): Final answer; only its length is stored.
             finalization (Finalization): How the answer was produced. Defaults to ``NONE``.
         """
         self._write({

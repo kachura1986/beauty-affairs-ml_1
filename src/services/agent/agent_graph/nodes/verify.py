@@ -10,7 +10,10 @@ from ..state import AgentContext, GraphState
 
 def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     """
-    Equivalent of the existing VERIFY phase.
+    Verify the pending answer via the optional postcondition.
+
+    CONTRACT: requires state['pending_answer'] — raising here surfaces a routing bug
+    rather than silently accepting an absent answer.
 
     Args:
         state: The current state of the agent_graph.
@@ -36,11 +39,12 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
             ),
         }
 
-    # Run configured postcondition
     try:
         ok, note = ctx.task.postcondition(answer)
 
     except Exception as exc:  # noqa: BLE001
+        # A raising postcondition preserves the answer as-is: the model produced
+        # something valid, and failing the postcondition must not discard it.
         _log_internal_exception('Postcondition verification failed.', exc)
         ctx.trace.error(
             step=state['budget'].steps,
@@ -55,7 +59,6 @@ def verify_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
             'termination_reason': TerminationReason.POSTCONDITION_ERROR,
         }
 
-    # Verification succeeded
     if ok:
         return {
             'answer': answer,

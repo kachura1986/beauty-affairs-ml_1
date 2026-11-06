@@ -18,11 +18,8 @@ class LLMStepService:
     One bounded LLM decision step: budget pre-flight, error classification,
     token/cost accounting, trace recording.
 
-    Stateless w.r.t. own fields; mutates ``budget`` by reference (``steps``,
-    ``tokens``, ``cost_usd``). Callers must pass ``budget=state['budget']``, never a copy.
-
-    Takes a ``ToolRegistry`` (not a schema list) and snapshots schemas inside
-    ``run`` at call time, so ``test_request_llm_success`` keeps passing.
+    CONTRACT: mutates ``budget`` by reference (``steps``, ``tokens``, ``cost_usd``) —
+    callers must pass ``budget=state['budget']``, never a copy.
     """
 
     def __init__(self, *, llm: LLMModel, tools: ToolRegistry, trace: Trace) -> None:
@@ -36,10 +33,12 @@ class LLMStepService:
         """
         Execute exactly one LLM decision step.
 
-        Preconditions:
-            ``budget.can_start_step()`` is True. This is guaranteed by the only caller,
-            :func:`decide_node`, via :func:`_check_budget`. The step budget is intentionally
-            not re-checked here to keep a single enforcement point.
+        CONTRACT: ``budget.can_start_step()`` must be True — guaranteed by the only caller,
+        :func:`decide_node`, via :func:`_check_budget`. The step budget is intentionally not
+        re-checked here to keep a single enforcement point.
+        When ``reason`` is not ``None``, ``reply`` may still be valid: a completed LLM call that
+        itself pushed the run over a hard budget is preserved so the caller can decide whether
+        it qualifies as a final answer.
 
         Args:
             budget (Budget): Budget for the request (mutated by reference).
@@ -47,24 +46,20 @@ class LLMStepService:
 
         Returns:
             tuple[Reply | None, TerminationReason | None]: Tuple of (reply, termination reason).
-            When ``reason`` is not ``None``, ``reply`` may still be valid: a completed LLM call that itself
-            pushed the run over a hard budget is preserved so the caller can decide whether it qualifies
-            as a final answer. This is not a contract violation — it is a retained reply, not a missing one.
         """
-        # Fail loud if the precondition is violated. Explicit raise, not assert: under `python -O` an assert is
-        # stripped and the violation would pass silently, breaking the steps <= max_steps invariant.
+        # Explicit raise, not assert: under `python -O` an assert is stripped and the violation
+        # would pass silently, breaking the steps <= max_steps invariant.
         if not budget.can_start_step():
             raise RuntimeError('precondition violated: LLMStepService.run called with exhausted step budget')
 
-        # TOCTOU guard: build_context() runs between _check_budget() and this call, so the wall-clock budget may have
-        # expired in the meantime. Limit the request by the remaining wall-clock budget.
+        # TOCTOU guard: build_context() runs between _check_budget() and this call, so the wall-clock
+        # budget may have expired in the meantime.
         remaining = budget.remaining_seconds()
 
         if remaining <= 0:
             return None, TerminationReason.BUDGET_TIME
 
-        # Pre-flight for tokens. Strict '<' on purpose: a caller that lands exactly
-        # on MIN_EXPECTED_TOKENS is still allowed to try one more call.
+        # Strict '<' on purpose: a caller that lands exactly on MIN_EXPECTED_TOKENS is still allowed to try.
         if budget.remaining_tokens() < settings.MIN_EXPECTED_TOKENS:
             logger.info(
                 'Preflight token check failed | step=%s | remaining=%s | min=%s',
@@ -124,10 +119,8 @@ class LLMStepService:
 
         latency_ms = int((time.monotonic() - t0) * 1000)
 
-        # Account for model usage
         budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
 
-        # Preserve existing trace format
         self._trace.step(
             budget.steps,
             context_window.messages,

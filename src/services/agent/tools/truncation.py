@@ -16,41 +16,27 @@ MAX_DEPTH = 50
 
 def truncate_for_model(data: Any, max_chars: int | None) -> tuple[str, bool]:
     """
-    Serialize `data` into a string no longer than `max_chars`.
+    Serialize `data` to a string of at most `max_chars`, preserving structure where possible.
 
-    Structure is preserved where possible: whole list items are dropped first, then long strings are shortened,
-    then dictionary fields are dropped, and only after that are the markers themselves compressed.
-    Field type is preserved where possible: a list stays a list, a dictionary stays a dictionary.
-    Fallback to `_valid_fallback` is used only when the budget is smaller than the minimum marker.
+    CONTRACT:
+        - Content is valid JSON when max_chars >= 2 (empty string otherwise).
+        - A truncated list ends with `{"_truncated": true, "returned": K, "total": N}` — downstream
+          code must treat the last item as a marker, not data.
+        - A dict with dropped fields has a `_truncated_fields` key (on collision, `_truncated_fields_1`,
+          `_2`, ... are used).
+        - Limitations: Decimal/numpy numbers coerce to int/float (precision may be lost); bytes decode
+          as UTF-8 with errors="replace"; set/frozenset become a sorted list; NaN/±Inf become
+          "nan"/"inf"/"-inf".
+
+    Reduction order: whole list items → long strings → dict fields → markers themselves; the fallback
+    is used only when the budget is smaller than the minimum marker.
 
     Args:
         data (Any): Arbitrary Python value to serialize.
         max_chars (int): Maximum length of the returned string.
 
     Returns:
-        tuple[str, bool]: The serialized content and a flag indicating
-            whether truncation occurred.
-
-    Guarantees:
-        - content is valid JSON when max_chars >= 2 (otherwise an empty string).
-        - Structure is preserved where possible (see above).
-
-    Marker formats:
-        - A truncated list ends with an object
-          `{"_truncated": true, "returned": K, "total": N}`.
-          Downstream code must account for the last item possibly being a
-          marker rather than user data.
-        - A dictionary with dropped fields has a `_truncated_fields` key
-          containing the names of dropped fields (on collision with input
-          data, `_truncated_fields_1`, `_2`, ... are used).
-
-    Limitations:
-        - `Decimal`, `numpy` numbers, and other `numbers.Number` instances
-          are converted to `int`/`float`; precision may be lost (for example,
-          `Decimal("0.1") + Decimal("0.2")`).
-        - `bytes` are decoded as UTF-8 with `errors="replace"`.
-        - `set`/`frozenset` are converted to a sorted list (deterministically).
-        - `NaN`/`±Inf` are replaced with the strings `"nan"`, `"inf"`, `"-inf"`.
+        tuple[str, bool]: The serialized content and a flag indicating whether truncation occurred.
     """
     if max_chars is not None and max_chars <= 0:
         return "", True
@@ -80,6 +66,10 @@ def _prepare(data: Any) -> Any:
 def _prepare_impl(data: Any, seen: set[int], depth: int) -> Any:
     """
     Recursively normalize `data`, tracking seen container ids and depth.
+
+    CONTRACT: ``seen`` is used for cycle detection; containers are added on entry and discarded on exit
+    (via ``finally``), so only *true* cycles return ``CYCLE_MARKER`` — shared siblings are still normalized
+    independently.
 
     Args:
         data (Any): Value to normalize.
@@ -117,7 +107,6 @@ def _prepare_impl(data: Any, seen: set[int], depth: int) -> Any:
     if isinstance(data, (bytes, bytearray, memoryview)):
         return bytes(data).decode("utf-8", errors="replace")
 
-    # Track only containers/custom objects here; scalar leaves were handled above
     obj_id = id(data)
     if obj_id in seen:
         return CYCLE_MARKER
@@ -189,10 +178,10 @@ def _reduce(data: Any, max_chars: int, depth: int = 0) -> tuple[str, bool]:
 
 def _reduce_list(items: list, max_chars: int) -> tuple[str, bool]:
     """
-    Binary search for how many leading items to keep.
+    Binary-search the largest leading prefix that fits with the truncation marker.
 
-    If the input list is already truncated (the last item is a `{_truncated: true, ...}` marker), the original `total`
-    is preserved instead of being overwritten with the current size.
+    CONTRACT: if ``items`` is already truncated (last item is a ``{_truncated: true, ...}`` marker),
+    the original ``total`` is preserved — re-reducing must not overwrite it with the current size.
 
     Args:
         items (list): The list to reduce.
@@ -212,7 +201,6 @@ def _reduce_list(items: list, max_chars: int) -> tuple[str, bool]:
         marker = {TRUNCATED_LIST_KEY: True, "returned": k, "total": original_total}
         return _dumps(real_items[:k] + [marker])
 
-    # Find the largest prefix length that still fits with the truncation marker
     lo, hi = 0, len(real_items)
     best: tuple[str, bool] | None = None
     while lo <= hi:
@@ -236,13 +224,12 @@ def _reduce_list(items: list, max_chars: int) -> tuple[str, bool]:
 
 def _reduce_dict(d: dict, max_chars: int, depth: int = 0) -> tuple[str, bool]:
     """
-    Iteratively reduce a dictionary.
+    Iteratively reduce a dictionary until its JSON fits `max_chars`.
 
-    The reduction tries, in order:
-        A. Recursively shrink a nested container (preserving its type).
-        B. Truncate a long string value.
-        C. Drop a field (record it in `_truncated_fields`).
-        D. Compress the `_truncated_fields` marker if it becomes the problem.
+    Reduction order, per iteration: (A) recurse into the fattest nested container, (B) truncate the
+    fattest long string, (C) drop the fattest field and record it in ``_truncated_fields``, (D) compress
+    or remove the marker if it becomes the problem. The loop is bounded so a pathological structure
+    cannot spin forever.
 
     Args:
         d (dict): The dictionary to reduce.
@@ -274,7 +261,6 @@ def _reduce_dict(d: dict, max_chars: int, depth: int = 0) -> tuple[str, bool]:
         non_marker_keys = [k for k in working if k != marker_key]
         made_progress = False
 
-        # --- A / B / C: only when there are non-marker fields -------------
         if non_marker_keys:
             fattest_key = max(non_marker_keys, key=lambda k: len(_dumps(working[k])))
             fattest_val = working[fattest_key]
@@ -283,7 +269,7 @@ def _reduce_dict(d: dict, max_chars: int, depth: int = 0) -> tuple[str, bool]:
             # A: recurse into a nested container
             if isinstance(fattest_val, (list, dict)):
                 overhead = len(serialized) - field_size
-                # Reserve the rest of the serialized object; the nested value gets the remaining budget
+                # The nested value gets the remaining budget after reserving the rest of the object
                 budget = max_chars - overhead
                 if budget > MARKER_RESERVE:
                     reduced_str, _ = _reduce(fattest_val, budget, depth + 1)
@@ -323,7 +309,7 @@ def _reduce_dict(d: dict, max_chars: int, depth: int = 0) -> tuple[str, bool]:
                 truncated = True
                 made_progress = True
 
-        # --- D: compress an oversized marker ---------------------------
+        # D: compress an oversized marker
         if not made_progress:
             marker_val = working.get(marker_key)
             if isinstance(marker_val, list):
@@ -360,7 +346,7 @@ def _reduce_dict(d: dict, max_chars: int, depth: int = 0) -> tuple[str, bool]:
 
 def _reduce_str(s: str, max_chars: int) -> tuple[str, bool]:
     """
-    Reduce a string value to fit `max_chars` by truncating it.
+    Truncate a string value to fit `max_chars`.
 
     Args:
         s (str): The string to reduce.
@@ -373,7 +359,6 @@ def _reduce_str(s: str, max_chars: int) -> tuple[str, bool]:
     if len(serialized) <= max_chars:
         return serialized, False
 
-    # Find the longest prefix that fits together with the truncation marker
     lo, hi = 0, len(s)
     best: tuple[str, bool] | None = None
     while lo <= hi:
@@ -394,7 +379,7 @@ def _reduce_str(s: str, max_chars: int) -> tuple[str, bool]:
 
 def _valid_fallback(max_chars: int) -> tuple[str, bool]:
     """
-    Return the largest guaranteed-valid JSON that fits within `max_chars`.
+    Return the largest guaranteed-valid JSON fragment that fits within `max_chars`.
 
     Args:
         max_chars (int): Maximum length of the returned string.

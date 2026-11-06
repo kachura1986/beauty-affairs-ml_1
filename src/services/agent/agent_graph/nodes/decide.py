@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 def _check_budget(budget: Budget) -> TerminationReason | None:
     """
-    Preserve the existing agent_graph budget semantics.
-    Step budget is checked first; then time/token/cost limits.
+    Check step budget first, then time/token/cost limits.
 
     Args:
         budget (Budget): Budget to check.
@@ -62,11 +61,9 @@ async def _request_llm(
 
 async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     """
-    Equivalent of:
+    Decision step: check budget, build the context window, call the LLM, and route its reply.
 
-        OBSERVE -> DECIDE -> handle_reply()
-
-    The OBSERVE phase is collapsed into this node because it only built the context window.
+    OBSERVE is collapsed into this node because it only built the context window.
 
     Args:
         state (GraphState): The current graph state.
@@ -78,7 +75,6 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     ctx = runtime.context
     budget = state['budget']
 
-    # Same budget check that previously happened before OBSERVE
     reason = _check_budget(budget)
 
     if reason:
@@ -111,7 +107,6 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             budget_warning_emitted = True
 
     # System prompt goes via its own channel; `messages` holds only history.
-    # `ContextOverflow` → normal TerminationReason, finished via `finish_node`.
     try:
         context_window = build_context(ctx.task.system_prompt, warning, state['history'])
     except ContextOverflow as exc:
@@ -164,7 +159,6 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     if reply is None:
         raise RuntimeError('LLM request returned no reply and no termination reason.')
 
-    # Empty response
     if not reply.tool_calls and not reply.text.strip():
         consecutive_empty_steps = (state['consecutive_empty_steps'] + 1)
 
@@ -196,7 +190,6 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
 
         return result
 
-    # Tool calls
     # Preserve the assistant message containing the tool calls
     result['history'] = [
         {

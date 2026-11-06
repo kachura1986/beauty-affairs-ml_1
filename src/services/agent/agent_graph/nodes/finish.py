@@ -8,7 +8,10 @@ from ..state import AgentContext, GraphState
 
 def finish_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     """
-    Finish the agent_graph execution.
+    Finish the agent_graph execution and build the stable AgentResult.
+
+    CONTRACT: requires a termination_reason; raising here surfaces a routing bug
+    rather than emitting a result with an unknown reason.
 
     Args:
         state (GraphState): The current state of the agent_graph execution.

@@ -14,8 +14,14 @@ class AgentContext:
     """
     Runtime dependencies for one agent_graph execution.
 
-    These are deliberately kept outside GraphState because they are
-    dependencies of the workflow rather than workflow state.
+    CONTRACT: kept outside GraphState because they are workflow dependencies, not state.
+
+    Args:
+        task (Task): The task being executed.
+        tools (ToolRegistry): Tool registry available to the run.
+        llm (LLMModel): LLM used for decision and finalization steps.
+        trace (Trace): Trace sink for the run.
+        policy (AgentPolicy): Anti-loop / finalization policy.
     """
 
     task: Task
@@ -29,8 +35,9 @@ class GraphState(TypedDict, total=False):
     """
     Mutable workflow state managed by LangGraph.
 
-    This is intentionally close to the existing AgentState, with a few
-    extra fields used for communication between graph nodes.
+    CONTRACT: ``history`` is append-only (``Annotated[..., operator.add]``).
+    ``needs_finalization`` is set by decide_node only for BUDGET_STEPS and reset by finalize_node;
+    ``finalization`` is set by finalize_node and read by finish_node.
     """
 
     # Conversation history is append-only
@@ -45,9 +52,8 @@ class GraphState(TypedDict, total=False):
     consecutive_empty_steps: int
     budget_warning_emitted: bool
 
-    # Content of the most recent successful tool result; set by execute_node when a ToolResult has status ToolStatus.OK.
-    # Used by finalize_node as a deterministic fallback source, so the fallback does not rely on a
-    # textual heuristic over tool message content.
+    # Set by execute_node only for ToolStatus.OK; used by finalize_node's deterministic fallback
+    # so the fallback never relies on a textual heuristic over tool message content.
     last_tool_ok: str | None
 
     # Graph-local pending values
@@ -59,8 +65,7 @@ class GraphState(TypedDict, total=False):
     answer: str | None
     result: AgentResult
 
-    # Finalization after max_steps: needs_finalization is set by decide_node only for BUDGET_STEPS, consumed and
-    # reset by finalize_node. finalization is set by finalize_node and read by finish_node.
+    # Finalization after max_steps
     needs_finalization: bool
     finalization: Finalization
 

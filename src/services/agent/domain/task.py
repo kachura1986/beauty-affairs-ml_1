@@ -10,11 +10,8 @@ class Task(BaseModel):
     """
     A single agent_graph task.
 
-    Attributes:
-        system_prompt (str): System prompt used to build the context window.
-        initial_messages (list[dict[str, Any]]): Append-only conversation history the run starts from.
-        postcondition (Callable[[str], tuple[bool, str]] | None): Optional final-answer verifier; returns ``(ok, note)``.
-        budget_limits (BudgetLimits): Resource limits used to build the run budget.
+    CONTRACT: ``initial_messages`` is the append-only starting history — the run may add to it, never rewrite it.
+    ``postcondition``, when set, is called on the final answer and must return ``(ok, note)``.
     """
 
     model_config = ConfigDict(frozen=True)

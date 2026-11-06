@@ -12,9 +12,10 @@ from ..state import AgentContext, GraphState
 
 async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     """
-    Equivalent of Agent.execute_tools().
+    Execute pending tool calls sequentially and pair each with a tool message.
 
-    Tool calls are still executed sequentially, exactly as in the original implementation.
+    INVARIANT: every pending call receives exactly one tool message, on every exit path.
+    Never use `break` — an unpaired assistant tool_call breaks the chat protocol.
 
     Args:
         state (GraphState): The current state of the graph.
@@ -37,13 +38,10 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
     history_updates: list[dict[str, Any]] = []
     termination_reason: TerminationReason | None = None
 
-    # INVARIANT: len(history_updates) == len(state['pending_tool_calls']) on every exit path.
-    # Never use `break` here — every call must receive a matching tool-message.
     for call in state['pending_tool_calls']:
         fp = ctx.tools.fingerprint(call)
 
-        # Step 1. Run is already terminating: report this call and every
-        # remaining one as skipped, so the assistant tool_calls stay paired.
+        # Run is already terminating: report this call and every remaining one as skipped.
         if termination_reason is not None:
             history_updates.append(build_tool_message(
                 call,
@@ -51,15 +49,14 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
             ))
             continue
 
-        # Step 2. This exact call already failed irrecoverably: return a
-        # structured non-retryable error instead of an observation.
+        # This exact call already failed irrecoverably: return a structured non-retryable error.
         if fp in failed_set:
             history_updates.append(build_tool_message(call, already_failed_result(call.get('name', '?'))))
 
             continue
 
-        # Step 3. Count repeated identical actions; exceeding the limit
-        # terminates the run but does not skip this call's response.
+        # Count repeated identical actions; exceeding the limit terminates the run
+        # but does not skip this call's response.
         count = action_counts.get(fp, 0) + 1
         action_counts[fp] = count
 
@@ -67,9 +64,9 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
             termination_reason = TerminationReason.REPEATED_ACTION
             history_updates.append(build_tool_message(call, repeated_action_result(call.get('name', '?'))))
 
-            continue  # remaining calls are handled by branch (1)
+            continue  # remaining calls are handled by the termination branch above
 
-        # Step 4. Pre-flight: budget may have expired since _request_llm.
+        # Pre-flight: budget may have expired since the LLM step.
         # `remaining` is computed once and reused for invoke() — no recomputation.
         remaining = budget.remaining_seconds()
         if remaining <= 0:
@@ -80,7 +77,7 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
             ))
             continue
 
-        # Step 5. Execute the tool call with a timeout capped by both the remaining wall-clock budget and
+        # Execute with a timeout capped by both the remaining wall-clock budget and
         # the per-tool ceiling (the latter is applied inside invoke()).
         t0 = time.monotonic()
         res = await ctx.tools.invoke(call, timeout=remaining)
@@ -100,8 +97,8 @@ async def execute_node(state: GraphState, runtime: Runtime[AgentContext]) -> dic
 
         history_updates.append(build_tool_message(call, res))
 
-        # Step 6. Hard budget check after each call: record the reason but
-        # keep iterating so every remaining call still gets a response.
+        # Hard budget check after each call: record the reason but keep iterating
+        # so every remaining call still gets a response.
         reason = budget.exceeded_without_steps()
         if reason:
             termination_reason = reason

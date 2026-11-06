@@ -11,23 +11,16 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
     """
     Synthesize a final answer after max_steps has been exhausted.
 
-    Preconditions (enforced here, not in FinalizeService):
-        state['termination_reason'] == TerminationReason.BUDGET_STEPS.
-        state['needs_finalization'] is True (set by decide_node only for BUDGET_STEPS).
-        state['answer'] is None.
+    CONTRACT: caller guarantees termination_reason == BUDGET_STEPS and answer is None;
+    needs_finalization is reset on every return path so it never leaks past this node.
 
-    This is the only place where an LLM call may run without can_start_step(); the exception is bounded to exactly
-    one call and gated by policy.finalize_on_max_steps and hard-budget checks.
-
-    Every return path resets state['needs_finalization'] to False, so the flag never leaks past this node
-    into finish_node or subsequent debugging.
-
-    All budget/LLM accounting and trace.error(kind='finalization_*') live in
-    FinalizeService.run; this node only orchestrates.
+    The only place where an LLM call may run without can_start_step(); bounded to exactly one call
+    and gated by policy.finalize_on_max_steps and hard-budget checks. All budget/LLM accounting and
+    trace.error(kind='finalization_*') live in FinalizeService.run; this node only orchestrates.
 
     Args:
-        state (GraphState): The current graph state.
-        runtime (Runtime[AgentContext]): Runtime for the graph.
+    state (GraphState): The current graph state.
+    runtime (Runtime[AgentContext]): Runtime for the graph.
 
     Returns:
         dict[str, Any]: Result of the node.

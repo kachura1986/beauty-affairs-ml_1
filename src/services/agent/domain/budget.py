@@ -10,16 +10,8 @@ class BudgetLimits(BaseModel):
     """
     Resource limits for an agent_graph run.
 
-    Attributes:
-        max_steps (int): Maximum number of LLM decision steps allowed. Once the limit is reached, the graph may perform
-            one additional finalization LLM call (with tools disabled) to synthesize a final answer from the collected
-            history, provided ``AgentPolicy.finalize_on_max_steps`` is enabled and the remaining wall-clock and
-            token budgets allow it. This extra call does not increment the step counter.
-        max_seconds (float): Maximum wall-clock time allowed for the run, in seconds.
-        max_tokens (int): Token budget for LLM input and output tokens.
-        max_cost_usd (float): Cost budget for LLM usage, in USD. A value of ``0`` means
-            a free model and free tools: the run proceeds as long as no nonzero cost is
-            recorded, and terminates as soon as any nonzero cost is reported.
+    CONTRACT: ``max_cost_usd == 0`` means a free model — the run proceeds as long as no nonzero cost is
+    recorded. The extra finalization call after ``max_steps`` does not increment the step counter.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -46,17 +38,8 @@ class Budget(BaseModel):
     """
     Tracks resource usage against the configured limits of an agent_graph run.
 
-    The budget tracks LLM decision steps, elapsed wall-clock time, consumed input and output tokens,
-    and accumulated LLM cost. Limits are checked by the agent_graph before and after resource-consuming operations,
-    so token, time, and cost usage may temporarily exceed their configured limits before execution is stopped.
-
-    Attributes:
-        limits (BudgetLimits): Resource limits configured for the run.
-        started (float): Monotonic timestamp used as the budget start time. Defaults to
-            ``time.monotonic()`` when the budget is created.
-        steps (int): Number of LLM decision steps executed so far.
-        tokens (int): Total number of input and output LLM tokens consumed.
-        cost_usd (float): Total accumulated LLM cost in USD.
+    CONTRACT: usage is checked before/after resource-consuming operations, so tokens, time, and cost may
+    temporarily exceed their limits before the run is stopped.
     """
 
     model_config = ConfigDict(validate_assignment=True)
@@ -81,7 +64,7 @@ class Budget(BaseModel):
         Return the remaining wall-clock time before the configured limit is reached.
 
         Returns:
-            float: Remaining time in seconds. Returns ``0.0`` when the limit has been reached or exceeded.
+            float: Remaining time in seconds, clamped at ``0.0`` when the limit is reached or exceeded.
         """
         return max(0.0, self.limits.max_seconds - self.elapsed())
 
@@ -90,8 +73,7 @@ class Budget(BaseModel):
         Return the remaining token budget.
 
         Returns:
-            int: Remaining number of input and output tokens before the configured limit is reached.
-            Returns ``0`` when the limit has been reached or exceeded.
+            int: Remaining tokens, clamped at ``0`` when the limit is reached or exceeded.
         """
         return max(0, self.limits.max_tokens - self.tokens)
 
@@ -99,9 +81,11 @@ class Budget(BaseModel):
         """
         Return the remaining LLM cost budget.
 
+        CONTRACT: ``max_cost_usd == 0`` means a free model → returns ``math.inf`` (never a hard stop
+        on cost), so callers must not treat the result as a finite cap.
+
         Returns:
-            float: Remaining budget in USD. Returns ``math.inf`` when ``max_cost_usd == 0``
-            (free model), and ``0.0`` when the limit has been reached or exceeded.
+            float: Remaining budget in USD; ``math.inf`` for a free model, ``0.0`` when exhausted.
         """
         if self.limits.max_cost_usd == 0:
             return math.inf
@@ -113,8 +97,7 @@ class Budget(BaseModel):
         Return the number of remaining LLM decision steps.
 
         Returns:
-            int: Number of LLM decision steps that can still be executed. Returns ``0``
-            when the step limit has been reached or exceeded.
+            int: Remaining steps, clamped at ``0`` when the limit is reached or exceeded.
         """
         return max(0, self.limits.max_steps - self.steps)
 
@@ -129,14 +112,11 @@ class Budget(BaseModel):
 
     def exceeded_without_steps(self) -> TerminationReason | None:
         """
-        Check whether any configured budget limit other than steps has been reached or exceeded.
+        Check whether any budget limit other than steps has been reached or exceeded.
 
-        Limits are checked in the following order: time, tokens, and cost.
-        The step limit is intentionally not checked so that the final allowed LLM step
-        can be processed before the run is stopped.
-
-        ``max_cost_usd == 0`` means a free model and free tools: the run proceeds as long as
-        no nonzero cost is recorded, and terminates as soon as any nonzero cost is reported.
+        CONTRACT: steps are intentionally not checked here — the final allowed LLM step must be processed
+        before the run is stopped. Checks are ordered time → tokens → cost.
+        ``max_cost_usd == 0`` means a free model: the run terminates as soon as any nonzero cost is reported.
 
         Returns:
             TerminationReason | None: A budget reason if a limit has been reached or exceeded, otherwise ``None``.
@@ -171,11 +151,9 @@ class Budget(BaseModel):
         """
         Calculate resource utilization relative to the configured limits.
 
-        A value of ``1.0`` means that the corresponding limit has been reached. Values above ``1.0`` are
-        possible for time, tokens, and cost because usage is checked after resource-consuming operations.
-
         Returns:
-            dict[str, float]: Mapping with utilization ratios for ``steps``, ``time``, ``tokens``, and ``cost``.
+            dict[str, float]: Utilization ratios for ``steps``, ``time``, ``tokens``, and ``cost``.
+            Values may exceed ``1.0`` because usage is checked after resource-consuming operations.
         """
         return {
             'steps': self.steps / max(self.limits.max_steps, 1),
@@ -186,9 +164,7 @@ class Budget(BaseModel):
 
     def soft_warning(self) -> str | None:
         """
-        Return a warning when any budget utilization reaches 80%.
-
-        The warning is intended to give the agent_graph an opportunity to finish its work
+        Return a warning when any budget utilization reaches 80%, so the agent can finish
         before a hard budget check stops the run.
 
         Returns:
@@ -209,8 +185,7 @@ class Budget(BaseModel):
         Return a human-readable snapshot of the current budget usage.
 
         Returns:
-            dict[str, str]: Mapping containing current usage and configured limits for steps, tokens, cost, and
-            elapsed wall-clock time.
+            dict[str, str]: Usage and limits for steps, tokens, cost, and elapsed wall-clock time.
         """
         return {
             'steps': f'{self.steps}/{self.limits.max_steps}',
