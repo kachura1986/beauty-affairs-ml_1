@@ -54,5 +54,9 @@ class Settings(BaseSettings):
     TOOL_DEFAULT_TIMEOUT_SECONDS: float = 30.0
     TOOL_DEFAULT_MAX_OUTPUT_CHARS: int = 15000
 
+    # Retry
+    LLM_RETRY_BACKOFF_SECONDS: float = 1.0
+    LLM_RETRY_MIN_TIMEOUT_SECONDS: float = 5.0
+
 
 settings = Settings()

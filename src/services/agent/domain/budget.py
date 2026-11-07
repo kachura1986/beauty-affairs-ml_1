@@ -19,8 +19,11 @@ class BudgetLimits(BaseModel):
     max_steps: int = Field(
         gt=0,
         description=(
-            "Maximum number of LLM decision steps. When the limit is reached, one additional finalization call"
-            "(tools disabled) may be made if allowed by policy and remaining wall-clock / token budgets."
+            "Maximum number of LLM decision steps. Each retry of a transient failed call counts as one step: "
+            "the budget is consumed by physical invocations, not logical attempts. ``max_steps=1`` disables "
+            "retry; to tolerate a transient 429/503, configure ``max_steps >= 2``. When the limit is reached, "
+            "one additional finalization call (tools disabled) may be made if allowed by policy and remaining "
+            "wall-clock / token budgets."
         ),
     )
     max_seconds: float = Field(gt=0, description="Maximum wall-clock time in seconds.")
@@ -46,7 +49,14 @@ class Budget(BaseModel):
 
     limits: BudgetLimits
     started: float = Field(default_factory=time.monotonic, description="Monotonic start timestamp.")
-    steps: int = Field(default=0, ge=0, description="LLM decision steps executed.")
+    steps: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "LLM decision steps executed, including retries. Incremented before each LLM call attempt, "
+            "so failed calls are also accounted for."
+        ),
+    )
     tokens: int = Field(default=0, ge=0, description="Total tokens consumed.")
     cost_usd: float = Field(default=0.0, ge=0, description="Accumulated cost in USD.")
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 
@@ -24,14 +25,14 @@ class LLMStepService:
     async def run(
             self, *, budget: Budget, context_window: AgentContextWindow,
     ) -> tuple[Reply | None, TerminationReason | None]:
-        """Execute exactly one LLM decision step.
+        """Execute one LLM decision step, with at most one retry on a transient error.
 
         CONTRACT: ``budget.can_start_step()`` must be True — guaranteed by the only caller,
         :func:`decide_node`, via :func:`_check_budget`; the step budget is intentionally not re-checked
         here to keep a single enforcement point. Mutates ``budget`` by reference; callers must pass
-        ``budget=state['budget']``, never a copy. When ``reason`` is not ``None``, ``reply`` may still be valid:
-        a completed LLM call that itself pushed the run over a hard budget is preserved so the caller can decide
-        whether it qualifies as a final answer.
+        ``budget=state['budget']``, never a copy. When ``reason`` is not ``None``, ``reply`` may still be
+        valid: a completed LLM call that itself pushed the run over a hard budget is preserved so the
+        caller can decide whether it qualifies as a final answer.
 
         Args:
             budget (Budget): Budget for the request (mutated by reference).
@@ -76,14 +77,7 @@ class LLMStepService:
         t0 = time.monotonic()
 
         try:
-            chat = getattr(self._llm, 'chat', None)
-
-            if chat is None:
-                raise ValueError(f"{self._llm.__class__.__name__} does not support agent chat()")
-
-            timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
-            reply = await chat(context_window.messages, self._tools.schemas(), timeout, context_window.system)
-
+            return await self._attempt(budget, context_window, t0)
         except Exception as exc:  # noqa: BLE001
             latency_ms = int((time.monotonic() - t0) * 1000)
 
@@ -101,17 +95,105 @@ class LLMStepService:
 
                 return None, TerminationReason.BUDGET_TIME
 
-            # `kind` distinguishes transient vs permanent for post-mortem; TerminationReason is unchanged.
-            kind = 'llm_transient' if _is_transient_llm_error(exc) else 'llm_error'
+            # llm_transient is emitted for every transient failure, regardless of whether a retry follows.
+            first_kind = 'llm_transient' if _is_transient_llm_error(exc) else 'llm_error'
             self._trace.error(
                 step=budget.steps,
-                kind=kind,
+                kind=first_kind,
                 message=type(exc).__name__,
                 latency_ms=latency_ms,
                 budget=budget,
             )
 
-            return None, TerminationReason.LLM_ERROR
+            if first_kind != 'llm_transient' or not self._can_retry(budget):
+                return None, TerminationReason.LLM_ERROR
+
+            # Retry bookkeeping: the step is counted before the second attempt so a failed retry is
+            # also accounted for; backoff is capped at remaining/4 to leave time for the retry itself.
+            budget.steps += 1
+            backoff = self._backoff(budget.remaining_seconds())
+            self._trace.error(
+                step=budget.steps,
+                kind='llm_retry',
+                message=type(exc).__name__,
+                latency_ms=latency_ms,
+                budget=budget,
+            )
+
+            if backoff > 0:
+                await asyncio.sleep(backoff)
+
+            t0 = time.monotonic()
+
+            try:
+                return await self._attempt(budget, context_window, t0)
+            except Exception as retry_exc:  # noqa: BLE001
+                latency_ms = int((time.monotonic() - t0) * 1000)
+
+                _log_internal_exception("LLM retry failed.", retry_exc, step=budget.steps)
+
+                if budget.remaining_seconds() <= 0:
+                    self._trace.error(
+                        step=budget.steps,
+                        kind='llm_timeout',
+                        message=type(retry_exc).__name__,
+                        latency_ms=latency_ms,
+                        budget=budget,
+                    )
+
+                    return None, TerminationReason.BUDGET_TIME
+
+                kind = 'llm_transient' if _is_transient_llm_error(retry_exc) else 'llm_error'
+                self._trace.error(
+                    step=budget.steps,
+                    kind=kind,
+                    message=type(retry_exc).__name__,
+                    latency_ms=latency_ms,
+                    budget=budget,
+                )
+
+                return None, TerminationReason.LLM_ERROR
+
+    async def _attempt(
+            self, budget: Budget, context_window: AgentContextWindow, t0: float,
+    ) -> tuple[Reply | None, TerminationReason | None]:
+        """One bounded LLM call attempt.
+
+        CONTRACT: exceptions from ``chat`` propagate unchanged — :meth:`run` classifies them, emits the
+        appropriate trace event, and (for transient errors) schedules at most one retry. The TOCTOU guard
+        (``remaining <= 0``) returns a sentinel tuple instead of raising: the budget expired between
+        :meth:`run`'s preflight and this call (or between the first attempt and the retry), which is not
+        an error.
+
+        Args:
+            budget (Budget): Budget for the request (mutated by reference on success).
+            context_window (AgentContextWindow): Context for the request.
+            t0 (float): Monotonic timestamp captured by the caller before invoking this helper;
+                used to compute ``latency_ms`` for the trace record.
+
+        Returns:
+            tuple[Reply | None, TerminationReason | None]:
+                - ``(reply, None)``: successful call within budget.
+                - ``(reply, reason)``: successful call that pushed the run over a hard budget; the caller
+                  decides if the reply qualifies as a final answer.
+                - ``(None, BUDGET_TIME)``: TOCTOU guard — ``chat`` was not invoked.
+
+        Raises:
+            Exception: Any exception raised by ``chat`` is propagated unchanged.
+        """
+        remaining = budget.remaining_seconds()
+
+        if remaining <= 0:
+            return None, TerminationReason.BUDGET_TIME
+
+        timeout = min(remaining, settings.LLM_DEFAULT_TIMEOUT_SECONDS)
+
+        chat = getattr(self._llm, 'chat', None)
+
+        if chat is None:
+            raise ValueError(f"{self._llm.__class__.__name__} does not support agent chat()")
+
+        reply = await chat(context_window.messages, self._tools.schemas(), timeout, context_window.system)
 
         latency_ms = int((time.monotonic() - t0) * 1000)
 
@@ -130,7 +212,46 @@ class LLMStepService:
         # a finished step into an empty AgentResult. decide_node decides if it's a final answer.
         reason = budget.exceeded_without_steps()
 
-        if reason:
-            return reply, reason
+        return reply, reason
 
-        return reply, None
+    def _can_retry(self, budget: Budget) -> bool:
+        """Return True if a retry is allowed by every hard limit.
+
+        The ``remaining_tokens`` check is defensive: :meth:`run` already verified
+        ``remaining_tokens() >= MIN_EXPECTED_TOKENS`` in preflight, and a failed attempt does not consume
+        tokens (``record_llm`` runs only on success). The check guards against future changes where
+        ``record_llm`` might run before a failure is raised.
+
+        Args:
+            budget (Budget): Budget for the request (read-only).
+
+        Returns:
+            bool: True if a retry is allowed by every hard limit.
+        """
+        if not budget.can_start_step():
+            return False
+
+        remaining = budget.remaining_seconds()
+        backoff = self._backoff(remaining)
+
+        # The retry needs time to back off AND time to actually run the second chat call;
+        # LLM_RETRY_MIN_TIMEOUT_SECONDS reserves the latter.
+        if remaining <= backoff + settings.LLM_RETRY_MIN_TIMEOUT_SECONDS:
+            return False
+
+        return budget.remaining_tokens() >= settings.MIN_EXPECTED_TOKENS
+
+    @staticmethod
+    def _backoff(remaining_seconds: float) -> float:
+        """Return the retry backoff derived from the remaining wall-clock time.
+
+        Capped at ``remaining_seconds / 4`` so the retry itself still has time to run after the sleep;
+        without the cap, a small remaining budget would be entirely consumed by the backoff.
+
+        Args:
+            remaining_seconds (float): Remaining wall-clock budget, in seconds.
+
+        Returns:
+            float: Backoff duration in seconds, never exceeding ``remaining_seconds / 4``.
+        """
+        return min(settings.LLM_RETRY_BACKOFF_SECONDS, remaining_seconds / 4)
