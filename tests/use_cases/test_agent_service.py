@@ -1,5 +1,6 @@
 """Tests for AgentService concurrency limiting."""
 import asyncio
+import time
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -67,6 +68,29 @@ class _GatedLLM:
         return Reply(text="ok")
 
 
+class _DelayLLM:
+    """LLM stub whose chat() sleeps for ``delay`` seconds.
+
+    Provides the async yield that makes concurrent execution observable: without a real await inside
+    the critical section, even a buggy concurrency would appear serialized.
+    """
+
+    model_name = "fake"
+
+    def __init__(self, delay: float = 0.1) -> None:
+        self._delay = delay
+
+    async def chat(
+            self,
+            messages,
+            tools=None,
+            timeout=None,
+            system_prompt=None,
+    ) -> Reply:
+        await asyncio.sleep(self._delay)
+        return Reply(text="ok")
+
+
 @pytest.fixture
 def service_kwargs(tmp_path):
     return dict(
@@ -86,11 +110,14 @@ async def test_semaphore_limits_concurrent_runs(service_kwargs, monkeypatch):
     concurrent = 0
     peak = 0
     gate = asyncio.Event()
+    two_entered = asyncio.Event()
 
     async def fake_run_graph(*args, **kwargs):
         nonlocal concurrent, peak
         concurrent += 1
         peak = max(peak, concurrent)
+        if concurrent == 2:
+            two_entered.set()
         try:
             await gate.wait()
             return _fake_result()
@@ -107,8 +134,8 @@ async def test_semaphore_limits_concurrent_runs(service_kwargs, monkeypatch):
         for _ in range(4)
     ]
 
-    # Let all four attempt acquisition; only 2 must reach run_graph.
-    await asyncio.sleep(0.05)
+    # Deterministically wait until two runs are inside run_graph.
+    await asyncio.wait_for(two_entered.wait(), timeout=5.0)
     assert peak == 2
 
     gate.set()
@@ -133,9 +160,9 @@ async def test_validation_errors_do_not_consume_slot(service_kwargs, monkeypatch
     semaphore = asyncio.Semaphore(1)
     service = AgentService(**service_kwargs, semaphore=semaphore)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Messages cannot be empty"):
         await service.run([])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="only 'user' and 'assistant' are allowed"):
         await service.run([_msg(role="system", content="bad")])
 
     # _value is private, but in a test it proves the slot was never acquired.
@@ -168,11 +195,9 @@ async def test_queue_wait_not_counted_in_budget(service_kwargs):
 
     # First run holds the slot while its LLM call is blocked.
     first = asyncio.create_task(service.run([_msg()]))
-    await llm.entered.wait()
+    await asyncio.wait_for(llm.entered.wait(), timeout=5.0)
 
-    # Second run queues on the semaphore. The queue wait (0.3s) exceeds the
-    # run's 0.2s wall-clock limit, so a budget started before acquisition
-    # would surface as BUDGET_TIME.
+    # Second run queues on the semaphore; the wait exceeds max_seconds.
     second = asyncio.create_task(service.run([_msg()]))
 
     await asyncio.sleep(0.3)
@@ -182,3 +207,52 @@ async def test_queue_wait_not_counted_in_budget(service_kwargs):
 
     assert result.reason == TerminationReason.DONE_UNVERIFIED
     assert result.answer == "ok"
+
+
+async def test_semaphore_serializes_runs_over_time(service_kwargs, monkeypatch):
+    """With Semaphore(1), run_graph intervals do not overlap.
+
+    run() includes the semaphore wait, so its intervals always overlap for queued runs; run_graph runs entirely inside
+    the critical section. delay=100ms: large enough to guarantee overlap if runs were concurrent.
+    """
+    import use_cases.agent_service as agent_service_mod
+
+    llm = _DelayLLM(delay=0.1)
+    kwargs = {
+        **service_kwargs,
+        "llm": llm,
+        "tools": ToolRegistry([], default_timeout_seconds=1.0, max_output_chars=1000),
+        "budget_limits": BudgetLimits(
+            max_steps=1, max_seconds=2.0, max_tokens=1000, max_cost_usd=0,
+        ),
+    }
+    semaphore = asyncio.Semaphore(1)
+    service = AgentService(**kwargs, semaphore=semaphore)
+
+    run_graph_intervals: list[tuple[float, float]] = []
+    real_run_graph = agent_service_mod.run_graph
+
+    async def timed_run_graph(*args, **kwargs):
+        start = time.monotonic()
+        try:
+            return await real_run_graph(*args, **kwargs)
+        finally:
+            run_graph_intervals.append((start, time.monotonic()))
+
+    monkeypatch.setattr(agent_service_mod, "run_graph", timed_run_graph)
+
+    n = 3
+    tasks = [asyncio.create_task(service.run([_msg()])) for _ in range(n)]
+    await asyncio.gather(*tasks)
+
+    assert len(run_graph_intervals) == n
+
+    # Sort by start time: append order is by completion.
+    run_graph_intervals.sort(key=lambda t: t[0])
+
+    for (start_a, end_a), (start_b, _end_b) in zip(
+            run_graph_intervals, run_graph_intervals[1:]
+    ):
+        assert end_a <= start_b, (
+            f"runs overlapped: previous ended at {end_a}, next started at {start_b}"
+        )

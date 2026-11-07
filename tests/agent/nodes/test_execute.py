@@ -382,6 +382,47 @@ async def test_execute_sets_last_tool_ok_on_success(trace, make_context, make_st
     assert "hi" in result["last_tool_ok"]
 
 
+async def test_execute_last_tool_ok_is_truncated(trace, make_context, make_state, make_registry):
+    """last_tool_ok carries the tool's truncated content.
+
+    The cap is applied in ToolRegistry.invoke → truncate_for_model (per-tool
+    max_output_chars wins over the registry default); execute_node only
+    copies res.content. This test pins the source of the cap so a future
+    refactor cannot silently move truncation into finalize's fallback
+    (double-truncation) or drop it entirely.
+
+    Both the tool message seen by the model and last_tool_ok are bounded by
+    the per-tool cap. The two are asserted independently: a formatting change
+    to build_tool_message must not be able to break the last_tool_ok contract.
+    """
+
+    async def huge_fn(**kwargs):
+        return 'x' * 100_000
+
+    registry = make_registry(
+        Tool(
+            name="huge",
+            description="",
+            fn=huge_fn,
+            args_model=EchoArgs,
+            max_output_chars=500,  # per-tool cap dominates the registry default (15000)
+        ),
+    )
+    ctx = make_context(tools=registry)
+    state = make_state(ctx)
+    state["pending_tool_calls"] = [{"id": "c1", "name": "huge", "arguments": {}}]
+
+    result = await execute_node(state, FakeRuntime(ctx))
+
+    assert result["last_tool_ok"] is not None
+    assert len(result["last_tool_ok"]) <= 500  # per-tool cap applied
+
+    # The tool message seen by the model is bounded by the same cap.
+    tool_msg = result["history"][0]
+    assert tool_msg["role"] == "tool"
+    assert len(tool_msg["content"]) <= 500
+
+
 async def test_execute_keeps_last_tool_ok_on_subsequent_error(trace, make_context, make_state, make_registry):
     """A failed round must not overwrite an earlier successful result — otherwise the fallback degrades to an error explanation instead of the useful data."""
     ok_call = {"id": "c1", "name": "echo", "arguments": {"value": "saved"}}

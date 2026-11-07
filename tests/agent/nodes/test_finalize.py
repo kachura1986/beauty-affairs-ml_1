@@ -524,6 +524,27 @@ def test_deterministic_fallback_uses_last_tool_ok():
     assert result.endswith('\n{"id": 1, "name": "ok"}')
 
 
+def test_deterministic_fallback_does_not_cap_last_tool_ok():
+    """_deterministic_fallback must not re-truncate last_tool_ok.
+
+    last_tool_ok is already capped by ToolRegistry.invoke → truncate_for_model
+    (per-tool max_output_chars or TOOL_DEFAULT_MAX_OUTPUT_CHARS). A second cap
+    here would double-truncate the answer and embed two markers. This test
+    pins the responsibility boundary: the cap lives upstream, not here.
+
+    The ``big in result`` assertion is the sole contract guard: any
+    re-truncation drops the contiguous 100_000-char run, so the full
+    ``big`` can no longer appear in the result. Format details (exact
+    position of last_tool_ok, marker spelling) are intentionally not
+    asserted — they are implementation choices, not the contract.
+    """
+    big = 'x' * 100_000  # above any plausible per-tool or registry default
+    result = _deterministic_fallback([{"role": "tool", "content": big}], big)
+
+    assert result is not None
+    assert big in result  # passed through verbatim — no re-truncation
+
+
 def test_deterministic_fallback_returns_error_explanation_when_all_errors():
     """All-error history (last_tool_ok=None) yields an error explanation, not None."""
     history = [
@@ -641,6 +662,60 @@ async def test_max_steps_1_tool_fails_and_llm_fails_returns_fallback_explanation
     assert result.answer is not None
     assert "ERROR" in result.answer
     assert result.finalization == Finalization.FALLBACK
+
+
+async def test_e2e_huge_tool_result_fallback_is_capped(trace, make_registry):
+    """End-to-end: a huge tool result does not inflate the fallback answer.
+
+    Tool returns 100 KB; the finalize LLM reply is empty → deterministic
+    fallback. The answer must be bounded by the per-tool max_output_chars
+    (plus a short prefix), proving the cap propagates from ToolRegistry
+    through execute_node.last_tool_ok into the fallback answer.
+
+    Expected upper bound: ~90 (prefix) + 1 (\\n) + 500 (cap) ≈ 591. The
+    first assertion uses 1000 — comfortable slack for prefix tweaks. The
+    second is a backstop against a weakened first threshold: a regression
+    that lets the full 100 KB through produces ~100_090 chars.
+    """
+
+    async def huge_fn(**kwargs):
+        return 'x' * 100_000
+
+    call = {"id": "c1", "name": "huge", "arguments": {}}
+    llm = FakeLLM(
+        reply(text="", tool_calls=[call]),
+        reply(text=""),  # empty finalize → fallback path
+    )
+    policy = AgentPolicy(empty_limit=3, repeat_limit=3)
+    registry = make_registry(
+        Tool(
+            name="huge",
+            description="",
+            fn=huge_fn,
+            args_model=EchoArgs,
+            max_output_chars=500,
+        ),
+    )
+
+    result = await run_graph(
+        task=_task(max_steps=1),
+        tools=registry,
+        llm=llm,
+        trace=trace,
+        policy=policy,
+    )
+
+    # Route sanity: fallback was actually taken (not LLM synthesis, not error).
+    assert result.finalization == Finalization.FALLBACK
+    assert result.answer is not None
+    assert result.answer.startswith(
+        "The model could not produce a final answer within the step limit. "
+        "Here is the most recent tool result:"
+    )
+    # Primary bound: a 500-char cap cannot inflate the answer beyond ~600.
+    assert len(result.answer) < 1000
+    # Backstop: catches a regression that drops truncation entirely (~100_090 chars).
+    assert len(result.answer) < 100_000
 
 
 async def test_multiple_tool_calls_at_max_steps(trace, make_registry):
