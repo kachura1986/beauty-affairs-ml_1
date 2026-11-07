@@ -13,7 +13,15 @@ from services.agent.domain import (
     TerminationReason,
 )
 
-from _testing import FakeLLM, FakeRuntime, make_context_window, rate_limit_error, reply
+from _testing import (
+    _FakeAPIStatusError,
+    FakeLLM,
+    FakeRuntime,
+    internal_server_error,
+    make_context_window,
+    rate_limit_error,
+    reply,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -146,10 +154,13 @@ async def test_request_llm_error_path_does_not_copy_messages(trace, make_context
 
 
 async def test_request_llm_timeout_returns_budget_time(trace, make_context, monkeypatch):
-    """An LLM exception on an exhausted wall-clock budget yields BUDGET_TIME, not LLM_ERROR.
+    """The _attempt TOCTOU guard short-circuits before chat() when the wall-clock budget expired.
 
-    The pinned elapsed() call count guards against extra budget checks: a fallback
-    default would silently absorb them, so the count is asserted explicitly.
+    After Phase B1, run()'s preflight passes (elapsed #1 = 0.0, remaining = 1.0), but
+    _attempt's TOCTOU guard sees elapsed #2 = 2.0 with max_seconds=1.0 → remaining = 0 →
+    returns (None, BUDGET_TIME) without calling chat(). Both assertions below changed from
+    the pre-B1 shape (llm.calls == 1, elapsed_calls == 3) — the structure of the call
+    path is intentionally different now.
     """
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(llm=llm)
@@ -173,11 +184,10 @@ async def test_request_llm_timeout_returns_budget_time(trace, make_context, monk
 
     assert result is None
     assert reason == TerminationReason.BUDGET_TIME
-    assert len(llm.calls) == 1
-    # Regression guard: an extra elapsed() call must not be silently absorbed
-    # by a fallback 2.0. Any refactor that adds a budget check to the except
-    # path must update this count deliberately.
-    assert len(elapsed_calls) == 3
+    # TOCTOU guard in _attempt: chat is never called.
+    assert len(llm.calls) == 0
+    # Two calls: run preflight + _attempt guard. trace.error(budget.snapshot()) is not reached.
+    assert len(elapsed_calls) == 2
 
 
 async def test_request_llm_llm_error(trace, make_context):
@@ -729,9 +739,14 @@ async def test_decide_forwards_context_window_to_request_llm(trace, make_context
 # Error classification in the trace (Phase A observability)
 # ---------------------------------------------------------------------------
 
-async def test_request_llm_transient_kind_in_trace(trace, make_context):
-    """A transient LLM error (429) is recorded as kind='llm_transient'."""
-    llm = FakeLLM(errors=[rate_limit_error()])
+async def test_request_llm_transient_kind_in_trace(trace, make_context, fast_retry):
+    """A transient LLM error (429) is recorded as kind='llm_transient'.
+
+    After Phase B1, a transient error triggers a retry. Both attempts fail transiently
+    here; the second error keeps the retry from falling into FakeLLM's empty reply list
+    (IndexError) and fast_retry removes the real backoff from the suite runtime.
+    """
+    llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
@@ -763,3 +778,255 @@ async def test_request_llm_permanent_kind_in_trace(trace, make_context):
     kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
     assert "llm_error" in kinds
     assert "llm_transient" not in kinds
+
+
+# ---------------------------------------------------------------------------
+# Retry (Phase B1)
+# ---------------------------------------------------------------------------
+
+async def test_request_llm_retries_on_429(trace, make_context, fast_retry):
+    """A transient 429 is retried once; the retry success returns the reply with steps=2."""
+    llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert reason is None
+    assert result is not None and result.text == "ok"
+    assert budget.steps == 2
+
+    records = trace.records()
+    error_kinds = [r.get("kind") for r in records if r.get("t") == "error"]
+    assert "llm_transient" in error_kinds
+    assert "llm_retry" in error_kinds
+    step_records = [r for r in records if r.get("t") == "step"]
+    assert len(step_records) == 1
+    assert step_records[0]["step"] == 2
+
+
+async def test_request_llm_retries_on_503(trace, make_context, fast_retry):
+    """A transient 503 is retried once; the retry success returns the reply with steps=2."""
+    llm = FakeLLM(reply(text="ok"), errors=[internal_server_error(503)])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert reason is None
+    assert result is not None and result.text == "ok"
+    assert budget.steps == 2
+
+
+async def test_request_llm_retries_at_most_once(trace, make_context, fast_retry):
+    """Even with plenty of step budget left, a failed retry is terminal — one retry is the maximum."""
+    llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error(), rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.LLM_ERROR
+    assert budget.steps == 2  # not 3 — the failed retry does not trigger another retry
+    assert len(llm.calls) == 2
+    retries = [r for r in trace.records() if r.get("kind") == "llm_retry"]
+    assert len(retries) == 1
+
+
+async def test_request_llm_no_retry_on_400(trace, make_context):
+    """A permanent 400 is not retried, regardless of the remaining step budget."""
+    llm = FakeLLM(errors=[_FakeAPIStatusError(400)])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.LLM_ERROR
+    assert budget.steps == 1
+    kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
+    assert "llm_error" in kinds
+    assert "llm_retry" not in kinds
+
+
+async def test_request_llm_no_retry_when_max_steps_1(trace, make_context):
+    """A transient error with max_steps=1 emits llm_transient, no llm_retry, and returns LLM_ERROR."""
+    llm = FakeLLM(errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.LLM_ERROR
+    assert budget.steps == 1
+    kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
+    assert "llm_transient" in kinds
+    assert "llm_retry" not in kinds
+
+
+async def test_request_llm_no_retry_when_time_exhausted(trace, make_context, monkeypatch):
+    """No retry is attempted when the wall-clock budget expires between the attempt and the except branch."""
+    llm = FakeLLM(errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    # Preflight + _attempt guard see elapsed=0.0 (pass), the except branch sees 15.0
+    # with max_seconds=10 → remaining=0 → BUDGET_TIME, no retry.
+    times = iter([0.0, 0.0, 15.0])
+
+    def fake_elapsed(self):
+        return next(times, 15.0)
+
+    monkeypatch.setattr(Budget, "elapsed", fake_elapsed)
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.BUDGET_TIME
+    kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
+    assert "llm_retry" not in kinds
+
+
+async def test_request_llm_no_retry_when_tokens_insufficient(trace, make_context, monkeypatch):
+    """_can_retry rejects a retry when the token budget shrank below MIN_EXPECTED_TOKENS.
+
+    ``remaining_tokens()`` is called twice: once by run()'s preflight (call #1 — must
+    pass) and once by ``_can_retry`` (call #2 — must reject). The monkeypatch returns
+    different values per call to exercise the ``_can_retry`` token branch without a
+    production-code change.
+    """
+    from core.config import settings
+
+    llm = FakeLLM(reply(text="never"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    call_count = [0]
+
+    def fake_remaining_tokens(self):
+        call_count[0] += 1
+        if call_count[0] == 1:  # run preflight: pass
+            return settings.MIN_EXPECTED_TOKENS
+        return settings.MIN_EXPECTED_TOKENS - 1  # _can_retry: reject
+
+    monkeypatch.setattr(Budget, "remaining_tokens", fake_remaining_tokens)
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert reason == TerminationReason.LLM_ERROR
+    assert len(llm.calls) == 1  # no retry
+    assert not any(r.get("kind") == "llm_retry" for r in trace.records())
+
+
+async def test_request_llm_retry_consumes_step(trace, make_context, fast_retry):
+    """A successful retry consumes a second step — budget.steps reflects physical invocations."""
+    llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert reason is None
+    assert result is not None and result.text == "ok"
+    assert budget.steps == 2
+
+
+async def test_request_llm_retry_does_not_exceed_max_steps(trace, make_context, fast_retry):
+    """With max_steps=2, a failed retry terminates at steps=2 — no third attempt."""
+    llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.LLM_ERROR
+    assert budget.steps == 2
+    assert len(llm.calls) == 2
+
+
+async def test_request_llm_retry_records_real_latency(trace, make_context, fast_retry):
+    """llm_retry.latency_ms reflects the first attempt's real duration (raise_after sleeps before raising)."""
+    llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()], raise_after=0.02)
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    retry_events = [r for r in trace.records() if r.get("kind") == "llm_retry"]
+    assert len(retry_events) == 1
+    assert retry_events[0]["latency_ms"] >= 15
+
+
+async def test_request_llm_retry_records_separate_steps(trace, make_context, fast_retry):
+    """llm_transient records the first attempt's step; llm_retry records the retry's step — they differ."""
+    llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    records = trace.records()
+    transient = [r for r in records if r.get("kind") == "llm_transient"]
+    retry = [r for r in records if r.get("kind") == "llm_retry"]
+    assert len(transient) == 1
+    assert len(retry) == 1
+    assert transient[0]["step"] == 1
+    assert retry[0]["step"] == 2
+
+
+async def test_request_llm_retry_also_emits_llm_transient(trace, make_context, fast_retry):
+    """llm_transient is emitted for every transient failure — including the retry's failure.
+
+    This pins Z2: introducing llm_retry must not silence the llm_transient signal on
+    either attempt; dashboards counting llm_transient lose nothing.
+    """
+    llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    records = trace.records()
+    transient = [r for r in records if r.get("kind") == "llm_transient"]
+    retry = [r for r in records if r.get("kind") == "llm_retry"]
+    assert len(transient) == 2  # original failure + retry failure
+    assert len(retry) == 1

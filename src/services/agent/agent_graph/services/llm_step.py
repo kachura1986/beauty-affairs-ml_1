@@ -9,7 +9,7 @@ from ...context import AgentContextWindow
 from ...domain import Budget, TerminationReason
 from ...tools import ToolRegistry
 from ...trace import Trace
-from .._common import _is_transient_llm_error, _log_internal_exception
+from .._common import _is_transient_llm_error, _log_internal_exception, _retry_backoff
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class LLMStepService:
             # Retry bookkeeping: the step is counted before the second attempt so a failed retry is
             # also accounted for; backoff is capped at remaining/4 to leave time for the retry itself.
             budget.steps += 1
-            backoff = self._backoff(budget.remaining_seconds())
+            backoff = _retry_backoff(budget.remaining_seconds())
             self._trace.error(
                 step=budget.steps,
                 kind='llm_retry',
@@ -232,7 +232,7 @@ class LLMStepService:
             return False
 
         remaining = budget.remaining_seconds()
-        backoff = self._backoff(remaining)
+        backoff = _retry_backoff(remaining)
 
         # The retry needs time to back off AND time to actually run the second chat call;
         # LLM_RETRY_MIN_TIMEOUT_SECONDS reserves the latter.
@@ -240,18 +240,3 @@ class LLMStepService:
             return False
 
         return budget.remaining_tokens() >= settings.MIN_EXPECTED_TOKENS
-
-    @staticmethod
-    def _backoff(remaining_seconds: float) -> float:
-        """Return the retry backoff derived from the remaining wall-clock time.
-
-        Capped at ``remaining_seconds / 4`` so the retry itself still has time to run after the sleep;
-        without the cap, a small remaining budget would be entirely consumed by the backoff.
-
-        Args:
-            remaining_seconds (float): Remaining wall-clock budget, in seconds.
-
-        Returns:
-            float: Backoff duration in seconds, never exceeding ``remaining_seconds / 4``.
-        """
-        return min(settings.LLM_RETRY_BACKOFF_SECONDS, remaining_seconds / 4)

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -46,9 +47,15 @@ def internal_server_error(status_code: int = 503) -> Exception:
 class FakeLLM:
     """Protocol-compatible LLM: returns canned replies or raises scripted errors."""
 
-    def __init__(self, *replies: Reply, errors: list[Exception] | None = None):
+    def __init__(
+            self,
+            *replies: Reply,
+            errors: list[Exception] | None = None,
+            raise_after: float | None = None,
+    ):
         self._replies = list(replies)
         self._errors = list(errors or [])
+        self._raise_after = raise_after
         self.calls: list[dict] = []
         self.model_name = "fake"
 
@@ -60,6 +67,10 @@ class FakeLLM:
             "system_prompt": system_prompt,
         })
         if self._errors:
+            # Optional delay before raising, so latency-sensitive tests can observe
+            # a non-zero duration in the error path. Never applied on the success path.
+            if self._raise_after is not None:
+                await asyncio.sleep(self._raise_after)
             raise self._errors.pop(0)
         return self._replies.pop(0)
 

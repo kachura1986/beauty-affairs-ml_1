@@ -43,8 +43,8 @@ async def _request_llm(
     """
     Thin compatibility wrapper around :class:`LLMStepService`.
 
-    Preserved because existing tests monkeypatch ``nodes._request_llm``
-    (e.g. ``test_decide_forwards_context_window_to_request_llm``). New code should call ``LLMStepService`` directly.
+    Preserved because existing tests monkeypatch ``nodes._request_llm``.
+    New code should call ``LLMStepService`` directly.
 
     Args:
         llm (LLMModel): LLM to use for the request.
@@ -63,8 +63,6 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     """
     Decision step: check budget, build the context window, call the LLM, and route its reply.
 
-    OBSERVE is collapsed into this node because it only built the context window.
-
     Args:
         state (GraphState): The current graph state.
         runtime (Runtime[AgentContext]): Runtime for the graph.
@@ -72,6 +70,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
     Returns:
         dict[str, Any]: Result of the node.
     """
+    # OBSERVE is collapsed into this node because it only built the context window.
     ctx = runtime.context
     budget = state['budget']
 

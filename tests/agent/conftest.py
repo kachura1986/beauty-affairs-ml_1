@@ -68,3 +68,17 @@ def make_state():
         return create_initial_state(ctx.task)
 
     return _make
+
+
+@pytest.fixture
+def fast_retry(monkeypatch):
+    """Shrink retry delays so tests do not sleep on real backoff.
+
+    Both ``LLMStepService`` and ``FinalizeService`` go through ``_retry_backoff``
+    and read settings on every call. Without this fixture, retry tests would add
+    ~1.0s per test to the suite. The fixture lives in conftest so both
+    ``test_decide.py`` and ``test_finalize.py`` see it without duplication.
+    """
+    from core.config import settings
+    monkeypatch.setattr(settings, "LLM_RETRY_BACKOFF_SECONDS", 0.01)
+    monkeypatch.setattr(settings, "LLM_RETRY_MIN_TIMEOUT_SECONDS", 0.01)

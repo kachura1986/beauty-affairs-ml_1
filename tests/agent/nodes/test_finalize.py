@@ -17,7 +17,15 @@ from services.agent.domain import (
 )
 from services.agent.tools import Tool
 
-from _testing import EchoArgs, FakeLLM, FakeRuntime, failing_tool, rate_limit_error, reply
+from _testing import (
+    _FakeAPIStatusError,
+    EchoArgs,
+    FakeLLM,
+    FakeRuntime,
+    failing_tool,
+    rate_limit_error,
+    reply,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -897,9 +905,14 @@ async def test_e2e_trace_jsonl_contains_no_raw_keys_after_validation_error(trace
 # Error classification in the trace (Phase A observability)
 # ---------------------------------------------------------------------------
 
-async def test_finalize_transient_message_in_trace(trace, make_context):
-    """A transient LLM error (429) is recorded as message='llm_transient' inside finalization_fallback."""
-    llm = FakeLLM(errors=[rate_limit_error()])
+async def test_finalize_transient_message_in_trace(trace, make_context, fast_retry):
+    """A transient LLM error (429) is recorded as message='llm_transient' inside finalization_fallback.
+
+    After Phase B2, a transient error triggers a retry. Both attempts fail transiently
+    here; the second error keeps the retry from falling into FakeLLM's empty reply list
+    (IndexError) and fast_retry removes the real backoff from the suite runtime.
+    """
+    llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(
         ctx,
@@ -927,3 +940,119 @@ async def test_finalize_permanent_message_in_trace(trace, make_context):
 
     fallbacks = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
     assert any(r["message"] == "llm_error" for r in fallbacks)
+
+
+# ---------------------------------------------------------------------------
+# Retry (Phase B2)
+# ---------------------------------------------------------------------------
+
+async def test_finalize_retries_on_429(trace, make_context, fast_retry):
+    """A transient 429 triggers one retry; the retry success returns Finalization.LLM and records both events."""
+    llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    result = await finalize_node(state, FakeRuntime(ctx))
+
+    assert result["finalization"] == Finalization.LLM
+    assert result["answer"] == "final"
+
+    records = trace.records()
+    fallbacks = [r for r in records if r.get("kind") == "finalization_fallback"]
+    retries = [r for r in records if r.get("kind") == "finalization_retry"]
+    assert len(fallbacks) == 1
+    assert fallbacks[0]["message"] == "llm_transient"
+    assert len(retries) == 1
+
+
+async def test_finalize_no_retry_on_400(trace, make_context, fast_retry):
+    """A permanent 400 is not retried and is recorded as message='llm_error'."""
+    llm = FakeLLM(errors=[_FakeAPIStatusError(400)])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    result = await finalize_node(state, FakeRuntime(ctx))
+
+    assert result["finalization"] == Finalization.FALLBACK
+
+    records = trace.records()
+    fallbacks = [r for r in records if r.get("kind") == "finalization_fallback"]
+    assert any(r["message"] == "llm_error" for r in fallbacks)
+    assert not any(r.get("kind") == "finalization_retry" for r in records)
+
+
+async def test_finalize_permanent_emits_single_fallback_event(trace, make_context):
+    """A permanent error emits exactly one finalization_fallback event, not two.
+
+    Regression (C6): the explicit trace.error for the first attempt used to be
+    emitted before the retry decision, so a permanent failure was recorded twice —
+    once explicitly, once via _fallback. The any()-style assertions in the
+    message-classification tests cannot catch this; only an exact count can.
+    """
+    llm = FakeLLM(errors=[RuntimeError("boom")])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    fallbacks = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
+    assert len(fallbacks) == 1
+    assert fallbacks[0]["message"] == "llm_error"
+
+
+async def test_finalize_retry_does_not_increment_steps(trace, make_context, fast_retry):
+    """A retry after a transient error must not increment budget.steps.
+
+    Finalize runs out-of-steps by contract; the retry is bounded by wall-clock
+    and tokens only. The test also verifies the retry actually happened — without
+    the trace assertion, the test would pass trivially even if _can_retry had
+    returned False and no retry was attempted.
+    """
+    llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+    assert state["budget"].steps == 1
+
+    result = await finalize_node(state, FakeRuntime(ctx))
+
+    assert result["finalization"] == Finalization.LLM  # retry succeeded
+    assert state["budget"].steps == 1  # NOT incremented by retry
+    assert any(r.get("kind") == "finalization_retry" for r in trace.records())
+
+
+async def test_finalize_retry_records_real_latency(trace, make_context, fast_retry):
+    """llm_retry.latency_ms reflects the first attempt's real duration.
+
+    ``raise_after`` sleeps before raising on the first attempt, so a zero
+    latency would indicate the retry branch was never entered or the trace
+    record was written with a stale timestamp.
+    """
+    llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()], raise_after=0.02)
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    retry_events = [r for r in trace.records() if r.get("kind") == "finalization_retry"]
+    assert len(retry_events) == 1
+    assert retry_events[0]["latency_ms"] >= 15

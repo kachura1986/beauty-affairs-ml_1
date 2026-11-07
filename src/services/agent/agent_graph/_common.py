@@ -2,6 +2,8 @@ import logging
 
 import httpx
 
+from core.config import settings
+
 from ..tools.errors import is_temporary_failure
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,25 @@ def _is_transient_llm_error(exc: Exception) -> bool:
 
     cause = exc.__cause__
     return cause is not None and is_temporary_failure(cause)
+
+
+def _retry_backoff(remaining_seconds: float) -> float:
+    """Return the retry backoff derived from the remaining wall-clock time.
+
+    Capped at ``remaining_seconds / 4`` so the retry itself still has time to run
+    after the sleep; without the cap, a small remaining budget would be entirely
+    consumed by the backoff.
+
+    Shared by :class:`LLMStepService` (decision-step retry) and
+    :class:`FinalizeService` (finalization retry) so both apply the same formula.
+
+    Args:
+        remaining_seconds (float): Remaining wall-clock budget, in seconds.
+
+    Returns:
+        float: Backoff duration in seconds, never exceeding ``remaining_seconds / 4``.
+    """
+    return min(settings.LLM_RETRY_BACKOFF_SECONDS, remaining_seconds / 4)
 
 
 def _log_internal_exception(message: str, exc: Exception, step: int | None = None) -> None:
