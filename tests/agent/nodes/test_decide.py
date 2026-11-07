@@ -13,7 +13,7 @@ from services.agent.domain import (
     TerminationReason,
 )
 
-from _testing import FakeLLM, FakeRuntime, make_context_window, reply
+from _testing import FakeLLM, FakeRuntime, make_context_window, rate_limit_error, reply
 
 
 # ---------------------------------------------------------------------------
@@ -723,3 +723,43 @@ async def test_decide_forwards_context_window_to_request_llm(trace, make_context
 
     assert isinstance(seen["cw"], AgentContextWindow)
     assert "WARNING: more than 80%" in seen["cw"].system
+
+
+# ---------------------------------------------------------------------------
+# Error classification in the trace (Phase A observability)
+# ---------------------------------------------------------------------------
+
+async def test_request_llm_transient_kind_in_trace(trace, make_context):
+    """A transient LLM error (429) is recorded as kind='llm_transient'."""
+    llm = FakeLLM(errors=[rate_limit_error()])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.LLM_ERROR
+    kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
+    assert "llm_transient" in kinds
+    assert "llm_error" not in kinds
+
+
+async def test_request_llm_permanent_kind_in_trace(trace, make_context):
+    """A permanent LLM error (RuntimeError) is recorded as kind='llm_error'."""
+    llm = FakeLLM(errors=[RuntimeError("boom")])
+    ctx = make_context(llm=llm)
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+
+    result, reason = await _request_llm(
+        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        context_window=make_context_window(),
+    )
+
+    assert result is None
+    assert reason == TerminationReason.LLM_ERROR
+    kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
+    assert "llm_error" in kinds
+    assert "llm_transient" not in kinds

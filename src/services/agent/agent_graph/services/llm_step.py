@@ -8,19 +8,13 @@ from ...context import AgentContextWindow
 from ...domain import Budget, TerminationReason
 from ...tools import ToolRegistry
 from ...trace import Trace
-from .._common import _log_internal_exception
+from .._common import _is_transient_llm_error, _log_internal_exception
 
 logger = logging.getLogger(__name__)
 
 
 class LLMStepService:
-    """
-    One bounded LLM decision step: budget pre-flight, error classification,
-    token/cost accounting, trace recording.
-
-    CONTRACT: mutates ``budget`` by reference (``steps``, ``tokens``, ``cost_usd``) —
-    callers must pass ``budget=state['budget']``, never a copy.
-    """
+    """One bounded LLM decision step: budget pre-flight, error classification, token/cost accounting, trace."""
 
     def __init__(self, *, llm: LLMModel, tools: ToolRegistry, trace: Trace) -> None:
         self._llm = llm
@@ -30,15 +24,14 @@ class LLMStepService:
     async def run(
             self, *, budget: Budget, context_window: AgentContextWindow,
     ) -> tuple[Reply | None, TerminationReason | None]:
-        """
-        Execute exactly one LLM decision step.
+        """Execute exactly one LLM decision step.
 
         CONTRACT: ``budget.can_start_step()`` must be True — guaranteed by the only caller,
-        :func:`decide_node`, via :func:`_check_budget`. The step budget is intentionally not
-        re-checked here to keep a single enforcement point.
-        When ``reason`` is not ``None``, ``reply`` may still be valid: a completed LLM call that
-        itself pushed the run over a hard budget is preserved so the caller can decide whether
-        it qualifies as a final answer.
+        :func:`decide_node`, via :func:`_check_budget`; the step budget is intentionally not re-checked
+        here to keep a single enforcement point. Mutates ``budget`` by reference; callers must pass
+        ``budget=state['budget']``, never a copy. When ``reason`` is not ``None``, ``reply`` may still be valid:
+        a completed LLM call that itself pushed the run over a hard budget is preserved so the caller can decide
+        whether it qualifies as a final answer.
 
         Args:
             budget (Budget): Budget for the request (mutated by reference).
@@ -96,6 +89,7 @@ class LLMStepService:
 
             _log_internal_exception("LLM request failed.", exc, step=budget.steps)
 
+            # `llm_timeout` only when the budget is exhausted *after* the exception — not for any TimeoutError.
             if budget.remaining_seconds() <= 0:
                 self._trace.error(
                     step=budget.steps,
@@ -107,9 +101,11 @@ class LLMStepService:
 
                 return None, TerminationReason.BUDGET_TIME
 
+            # `kind` distinguishes transient vs permanent for post-mortem; TerminationReason is unchanged.
+            kind = 'llm_transient' if _is_transient_llm_error(exc) else 'llm_error'
             self._trace.error(
                 step=budget.steps,
-                kind='llm_error',
+                kind=kind,
                 message=type(exc).__name__,
                 latency_ms=latency_ms,
                 budget=budget,

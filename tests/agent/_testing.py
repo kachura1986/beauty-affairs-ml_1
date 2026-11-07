@@ -25,6 +25,24 @@ async def timeout_fn(**kwargs):
     raise TimeoutError("temporary timeout")
 
 
+class _FakeAPIStatusError(Exception):
+    """Stands in for openai.APIStatusError subclasses without depending on the SDK."""
+
+    def __init__(self, status_code: int) -> None:
+        self.status_code = status_code
+        super().__init__(f"status_{status_code}")
+
+
+def rate_limit_error() -> Exception:
+    """Build a 429 exception as raised by the OpenAI SDK."""
+    return _FakeAPIStatusError(429)
+
+
+def internal_server_error(status_code: int = 503) -> Exception:
+    """Build a 5xx exception as raised by the OpenAI SDK."""
+    return _FakeAPIStatusError(status_code)
+
+
 class FakeLLM:
     """Protocol-compatible LLM: returns canned replies or raises scripted errors."""
 

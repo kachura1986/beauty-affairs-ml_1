@@ -6,7 +6,7 @@ from services.llm import LLMModel
 
 from ...domain import Budget, Finalization, Task
 from ...trace import Trace
-from .._common import FINALIZE_ANCHOR, _log_internal_exception
+from .._common import FINALIZE_ANCHOR, _is_transient_llm_error, _log_internal_exception
 from .._fallback import _deterministic_fallback
 
 
@@ -77,6 +77,10 @@ class FinalizeService:
         accumulated spend hit the limit; a free model can still answer at zero cost, so the call
         proceeds (an overrun is then recorded as ``trace.error('finalization_overrun')``).
 
+        On exception, the fallback ``message`` distinguishes ``'llm_timeout'`` (wall-clock budget
+        exhausted), ``'llm_transient'`` (transient LLM error), and ``'llm_error'`` (permanent)
+        for post-mortem; ``kind='finalization_fallback'`` is unchanged.
+
         Args:
             budget (Budget): Budget for the run (mutated by reference).
             history (list[dict[str, Any]]): Conversation history to synthesize from.
@@ -114,8 +118,13 @@ class FinalizeService:
             _log_internal_exception('Finalization LLM call failed.', exc, step=budget.steps)
 
             # Mirror LLMStepService.run: `llm_timeout` only when the budget is exhausted *after*
-            # the exception, not for any TimeoutError.
-            message = 'llm_timeout' if budget.remaining_seconds() <= 0 else 'llm_error'
+            # the exception. Otherwise classify transient vs permanent for post-mortem.
+            if budget.remaining_seconds() <= 0:
+                message = 'llm_timeout'
+            elif _is_transient_llm_error(exc):
+                message = 'llm_transient'
+            else:
+                message = 'llm_error'
 
             return self._fallback(
                 budget=budget, history=history, last_tool_ok=last_tool_ok,

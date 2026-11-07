@@ -17,7 +17,7 @@ from services.agent.domain import (
 )
 from services.agent.tools import Tool
 
-from _testing import EchoArgs, FakeLLM, FakeRuntime, failing_tool, reply
+from _testing import EchoArgs, FakeLLM, FakeRuntime, failing_tool, rate_limit_error, reply
 
 
 # ---------------------------------------------------------------------------
@@ -891,3 +891,39 @@ async def test_e2e_trace_jsonl_contains_no_raw_keys_after_validation_error(trace
     raw = trace.path.read_text(encoding="utf-8")
     for forbidden in ("api_token", "secret-value"):
         assert forbidden not in raw, f"{forbidden!r} leaked into trace JSONL: {raw}"
+
+
+# ---------------------------------------------------------------------------
+# Error classification in the trace (Phase A observability)
+# ---------------------------------------------------------------------------
+
+async def test_finalize_transient_message_in_trace(trace, make_context):
+    """A transient LLM error (429) is recorded as message='llm_transient' inside finalization_fallback."""
+    llm = FakeLLM(errors=[rate_limit_error()])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    fallbacks = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
+    assert any(r["message"] == "llm_transient" for r in fallbacks)
+
+
+async def test_finalize_permanent_message_in_trace(trace, make_context):
+    """A permanent LLM error (RuntimeError) is recorded as message='llm_error' inside finalization_fallback."""
+    llm = FakeLLM(errors=[RuntimeError("boom")])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    fallbacks = [r for r in trace.records() if r.get("kind") == "finalization_fallback"]
+    assert any(r["message"] == "llm_error" for r in fallbacks)
