@@ -12,6 +12,8 @@ from services.agent.domain import (
     Finalization,
     TerminationReason,
 )
+from services.agent.tools import ToolRegistry
+from services.llm import Reply
 from use_cases.agent_service import AgentService
 
 
@@ -34,6 +36,35 @@ def _fake_result() -> AgentResult:
 def _msg(role: str = "user", content: str = "hi") -> SimpleNamespace:
     """Build a Message-shaped object with attribute access (Protocol-compatible)."""
     return SimpleNamespace(role=role, content=content)
+
+
+class _GatedLLM:
+    """Protocol-compatible LLM stub whose first call blocks until released.
+
+    The second and later calls return immediately. Used to hold the
+    semaphore slot for a controlled amount of time, so a queued run can
+    be observed against its own ``Budget.max_seconds``.
+    """
+
+    model_name = "fake"
+
+    def __init__(self) -> None:
+        self.entered = asyncio.Event()
+        self.release = asyncio.Event()
+        self._calls = 0
+
+    async def chat(
+            self,
+            messages,
+            tools=None,
+            timeout=None,
+            system_prompt=None,
+    ) -> Reply:
+        self._calls += 1
+        if self._calls == 1:
+            self.entered.set()
+            await self.release.wait()
+        return Reply(text="ok")
 
 
 @pytest.fixture
@@ -112,3 +143,42 @@ async def test_validation_errors_do_not_consume_slot(service_kwargs, monkeypatch
 
     await service.run([_msg()])
     assert len(calls) == 1
+
+
+async def test_queue_wait_not_counted_in_budget(service_kwargs):
+    """
+    A queued run's Budget starts at slot acquisition, not at run() entry.
+
+    If Budget.started were captured before the semaphore, the second run
+    would burn its 0.2s wall-clock limit purely from the 0.3s queue wait
+    and terminate with BUDGET_TIME instead of DONE_UNVERIFIED.
+    """
+    llm = _GatedLLM()
+    kwargs = {
+        **service_kwargs,
+        "llm": llm,
+        "tools": ToolRegistry([], default_timeout_seconds=1.0, max_output_chars=1000),
+        "budget_limits": BudgetLimits(
+            max_steps=1, max_seconds=0.2, max_tokens=1000, max_cost_usd=0,
+        ),
+    }
+
+    semaphore = asyncio.Semaphore(1)
+    service = AgentService(**kwargs, semaphore=semaphore)
+
+    # First run holds the slot while its LLM call is blocked.
+    first = asyncio.create_task(service.run([_msg()]))
+    await llm.entered.wait()
+
+    # Second run queues on the semaphore. The queue wait (0.3s) exceeds the
+    # run's 0.2s wall-clock limit, so a budget started before acquisition
+    # would surface as BUDGET_TIME.
+    second = asyncio.create_task(service.run([_msg()]))
+
+    await asyncio.sleep(0.3)
+    llm.release.set()
+
+    _, result = await asyncio.gather(first, second)
+
+    assert result.reason == TerminationReason.DONE_UNVERIFIED
+    assert result.answer == "ok"
