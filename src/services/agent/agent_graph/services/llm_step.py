@@ -130,11 +130,22 @@ class LLMStepService:
     ) -> tuple[Reply | None, TerminationReason | None]:
         """One bounded LLM call attempt.
 
-        CONTRACT: exceptions from ``chat`` propagate unchanged — :meth:`run` classifies them, emits the
-        appropriate trace event, and (for transient errors) schedules at most one retry. The TOCTOU guard
-        (``remaining <= 0``) returns a sentinel tuple instead of raising: the budget expired between
-        :meth:`run`'s preflight and this call (or between the first attempt and the retry), which is not
-        an error.
+        CONTRACT: only ``chat()`` exceptions propagate — :meth:`run` classifies them, emits the
+        appropriate trace event, and (for transient errors) schedules at most one retry. The TOCTOU
+        guard (``remaining <= 0``) returns a sentinel tuple instead of raising.
+
+        ACCOUNTING FAILURE (``budget.record_llm``): hard-fail with ``LLM_ERROR``, no retry — a retry
+        would invoke ``chat()`` a second time while the first call was already billed, doubling
+        token/cost accounting. The failure is traced once as ``llm_error`` with
+        ``message=type(exc).__name__``.
+
+        TRADE-OFF: on accounting failure the already-received ``reply`` is intentionally dropped
+        (``return None, LLM_ERROR``). Returning it as ``answer`` would yield an inconsistent trace
+        (``answer_chars > 0`` but ``tokens = 0``). A future design that returns the reply must add an
+        ``accounting_failed=true`` marker.
+
+        TRACE FAILURE (``trace.step``): best-effort — logged, then swallowed. The trace is
+        diagnostic; a failed trace write must not affect the run, let alone trigger a retry.
 
         Args:
             budget (Budget): Budget for the request (mutated by reference on success).
@@ -145,9 +156,11 @@ class LLMStepService:
         Returns:
             tuple[Reply | None, TerminationReason | None]:
                 - ``(reply, None)``: successful call within budget.
-                - ``(reply, reason)``: successful call that pushed the run over a hard budget; the caller
-                  decides if the reply qualifies as a final answer.
+                - ``(reply, reason)``: successful call that pushed the run over a hard budget; the
+                  caller decides if the reply qualifies as a final answer.
                 - ``(None, BUDGET_TIME)``: TOCTOU guard — ``chat`` was not invoked.
+                - ``(None, LLM_ERROR)``: accounting failure — ``chat`` succeeded, usage could not
+                  be recorded, retry intentionally suppressed.
 
         Raises:
             Exception: Any exception raised by ``chat`` is propagated unchanged.
@@ -164,20 +177,34 @@ class LLMStepService:
         if chat is None:
             raise ValueError(f"{self._llm.__class__.__name__} does not support agent chat()")
 
+        # (A) chat()
         reply = await chat(context_window.messages, self._tools.schemas(), timeout, context_window.system)
 
         latency_ms = int((time.monotonic() - t0) * 1000)
 
-        budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
+        # (B) record_llm()
+        try:
+            budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
+        except Exception as acc_exc:  # noqa: BLE001
+            _log_internal_exception("Failed to record LLM usage.", acc_exc, step=budget.steps)
+            _trace_llm_error(
+                trace=self._trace, step=budget.steps, kind='llm_error',
+                exc=acc_exc, latency_ms=latency_ms, budget=budget,
+            )
+            return None, TerminationReason.LLM_ERROR
 
-        self._trace.step(
-            budget.steps,
-            context_window.messages,
-            reply,
-            budget,
-            latency_ms,
-            system_prompt=context_window.system,
-        )
+        # (C) trace.step()
+        try:
+            self._trace.step(
+                budget.steps,
+                context_window.messages,
+                reply,
+                budget,
+                latency_ms,
+                system_prompt=context_window.system,
+            )
+        except Exception as trace_exc:  # noqa: BLE001
+            _log_internal_exception("Failed to write step trace.", trace_exc, step=budget.steps)
 
         # A completed call may push us over budget. Keep the reply — dropping it would turn
         # a finished step into an empty AgentResult. decide_node decides if it's a final answer.
