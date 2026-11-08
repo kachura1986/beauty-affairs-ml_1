@@ -103,7 +103,7 @@ class LLMStepService:
                     return None, TerminationReason.BUDGET_TIME
 
                 # llm_transient is emitted for every transient failure, regardless of whether a retry follows.
-                kind = _classify_llm_exception(exc)
+                kind = _classify_llm_exception(exc, llm=self._llm)
                 _trace_llm_error(
                     trace=self._trace, step=budget.steps, kind=kind,
                     exc=exc, latency_ms=latency_ms, budget=budget,
@@ -128,11 +128,9 @@ class LLMStepService:
     async def _attempt(
             self, budget: Budget, context_window: AgentContextWindow, t0: float,
     ) -> tuple[Reply | None, TerminationReason | None]:
-        """One bounded LLM call attempt.
+        """One bounded LLM call attempt; ``chat()`` exceptions propagate to :meth:`run` for classification.
 
-        CONTRACT: only ``chat()`` exceptions propagate — :meth:`run` classifies them, emits the
-        appropriate trace event, and (for transient errors) schedules at most one retry. The TOCTOU
-        guard (``remaining <= 0``) returns a sentinel tuple instead of raising.
+        CONTRACT: the TOCTOU guard (``remaining <= 0``) returns a sentinel tuple instead of raising.
 
         ACCOUNTING FAILURE (``budget.record_llm``): hard-fail with ``LLM_ERROR``, no retry — a retry
         would invoke ``chat()`` a second time while the first call was already billed, doubling

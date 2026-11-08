@@ -3,10 +3,54 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from openai import AsyncOpenAI
+import httpx
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI
 
 from .base_model import BaseLLMModel
 from .schemas import Reply, ToolCall
+
+
+def _is_transient_openai_error(exc: Exception) -> bool:
+    """Classify an OpenAI-SDK-path exception as transient (retryable) or permanent.
+
+    CONTRACT: single source of truth for the OpenAI path; ``LLMModel.is_transient_error`` delegates here.
+    ``APITimeoutError`` / ``httpx.TimeoutException`` are permanent (billed SDK call; a retry would double-bill) —
+    contractual only today, because the SDK timeout is disabled (``timeout=None`` + ``asyncio.wait_for``).
+    Builtin ``TimeoutError`` from ``asyncio.wait_for`` is the production timeout path and is transient.
+
+    Args:
+        exc (Exception): Exception raised during ``AzureOpenAIModel.chat``.
+
+    Returns:
+        bool: True if a retry has a non-trivial chance of succeeding.
+    """
+    # Step 1: SDK-level timeout → permanent (billed; retry would double-bill).
+    # Contractual today: SDK timeout is disabled; kept for the day it is re-enabled.
+    if isinstance(exc, APITimeoutError):
+        return False
+    if isinstance(exc.__cause__, httpx.TimeoutException):
+        return False
+
+    # Step 2: asyncio.wait_for timeout → transient (budget may still have room).
+    # Order after step 1 is deliberate: APITimeoutError is not a TimeoutError subclass.
+    if isinstance(exc, TimeoutError):
+        return True
+
+    # Step 3: connection-level errors → transient.
+    if isinstance(exc, (ConnectionError, APIConnectionError)):
+        return True
+    if isinstance(exc.__cause__, (ConnectionError, httpx.TransportError)):
+        return True
+
+    # Step 4: HTTP 429 / 5xx → transient.
+    status = getattr(exc, 'status_code', None)
+    if isinstance(status, int) and (status == 429 or status >= 500):
+        return True
+
+    # Azure SDK core names (ServiceRequestError, ...) are not matched: they do not
+    # appear in the LLM path — ``openai`` is httpx-based; those types come from
+    # ``azure-search-documents``, not from the LLM path.
+    return False
 
 
 class AzureOpenAIModel(BaseLLMModel):
@@ -49,6 +93,11 @@ class AzureOpenAIModel(BaseLLMModel):
     def _format_chat_messages(self, messages: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
         """
         Validate and format chat messages for the Azure OpenAI API.
+
+        CONTRACT: ``role='system'`` messages are dropped — the system prompt goes via
+        ``chat(..., system_prompt=...)`` (``instructions``), never through ``input``.
+        Tool calls without an explicit ``id`` get a deterministic synthetic id
+        ``f'{name}:{index}'`` so the tool result can be paired back.
 
         Args:
             messages (Sequence[Mapping[str, Any]]): Messages to format, including optional tool calls.
@@ -143,6 +192,10 @@ class AzureOpenAIModel(BaseLLMModel):
         """
         Extract and normalize tool calls from a completion response.
 
+        CONTRACT: non-``function_call`` output items are silently skipped. Missing
+        ``call_id`` gets a deterministic synthetic id ``f'{name}:{index}'`` so the
+        tool result can be paired back.
+
         Args:
             response (Any): Raw Azure OpenAI completion response.
 
@@ -213,6 +266,10 @@ class AzureOpenAIModel(BaseLLMModel):
         """
         Compute the request cost in USD from token counts and configured per-million rates.
 
+        CONTRACT: returns ``0.0`` when both token counts are ``<= 0`` — cost-based
+        budget limits are not enforced for that call. The caller must not treat
+        ``0.0`` as "free call", only as "no accounting data".
+
         Args:
             input_tokens (int): Number of input tokens reported by the API.
             output_tokens (int): Number of output tokens reported by the API.
@@ -238,6 +295,11 @@ class AzureOpenAIModel(BaseLLMModel):
     ) -> Reply:
         """
         Send a chat request and return a normalized response.
+
+        CONTRACT: ``timeout`` is required — the caller (``LLMStepService`` /
+        ``FinalizeService``) owns the per-call wall-clock cap; SDK-level timeouts
+        are disabled in the composition root (``timeout=None``) so that
+        ``asyncio.wait_for`` here is the single source of timeout enforcement.
 
         Args:
             messages (Sequence[Mapping[str, Any]]): Chat messages, including optional tool-call data.
@@ -280,6 +342,8 @@ class AzureOpenAIModel(BaseLLMModel):
         if timeout is None:
             raise ValueError(f"{self.__class__.__name__}: timeout is required.")
 
+        # asyncio.wait_for raises builtin TimeoutError on expiry, not openai.APITimeoutError.
+        # _is_transient_openai_error treats that builtin TimeoutError as transient.
         response = await asyncio.wait_for(request, timeout=timeout)
 
         text = self._extract_text(response)
@@ -295,3 +359,7 @@ class AzureOpenAIModel(BaseLLMModel):
             out_tokens=output_tokens,
             cost_usd=cost_usd,
         )
+
+    def is_transient_error(self, exc: Exception) -> bool:
+        """Delegate to the module-level OpenAI classifier; SDK knowledge stays here."""
+        return _is_transient_openai_error(exc)

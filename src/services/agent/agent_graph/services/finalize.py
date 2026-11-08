@@ -44,6 +44,10 @@ class FinalizeService:
         """
         Sole fallback exit: emits a uniform ``trace.error`` and builds the deterministic result.
 
+        CONTRACT: every fallback path must go through this method — a bare
+        ``trace.error('finalization_fallback', ...)`` elsewhere would break the
+        "one fallback event per failure" invariant.
+
         Args:
             budget (Budget): Budget for the run (read-only).
             history (list[dict[str, Any]]): Conversation history for the deterministic fallback.
@@ -124,7 +128,7 @@ class FinalizeService:
                         message='llm_timeout', latency_ms=latency_ms,
                     )
 
-                classification = _classify_llm_exception(exc)
+                classification = _classify_llm_exception(exc, llm=self._llm)
 
                 if attempt == 1 or classification != 'llm_transient' or not self._can_retry(budget):
                     return self._fallback(

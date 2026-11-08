@@ -221,6 +221,10 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace, make_con
     class NoChatLLM:
         model_name = "fake"
 
+        def is_transient_error(self, exc: Exception) -> bool:
+            # Mirror BaseLLMModel default so the no-chat ValueError classifies as permanent.
+            return isinstance(exc, (ConnectionError, TimeoutError))
+
     ctx = make_context(llm=NoChatLLM())
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 

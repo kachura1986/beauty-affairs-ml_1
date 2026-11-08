@@ -27,7 +27,7 @@ async def timeout_fn(**kwargs):
 
 
 class _FakeAPIStatusError(Exception):
-    """Stands in for openai.APIStatusError subclasses without depending on the SDK."""
+    """Stand-in for ``openai.APIStatusError`` subclasses, without the SDK dependency."""
 
     def __init__(self, status_code: int) -> None:
         self.status_code = status_code
@@ -46,6 +46,22 @@ def internal_server_error(status_code: int = 503) -> Exception:
 
 class FakeLLM:
     """Protocol-compatible LLM: returns canned replies or raises scripted errors."""
+
+    # Connection-level httpx transport names that AzureOpenAIModel treats as
+    # transient. Name-based because FakeLLM does not import httpx.
+    #
+    # DELIBERATELY EXCLUDED: timeout-named causes (ConnectTimeout, ReadTimeout,
+    # WriteTimeout, PoolTimeout, TimeoutException) — AzureOpenAIModel classifies
+    # them as PERMANENT (isinstance(cause, httpx.TimeoutException)); including
+    # them here would create a green-in-tests / no-retry-in-production divergence.
+    # Also excluded: ServerDisconnectedError (aiohttp name, never matches httpx).
+    _TRANSIENT_CAUSE_NAMES = frozenset({
+        'ConnectError',
+        'TransportError',
+        'NetworkError',
+        'ClientConnectionError',
+        'ClientConnectorError',
+    })
 
     def __init__(
             self,
@@ -74,6 +90,29 @@ class FakeLLM:
             raise self._errors.pop(0)
         return self._replies.pop(0)
 
+    def is_transient_error(self, exc: Exception) -> bool:
+        """SDK-like classifier for tests; must agree with AzureOpenAIModel on shared cases.
+
+        CONTRACT: mirrors ``AzureOpenAIModel.is_transient_error`` for the cases
+        the suite exercises — builtin ConnectionError/TimeoutError,
+        connection-level httpx transport causes (name-based), and 429/5xx status.
+        Timeout-named causes are NOT transient here (matches AzureOpenAIModel,
+        which classifies ``httpx.TimeoutException`` causes as permanent).
+        ``APITimeoutError`` / ``APIConnectionError`` instances are not replicated
+        (no openai import) — covered by ``services/llm/test_azure_openai_model.py``.
+        """
+        if isinstance(exc, (ConnectionError, TimeoutError)):
+            return True
+        cause = exc.__cause__
+        if isinstance(cause, ConnectionError):
+            return True
+        if cause is not None and type(cause).__name__ in self._TRANSIENT_CAUSE_NAMES:
+            return True
+        status = getattr(exc, 'status_code', None)
+        if isinstance(status, int) and (status == 429 or status >= 500):
+            return True
+        return False
+
 
 class FakeRuntime:
     """Minimal Runtime[AgentContext] stand-in."""
@@ -83,7 +122,7 @@ class FakeRuntime:
 
 
 def reply(text="ok", tool_calls=None, in_tokens=0, out_tokens=0, cost_usd=0.0, model="fake"):
-    """Helper to reduce noise and make tests resilient to Reply changes."""
+    """Build a Reply with defaults, so tests stay resilient to Reply field changes."""
     return Reply(
         text=text,
         tool_calls=tool_calls or [],

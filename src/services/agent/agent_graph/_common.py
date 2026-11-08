@@ -1,12 +1,10 @@
 import logging
 from typing import Literal
 
-import httpx
-
 from core.config import settings
+from services.llm import LLMModel
 
 from ..domain import Budget
-from ..tools.errors import is_temporary_failure
 from ..trace import Trace
 
 logger = logging.getLogger(__name__)
@@ -16,50 +14,26 @@ FINALIZE_ANCHOR = (
     'the information already collected. Do not call any tools.'
 )
 
-
-def _is_transient_llm_error(exc: Exception) -> bool:
-    """Classify an LLM exception as transient (retryable) or permanent.
-
-    CONTRACT: ``APITimeoutError`` without ``__cause__ = httpx.TimeoutException`` is permanent —
-    a dropped cause must never trigger a retry of an already-consumed budget.
-
-    Args:
-        exc (Exception): Exception raised by an LLM call.
-
-    Returns:
-        bool: True when the error is considered retryable.
-    """
-    # SDK wraps APITimeoutError with httpx.ReadTimeout as __cause__ (holds for httpx >= 0.23).
-    if isinstance(exc.__cause__, httpx.TimeoutException):
-        return False
-
-    if is_temporary_failure(exc):
-        return True
-
-    status = getattr(exc, 'status_code', None)
-    if isinstance(status, int) and (status == 429 or status >= 500):
-        return True
-
-    cause = exc.__cause__
-    return cause is not None and is_temporary_failure(cause)
-
-
 TransientKind = Literal["llm_transient", "llm_error"]
 
 
-def _classify_llm_exception(exc: Exception) -> TransientKind:
-    """Single source of truth for the transient/permanent split in trace events.
+def _classify_llm_exception(exc: Exception, *, llm: LLMModel) -> TransientKind:
+    """Return the trace-friendly kind for an LLM failure.
 
-    CONTRACT: both :class:`LLMStepService` and :class:`FinalizeService` must go through it,
-    so a change to the classification policy is made here once, not in four call sites.
+    CONTRACT: classification is delegated to ``LLMModel.is_transient_error`` —
+    the agent layer must not depend on provider internals (OpenAI SDK, httpx,
+    status codes). Both ``LLMStepService`` and ``FinalizeService`` go through
+    this function, so a policy change lives in the LLM implementation, not in
+    four call sites.
 
     Args:
         exc (Exception): Exception raised by an LLM call.
+        llm (LLMModel): The model that raised ``exc`` — owns the classification.
 
     Returns:
         TransientKind: ``'llm_transient'`` or ``'llm_error'``.
     """
-    return "llm_transient" if _is_transient_llm_error(exc) else "llm_error"
+    return "llm_transient" if llm.is_transient_error(exc) else "llm_error"
 
 
 def _trace_llm_error(
