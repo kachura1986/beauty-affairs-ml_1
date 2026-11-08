@@ -110,11 +110,7 @@ class PipelineDependencies:
                     agent_name=name,
                 )
 
-            logger.info(
-                "Created %d agent service(s): %s",
-                len(agent_services),
-                sorted(agent_services),
-            )
+            logger.info(f"Created {len(agent_services)} agent service(s): {sorted(agent_services)}")
 
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 
@@ -154,7 +150,7 @@ class PipelineDependencies:
             try:
                 await resource.close()
             except Exception:
-                logger.exception("Failed to close %s", name)
+                logger.exception(f"Failed to close {name}")
 
 
 # DI container

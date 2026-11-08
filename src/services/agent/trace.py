@@ -13,12 +13,12 @@ from .tools import ToolResult
 # How many trace files to keep in RUNS_DIR.
 MAX_TRACE_FILES = 500
 
-# Hard cap on a single trace file. Once exceeded, further records are dropped
-# and a single `truncated_at_bytes` marker is written. Bounds disk usage per run.
+# Hard cap on a single trace file: once exceeded, further records are dropped
+# and a single `truncated_at_bytes` marker is written. Bounds per-run disk usage.
 MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 
-# Trace files older than this are removed on every new trace creation,
-# in addition to the MAX_TRACE_FILES count cap. Bounds disk usage over time.
+# Trace files older than this are pruned on every new trace creation, in
+# addition to the MAX_TRACE_FILES count cap. Bounds on-disk retention over time.
 TRACE_TTL_DAYS = 7
 
 
@@ -37,13 +37,13 @@ class Trace:
           general error path; use ``error()`` with a machine-readable code.
         - Bounds: one file ≤ ``MAX_FILE_BYTES``; the directory is pruned by ``MAX_TRACE_FILES`` count
           and ``TRACE_TTL_DAYS`` age on every new trace creation.
-        - Every record carries an ``agent`` field: the agent name supplied at construction,
-          or ``null`` for traces created outside ``AgentService``.
+        - Every regular record carries an ``agent`` field (the construction-time agent name, or
+          ``null`` for ad-hoc traces). The ``truncated_at_bytes`` marker is the only exception —
+          it carries ``run_id`` and ``ts`` only.
 
-    Lifecycle: ``run_id`` is generated internally (UTC timestamp + random suffix); close via
-    :meth:`close` (idempotent) or as a context manager; an unclosed trace emits a ``ResourceWarning``
-    via :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee). ``agent_name`` is fixed
-    at construction and cannot be changed afterwards.
+    Lifecycle: ``run_id`` is generated internally; close via :meth:`close` (idempotent) or as a
+    context manager. An unclosed trace emits a ``ResourceWarning`` via :mod:`weakref.finalize`
+    (diagnostic only, no cleanup guarantee). ``agent_name`` is fixed at construction.
     """
 
     def __init__(self, runs_dir: Path, *, agent_name: str | None = None) -> None:
@@ -52,7 +52,7 @@ class Trace:
 
         Args:
             runs_dir (Path): Directory where the trace files are stored.
-            agent_name (str | None): Name of the agent that produces this trace; written to he ``agent`` field of
+            agent_name (str | None): Name of the agent that produces this trace; written to the ``agent`` field of
                 every record. ``None`` for ad-hoc traces created outside :class:`AgentService`.
         """
         self._runs_dir = runs_dir
@@ -98,12 +98,11 @@ class Trace:
 
     def _prune_old_runs(self) -> None:
         """
-        Keep only the most recent ``MAX_TRACE_FILES`` trace files and drop files older than ``TRACE_TTL_DAYS``.
+        Keep only the most recent ``MAX_TRACE_FILES`` trace files; drop files older than ``TRACE_TTL_DAYS``.
 
-        CONTRACT: best-effort — any failure while pruning must not affect the current run.
-        TTL is based on ``st_mtime`` (not the timestamp in ``run_id``): a file restored from backup may
-        survive past ``TRACE_TTL_DAYS``. Not synchronized across processes; ``unlink()`` on a file open in
-        another process is safe on POSIX and raises ``PermissionError`` on Windows (swallowed).
+        CONTRACT: best-effort — pruning failure must not affect the current run. TTL uses ``st_mtime``, not ``run_id``
+        (a restored file may survive past ``TRACE_TTL_DAYS``). Not synchronized across processes; ``unlink()`` on
+        an open file is safe on POSIX and raises ``PermissionError`` on Windows (swallowed).
         """
         try:
             files = sorted(self._runs_dir.glob('*.jsonl'), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -160,7 +159,7 @@ class Trace:
         Read back all JSONL records. Helper for post-mortem and tests.
 
         CONTRACT: not for hot-path production use — reads the entire file (up to roughly
-        ``MAX_FILE_BYTES``; the trailing ``truncated_at_bytes`` marker may push it a few bytes past).
+        ``MAX_FILE_BYTES`` plus the trailing ``truncated_at_bytes`` marker).
 
         Returns:
             list[dict[str, Any]]: Parsed records in file order.
@@ -199,13 +198,11 @@ class Trace:
         """
         Append one record as a JSONL line, enforcing the per-file size cap.
 
-        CONTRACT: no-op when closed or already capped. On overflow, writes a single
+        CONTRACT: no-op when closed or capped. On overflow, writes a single
         ``truncated_at_bytes`` marker and drops all further records.
 
-        RESERVED FIELDS: ``run_id``, ``agent``, and ``ts`` are injected here. Callers MUST NOT
-        pass them in ``rec`` — ``**rec`` would silently overwrite them. If a future payload needs
-        one of these names, extend the reserved set explicitly rather than relying on this
-        implicit contract.
+        RESERVED FIELDS: ``run_id``, ``agent``, ``ts`` are injected here; callers MUST NOT pass them in ``rec`` —
+        ``**rec`` would silently overwrite. Extend the reserved set explicitly if a future payload needs one of these names.
 
         Args:
             rec (dict[str, Any]): Record payload; ``run_id``, ``agent``, and ``ts`` are added automatically.
@@ -248,10 +245,9 @@ class Trace:
         """
         Return a short stable hash of a JSON-serializable object.
 
-        CONTRACT: deterministic, unsalted SHA-256 truncated to 12 hex chars (48 bits) — anti-PII
-        measure for free-text user data, NOT a cryptographic commitment. Low-entropy fields
-        (``top_k``, ``min_price``) are effectively recoverable by enumeration; high-entropy secrets
-        (API keys, tokens) are not reversible. Do not rely on this to hide low-entropy arguments.
+        CONTRACT: deterministic, unsalted SHA-256 truncated to 12 hex chars — anti-PII measure
+        for free-text user data, NOT a cryptographic commitment. Low-entropy values (``top_k``,
+        ``min_price``) are recoverable by enumeration; high-entropy secrets are not reversible.
 
         Args:
             obj (Any): Object to hash; serialized with sorted keys and ``default=str``.
@@ -312,10 +308,9 @@ class Trace:
             *,
             system_prompt: str,
     ) -> None:
-        # Records the single bounded finalization LLM call. Mirrors `step`, but tags the record as `t='finalize'`
-        # so post-mortem can separate the finalization call from decision steps (same fields, different `t`).
-        # No `window_hash` because finalization does not use a packed context window — `history` is
-        # sent as-is; only its length is recorded (content is PII-sensitive).
+        # Mirrors `step`, but tags the record `t='finalize'` to separate the finalization call
+        # from decision steps in post-mortem. No `window_hash` — finalization sends `history` as-is
+        # (only its length is recorded; content is PII-sensitive).
         self._write({
             't': 'finalize',
             'step': n,
@@ -336,21 +331,11 @@ class Trace:
         """
         Record one tool invocation.
 
-        CONTRACT: args are stored as ``args_hash`` + ``args_keys`` only — never raw values.
-        ``args_keys`` is supplied by :class:`ToolRegistry.invoke` via ``ToolResult.args_keys`` and is
-        already redacted: validation errors and unknown tools yield an empty tuple, so raw key names
-        never reach the trace.
-
-        ``args_hash`` is deterministic SHA-256 truncated to 12 hex chars, not a cryptographic
-        commitment. Low-entropy fields (``top_k``, ``min_price``) are effectively recoverable by
-        enumeration; high-entropy secrets are not reversible. This is a conscious trade-off:
-        determinism across runs is required for post-mortem diffing ("same args in step 3 and
-        step 7?"), which an HMAC with a per-process key would destroy. See ``_hash()`` for the
-        same caveat.
-
-        ``hint`` is intentionally NOT written: for ``validation`` / ``extra_forbidden`` it embeds the
-        raw field name from the model's arguments, which would re-introduce the very leak ``args_keys``
-        is designed to prevent. ``error_code`` + ``message`` are sufficient for post-mortem.
+        CONTRACT: args are stored as ``args_hash`` + ``args_keys`` only, never raw values.
+        ``args_hash`` is deterministic SHA-256 truncated to 12 hex chars — low-entropy fields
+        are recoverable by enumeration (required for post-mortem diffing; an HMAC would destroy
+        that). ``hint`` is intentionally NOT written: for ``validation`` / ``extra_forbidden``
+        it embeds the raw field name, which would re-introduce the leak ``args_keys`` prevents.
 
         Args:
             n (int): Step number the tool belongs to.
@@ -412,8 +397,7 @@ class Trace:
         """
         Record the terminal run record.
 
-        CONTRACT: only the answer's length (``answer_chars``) is stored — the answer text is not
-        written to disk.
+        CONTRACT: only the answer's length (``answer_chars``) is stored — the answer text is not written to disk.
 
         Args:
             reason (TerminationReason): Why the run ended.

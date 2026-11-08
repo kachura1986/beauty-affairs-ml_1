@@ -17,7 +17,8 @@ async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_a
         agent_service (AgentService): Orchestrator responsible for executing agent requests.
 
     Returns:
-        ChatResponse: Structured agent response with role, content, termination reason and usage stats.
+        ChatResponse: Structured agent response with run_id, role, content, termination reason,
+        finalization and usage stats.
     """
     result = await agent_service.run(request.messages)
 

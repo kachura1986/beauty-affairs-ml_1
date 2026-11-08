@@ -82,10 +82,10 @@ class ToolResult:
         """
         if self.status is ToolStatus.OK:
             # In-band markers (_truncated / _truncated_fields) already signal truncation.
-            # A text suffix would corrupt the JSON payload.
+            # A text suffix would corrupt the JSON payload
             return self.content
 
-        # An error result must contain a ToolError. If it does not, the ToolResult violates its internal contract
+        # __post_init__ enforces that an ERROR result always carries a ToolError
         return self.error.to_model()
 
 

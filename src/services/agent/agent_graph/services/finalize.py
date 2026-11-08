@@ -84,7 +84,7 @@ class FinalizeService:
         (overrun then recorded as ``trace.error('finalization_overrun')``). ``budget.steps`` is NOT
         incremented on retry (finalize runs out-of-steps by contract). ``finalization_fallback`` is
         emitted only on the terminal path; the retry path emits only ``finalization_retry``, so a
-        successful retry leaves zero ``finalization_fallback`` events (P2 #5).
+        successful retry leaves zero ``finalization_fallback`` events.
 
         Args:
             budget (Budget): Budget for the run (mutated by reference).
@@ -136,13 +136,11 @@ class FinalizeService:
                         message=classification, latency_ms=latency_ms,
                     )
 
-                # P2 #5: `finalization_fallback` is reserved for the terminal path
-                # (via `_fallback`). On the retry path we emit only
-                # `finalization_retry`, so a successful retry leaves zero
-                # `finalization_fallback` events — the alert "one fallback per
-                # failure" holds. Finalize runs out-of-steps by contract, so
-                # budget.steps is intentionally NOT incremented here — the retry
-                # is bounded by wall-clock and tokens only (see _can_retry).
+                # `finalization_fallback` is reserved for the terminal path (via `_fallback`). On the retry path
+                # we emit only `finalization_retry`, so a successful retry leaves zero `finalization_fallback` events —
+                # the alert "one fallback per failure" holds. Finalize runs out-of-steps by contract, so budget.steps is
+                # intentionally NOT incremented here — the retry is bounded by wall-clock and tokens only
+                # (see _can_retry).
                 backoff = _retry_backoff(budget.remaining_seconds())
                 _trace_llm_error(
                     trace=self._trace, step=budget.steps, kind='finalization_retry',

@@ -178,10 +178,10 @@ class AzureOpenAIModel(BaseLLMModel):
     @staticmethod
     def _extract_text(response: Any) -> str:
         """
-        Extract response text from the first completion choice.
+        Extract text from a Responses API response.
 
         Args:
-            response (Any): Raw Azure OpenAI completion response.
+            response (Any): Raw Azure OpenAI Responses API response.
 
         Returns:
             str: Response text, or an empty string if unavailable.
@@ -190,14 +190,14 @@ class AzureOpenAIModel(BaseLLMModel):
 
     def _extract_tool_calls(self, response: Any) -> list[ToolCall]:
         """
-        Extract and normalize tool calls from a completion response.
+        Extract and normalize tool calls from a Responses API response.
 
         CONTRACT: non-``function_call`` output items are silently skipped. Missing
         ``call_id`` gets a deterministic synthetic id ``f'{name}:{index}'`` so the
         tool result can be paired back.
 
         Args:
-            response (Any): Raw Azure OpenAI completion response.
+            response (Any): Raw Azure OpenAI Responses API response.
 
         Returns:
             list[ToolCall]: Tool calls with IDs, function names, and argument mappings.

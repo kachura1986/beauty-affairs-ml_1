@@ -14,10 +14,10 @@ FINALIZE_ANCHOR = (
     'the information already collected. Do not call any tools.'
 )
 
-TransientKind = Literal["llm_transient", "llm_error"]
+ClassifiedKind = Literal["llm_transient", "llm_error"]
 
 
-def _classify_llm_exception(exc: Exception, *, llm: LLMModel) -> TransientKind:
+def _classify_llm_exception(exc: Exception, *, llm: LLMModel) -> ClassifiedKind:
     """Return the trace-friendly kind for an LLM failure.
 
     CONTRACT: classification is delegated to ``LLMModel.is_transient_error`` —
@@ -31,7 +31,7 @@ def _classify_llm_exception(exc: Exception, *, llm: LLMModel) -> TransientKind:
         llm (LLMModel): The model that raised ``exc`` — owns the classification.
 
     Returns:
-        TransientKind: ``'llm_transient'`` or ``'llm_error'``.
+        ClassifiedKind: ``'llm_transient'`` (retryable) or ``'llm_error'`` (permanent).
     """
     return "llm_transient" if llm.is_transient_error(exc) else "llm_error"
 
@@ -51,9 +51,7 @@ def _trace_llm_error(
     :meth:`Trace.error`. Risk reduction only, not enforcement: call sites may bypass
     the helper.
 
-    CARVE-OUT: ``finalization_fallback`` is NOT covered — its ``message`` is a
-    machine-readable code, not ``type(exc).__name__``; it is emitted by
-    ``FinalizeService._fallback`` and by the retry branch in ``FinalizeService.run``.
+    CARVE-OUT: ``finalization_fallback`` is not covered; see ``FinalizeService._fallback`` for its emission contract.
 
     Args:
         trace (Trace): Trace sink.
