@@ -34,6 +34,7 @@ class AgentService:
             policy: AgentPolicy,
             budget_limits: BudgetLimits,
             semaphore: Semaphore,
+            agent_name: str | None = None,
     ) -> None:
         """
         Initialize the service.
@@ -49,6 +50,9 @@ class AgentService:
             policy (AgentPolicy): Anti-loop / finalization policy applied per run.
             budget_limits (BudgetLimits): Per-run resource limits.
             semaphore (Semaphore): Shared concurrency guard for ``run()``.
+            agent_name (str | None): Name of the agent; written to every trace record and copied
+                into :class:`AgentResult`. ``None`` for ad-hoc services created outside the
+                composition root.
         """
         self._llm = llm
         self._tools = tools
@@ -57,6 +61,7 @@ class AgentService:
         self._policy = policy
         self._budget_limits = budget_limits
         self._semaphore = semaphore
+        self._agent_name = agent_name
 
     async def run(self, messages: Sequence[Message]) -> AgentResult:
         """
@@ -97,7 +102,7 @@ class AgentService:
                 budget_limits=self._budget_limits,
             )
 
-            trace = Trace(self._runs_dir)
+            trace = Trace(self._runs_dir, agent_name=self._agent_name)
 
             return await run_graph(
                 task=task,

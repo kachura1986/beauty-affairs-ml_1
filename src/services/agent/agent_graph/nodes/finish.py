@@ -30,6 +30,7 @@ def finish_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, 
 
     result = AgentResult(
         run_id=runtime.context.trace.run_id,
+        agent_name=runtime.context.trace.agent_name,
         reason=reason,
         answer=answer,
         steps=state['budget'].steps,

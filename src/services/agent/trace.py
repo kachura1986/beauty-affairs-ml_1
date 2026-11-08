@@ -37,22 +37,28 @@ class Trace:
           general error path; use ``error()`` with a machine-readable code.
         - Bounds: one file ≤ ``MAX_FILE_BYTES``; the directory is pruned by ``MAX_TRACE_FILES`` count
           and ``TRACE_TTL_DAYS`` age on every new trace creation.
+        - Every record carries an ``agent`` field: the agent name supplied at construction,
+          or ``null`` for traces created outside ``AgentService``.
 
     Lifecycle: ``run_id`` is generated internally (UTC timestamp + random suffix); close via
     :meth:`close` (idempotent) or as a context manager; an unclosed trace emits a ``ResourceWarning``
-    via :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee).
+    via :mod:`weakref.finalize` (diagnostic only, no cleanup guarantee). ``agent_name`` is fixed
+    at construction and cannot be changed afterwards.
     """
 
-    def __init__(self, runs_dir: Path) -> None:
+    def __init__(self, runs_dir: Path, *, agent_name: str | None = None) -> None:
         """
         Create a new trace.
 
         Args:
             runs_dir (Path): Directory where the trace files are stored.
+            agent_name (str | None): Name of the agent that produces this trace; written to he ``agent`` field of
+                every record. ``None`` for ad-hoc traces created outside :class:`AgentService`.
         """
         self._runs_dir = runs_dir
         self._runs_dir.mkdir(parents=True, exist_ok=True)
 
+        self._agent_name = agent_name
         self._run_id = self.generate_run_id()
         self.path = self._runs_dir / f'{self._run_id}.jsonl'
 
@@ -141,6 +147,14 @@ class Trace:
         """Public run identifier; matches the trace file stem."""
         return self._run_id
 
+    @property
+    def agent_name(self) -> str | None:
+        """Name of the agent that produced this trace (``None`` for ad-hoc runs).
+
+        CONTRACT: read-only property; independent of ``_closed`` — safe to read after :meth:`close`.
+        """
+        return self._agent_name
+
     def records(self) -> list[dict[str, Any]]:
         """
         Read back all JSONL records. Helper for post-mortem and tests.
@@ -188,8 +202,13 @@ class Trace:
         CONTRACT: no-op when closed or already capped. On overflow, writes a single
         ``truncated_at_bytes`` marker and drops all further records.
 
+        RESERVED FIELDS: ``run_id``, ``agent``, and ``ts`` are injected here. Callers MUST NOT
+        pass them in ``rec`` — ``**rec`` would silently overwrite them. If a future payload needs
+        one of these names, extend the reserved set explicitly rather than relying on this
+        implicit contract.
+
         Args:
-            rec (dict[str, Any]): Record payload; ``run_id`` and ``ts`` are added automatically.
+            rec (dict[str, Any]): Record payload; ``run_id``, ``agent``, and ``ts`` are added automatically.
         """
         if self._closed:
             return
@@ -199,6 +218,7 @@ class Trace:
 
         rec = {
             'run_id': self._run_id,
+            'agent': self._agent_name,
             'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             **rec,
         }

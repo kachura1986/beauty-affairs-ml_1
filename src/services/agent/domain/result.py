@@ -9,6 +9,10 @@ class AgentResult(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     run_id: str = Field(description="Run identifier; matches the trace file stem.")
+    agent_name: str | None = Field(
+        default=None,
+        description="Agent that produced this result (None for ad-hoc runs).",
+    )
     reason: TerminationReason
     answer: str | None = None
     steps: int
