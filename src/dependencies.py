@@ -8,7 +8,7 @@ from openai import AsyncOpenAI
 
 from core.config import settings
 from core.logger import get_logger
-from services.agent.config import load_agent_configs, require_default_agent
+from services.agent.config import DEFAULT_AGENT_KEY, load_agent_configs, require_default_agent
 from services.agent.context import SYSTEM_PROMPT
 from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
@@ -21,7 +21,7 @@ from use_cases import AgentService, IndexService
 # DI container
 @dataclass
 class PipelineDependencies:
-    agent_service: AgentService
+    agent_services: dict[str, AgentService]
     azure_embedder: AzureOpenAIEmbedder
     azure_search_index_client: SearchIndexClient
     azure_search_index_manager: AzureSearchIndexManager
@@ -45,15 +45,6 @@ class PipelineDependencies:
                 max_retries=0,
             )
 
-            azure_model = AzureOpenAIModel(
-                model_name=settings.AZURE_OPENAI_CHAT_MODEL,
-                azure_openai_client=openai_client,
-                temperature=settings.TEMPERATURE,
-                max_tokens=settings.MAX_TOKENS,
-                input_cost_per_million=settings.INPUT_COST_PER_MILLION,
-                output_cost_per_million=settings.OUTPUT_COST_PER_MILLION,
-            )
-
             azure_embedder = AzureOpenAIEmbedder(
                 client=openai_client,
                 model_name=settings.AZURE_OPENAI_EMBEDDING_MODEL,
@@ -75,27 +66,50 @@ class PipelineDependencies:
             )
 
             agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
-            agent_config = require_default_agent(agent_configs, settings.AGENTS_CONFIG)
+            # Fail-fast validation AND explicit capture: get_agent_service() relies on
+            # DEFAULT_AGENT_KEY being present in agent_services.
+            default_agent = require_default_agent(agent_configs, settings.AGENTS_CONFIG)  # noqa: F841
+
+            shared_tools = create_product_tools(
+                products_index,
+                default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,
+                max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS,
+            )
             agent_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_AGENT_RUNS)
 
-            # Use cases
-            agent_service = AgentService(
-                llm=azure_model,
-                tools=create_product_tools(
-                    products_index,
-                    default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,
-                    max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS,
-                ),
-                system_prompt=SYSTEM_PROMPT,
-                runs_dir=settings.RUNS_DIR,
-                policy=agent_config.policy,
-                budget_limits=agent_config.budget,
-                semaphore=agent_semaphore,
+            agent_services: dict[str, AgentService] = {}
+
+            for name, cfg in agent_configs.items():
+                model = AzureOpenAIModel(
+                    model_name=cfg.model.model_name,
+                    azure_openai_client=openai_client,
+                    temperature=cfg.model.temperature,
+                    max_tokens=cfg.model.max_tokens,
+                    input_cost_per_million=cfg.model.input_cost_per_million,
+                    output_cost_per_million=cfg.model.output_cost_per_million,
+                )
+
+                agent_services[name] = AgentService(
+                    llm=model,
+                    tools=shared_tools,
+                    system_prompt=SYSTEM_PROMPT,
+                    runs_dir=settings.RUNS_DIR,
+                    policy=cfg.policy,
+                    budget_limits=cfg.budget,
+                    semaphore=agent_semaphore,
+                    agent_name=name,
+                )
+
+            logger.info(
+                "Created %d agent service(s): %s",
+                len(agent_services),
+                sorted(agent_services),
             )
+
             index_service = IndexService(search_index_manager=azure_search_index_manager, embedder=azure_embedder)
 
             return cls(
-                agent_service=agent_service,
+                agent_services=agent_services,
                 azure_embedder=azure_embedder,
                 azure_search_index_client=azure_search_index_client,
                 azure_search_index_manager=azure_search_index_manager,
@@ -141,7 +155,9 @@ def get_pipeline_dependencies(request: Request) -> PipelineDependencies:
 # Dependency providers
 # Agent
 def get_agent_service(request: Request) -> AgentService:
-    return get_pipeline_dependencies(request).agent_service
+    # Invariant: PipelineDependencies.create() calls require_default_agent(),
+    # so DEFAULT_AGENT_KEY is always present here. Validated at startup, not per-request.
+    return get_pipeline_dependencies(request).agent_services[DEFAULT_AGENT_KEY]
 
 
 # Index

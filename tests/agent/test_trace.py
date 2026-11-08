@@ -483,3 +483,45 @@ def test_ts_is_iso8601_utc(tmp_path):
         assert re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z', ts)
     finally:
         t.close()
+
+
+# ---------------------------------------------------------------------------
+# agent_name: per-trace ownership (multi-agent readiness)
+# ---------------------------------------------------------------------------
+
+def test_agent_field_present_when_name_provided(tmp_path):
+    """Every record carries the agent name supplied at construction."""
+    with Trace(tmp_path, agent_name='classifier_agent') as t:
+        t._write({'t': 'a'})
+        t._write({'t': 'b'})
+
+    assert [r['agent'] for r in t.records()] == ['classifier_agent', 'classifier_agent']
+
+
+def test_agent_field_is_null_when_name_omitted(tmp_path):
+    """Ad-hoc traces (no agent_name) still carry the ``agent`` key, set to None."""
+    with Trace(tmp_path) as t:
+        t._write({'t': 'a'})
+
+    assert t.records()[0]['agent'] is None
+
+
+def test_agent_name_property_readable_before_and_after_close(tmp_path):
+    """Trace.agent_name is independent of _closed — safe to read after close()."""
+    t = Trace(tmp_path, agent_name='x')
+    assert t.agent_name == 'x'
+
+    t.close()
+
+    assert t.agent_name == 'x'
+    assert t.closed is True
+
+
+def test_run_id_format_unchanged_by_agent_name(tmp_path):
+    """agent_name must NOT change run_id — it leaks into ChatResponse.run_id (API contract)."""
+    with Trace(tmp_path, agent_name='classifier_agent') as t:
+        pass
+
+    assert 'classifier_agent' not in t.run_id
+    assert re.fullmatch(r'\d{8}_\d{6}_[0-9a-f]{8}', t.run_id), t.run_id
+    assert t.path.stem == t.run_id

@@ -256,3 +256,62 @@ async def test_semaphore_serializes_runs_over_time(service_kwargs, monkeypatch):
         assert end_a <= start_b, (
             f"runs overlapped: previous ended at {end_a}, next started at {start_b}"
         )
+
+
+# ---------------------------------------------------------------------------
+# agent_name: propagation into the Trace
+# ---------------------------------------------------------------------------
+
+async def test_agent_name_propagated_to_trace(service_kwargs, monkeypatch):
+    """agent_name reaches Trace.agent_name for every run() call.
+
+    The fake run_graph must close the trace in ``finally`` — otherwise the
+    unclosed Trace emits a ResourceWarning at GC, which ``filterwarnings=error``
+    turns into a test failure.
+    """
+    import use_cases.agent_service as agent_service_mod
+
+    captured: dict = {}
+
+    async def fake_run_graph(*args, **kwargs):
+        trace = kwargs["trace"]
+        captured["agent_name"] = trace.agent_name
+        try:
+            return _fake_result()
+        finally:
+            trace.close()
+
+    monkeypatch.setattr(agent_service_mod, "run_graph", fake_run_graph)
+
+    semaphore = asyncio.Semaphore(1)
+    service = AgentService(
+        **service_kwargs, semaphore=semaphore, agent_name="classifier_agent",
+    )
+
+    await service.run([_msg()])
+
+    assert captured["agent_name"] == "classifier_agent"
+
+
+async def test_agent_name_none_by_default(service_kwargs, monkeypatch):
+    """Without agent_name in the constructor, Trace.agent_name stays None (backward compatible)."""
+    import use_cases.agent_service as agent_service_mod
+
+    captured: dict = {}
+
+    async def fake_run_graph(*args, **kwargs):
+        trace = kwargs["trace"]
+        captured["agent_name"] = trace.agent_name
+        try:
+            return _fake_result()
+        finally:
+            trace.close()
+
+    monkeypatch.setattr(agent_service_mod, "run_graph", fake_run_graph)
+
+    semaphore = asyncio.Semaphore(1)
+    service = AgentService(**service_kwargs, semaphore=semaphore)
+
+    await service.run([_msg()])
+
+    assert captured["agent_name"] is None

@@ -1,20 +1,11 @@
-"""Terminal stage tests: verify_node, finish_node, routing, create_initial_state."""
 import pytest
+from dataclasses import replace
 
 from services.agent.agent_graph.nodes import finish_node, verify_node
-from services.agent.agent_graph.routing import (
-    route_after_decide,
-    route_after_execute,
-    route_after_verify,
-)
+from services.agent.agent_graph.routing import route_after_decide, route_after_execute, route_after_verify
 from services.agent.agent_graph.state import create_initial_state
-from services.agent.domain import (
-    AgentResult,
-    BudgetLimits,
-    Finalization,
-    Task,
-    TerminationReason,
-)
+from services.agent.domain import AgentResult, BudgetLimits, Finalization, Task, TerminationReason
+from services.agent.trace import Trace
 
 from _testing import FakeRuntime
 
@@ -310,3 +301,73 @@ def test_agent_result_finalization_enum():
         trace="/tmp/t",
     )
     assert r.finalization == Finalization.NONE
+
+
+# ---------------------------------------------------------------------------
+# agent_name: per-agent attribution end-to-end (finish_node → AgentResult)
+# ---------------------------------------------------------------------------
+
+def test_finish_node_copies_trace_agent_name(trace, make_context, make_state, tmp_path):
+    """finish_node copies trace.agent_name into AgentResult.agent_name.
+
+    The shared `trace` fixture creates an unnamed Trace; a dedicated named
+    trace is injected via dataclasses.replace so the test does not depend on
+    fixture-internal state.
+    """
+    named_trace = Trace(tmp_path / 'named', agent_name='classifier_agent')
+    try:
+        ctx = replace(make_context(), trace=named_trace)
+        state = make_state(ctx)
+        state["termination_reason"] = TerminationReason.DONE
+        state["answer"] = "final"
+
+        result = finish_node(state, FakeRuntime(ctx))
+
+        assert result["result"].agent_name == "classifier_agent"
+    finally:
+        named_trace.close()
+
+
+def test_finish_node_agent_name_none_when_trace_has_no_name(trace, make_context, make_state):
+    """An unnamed Trace (ad-hoc / test fixture) produces AgentResult.agent_name=None."""
+    ctx = make_context()
+    state = make_state(ctx)
+    state["termination_reason"] = TerminationReason.DONE
+
+    result = finish_node(state, FakeRuntime(ctx))
+
+    assert result["result"].agent_name is None
+
+
+def test_agent_result_agent_name_defaults_to_none():
+    """Backward compatible: AgentResult constructed without agent_name keeps None."""
+    r = AgentResult(
+        run_id="r1",
+        reason=TerminationReason.DONE_UNVERIFIED,
+        answer="x",
+        steps=1,
+        tokens=1,
+        cost_usd=0.0,
+        seconds=0.1,
+        history_len=1,
+        trace="/tmp/t",
+    )
+    assert r.agent_name is None
+
+
+def test_agent_result_agent_name_preserved():
+    """agent_name flows through AgentResult and model_dump() unchanged."""
+    r = AgentResult(
+        run_id="r1",
+        agent_name="classifier_agent",
+        reason=TerminationReason.DONE_UNVERIFIED,
+        answer="x",
+        steps=1,
+        tokens=1,
+        cost_usd=0.0,
+        seconds=0.1,
+        history_len=1,
+        trace="/tmp/t",
+    )
+    assert r.agent_name == "classifier_agent"
+    assert r.model_dump()["agent_name"] == "classifier_agent"

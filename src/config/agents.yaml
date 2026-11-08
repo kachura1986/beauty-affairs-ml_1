@@ -1,9 +1,0 @@
-default_agent:
-  policy:
-    empty_limit: 2
-    repeat_limit: 3
-  budget:
-    max_steps: 8
-    max_seconds: 400
-    max_tokens: 80000
-    max_cost_usd: 0.50
