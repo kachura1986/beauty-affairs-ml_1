@@ -8,7 +8,7 @@ from openai import AsyncOpenAI
 
 from core.config import settings
 from core.logger import get_logger
-from services.agent.config import load_agent_configs
+from services.agent.config import load_agent_configs, require_default_agent
 from services.agent.context import SYSTEM_PROMPT
 from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
@@ -75,7 +75,7 @@ class PipelineDependencies:
             )
 
             agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
-            agent_config = agent_configs['default_agent']
+            agent_config = require_default_agent(agent_configs, settings.AGENTS_CONFIG)
             agent_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_AGENT_RUNS)
 
             # Use cases
