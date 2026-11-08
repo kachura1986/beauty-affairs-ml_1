@@ -328,6 +328,10 @@ def test_trace_tool_args_hash_is_deterministic_and_low_entropy_recoverable(trace
 
     # Raw values themselves are still absent.
     serialized = json.dumps(records[0])
+    assert 'vitamin c' not in serialized
+    assert records[0]['args_hash'] == _hash(call_a['arguments'])
+    assert len(records[0]['args_hash']) == 12
+    assert records[0]['args_keys'] == []
 
 
 def test_tool_result_is_hashable():
