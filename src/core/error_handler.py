@@ -1,11 +1,12 @@
 import logging
 import traceback
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class ErrorHandler:
@@ -29,6 +30,7 @@ class ErrorHandler:
             message: str,
             http_status: int,
             details: dict | Sequence | None = None,
+            headers: Mapping[str, str] | None = None,
     ) -> JSONResponse:
         """
         Builds a standardized JSON error response.
@@ -39,6 +41,7 @@ class ErrorHandler:
             message (str): Main error message.
             http_status (int): HTTP status code.
             details (dict | Sequence | None, optional): Optional detailed error information.
+            headers (Mapping[str, str] | None, optional): Optional HTTP headers to include in the response.
 
         Returns:
             JSONResponse: Formatted JSON response containing error details.
@@ -55,7 +58,7 @@ class ErrorHandler:
         if details is not None:
             response_content['error']['details'] = details
 
-        response = JSONResponse(status_code=http_status, content=response_content)
+        response = JSONResponse(status_code=http_status, content=response_content, headers=headers)
 
         return response
 
@@ -70,14 +73,13 @@ class ErrorHandler:
             None: This method modifies the app in place.
         """
 
-        @app.exception_handler(HTTPException)
-        async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
+        async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
             """
-            Handles FastAPI HTTPException errors.
+            Handles Starlette/FastAPI HTTPException errors (including 404 and 405).
 
             Args:
                 request (Request): FastAPI request object.
-                exc (HTTPException): Raised HTTPException.
+                exc (StarletteHTTPException): Raised StarletteHTTPException.
 
             Returns:
                 JSONResponse: JSON response describing the HTTP error.
@@ -92,11 +94,11 @@ class ErrorHandler:
                 error_type='HTTPException',
                 message=str(exc.detail),
                 http_status=exc.status_code,
+                headers=exc.headers,
             )
 
             return response
 
-        @app.exception_handler(RequestValidationError)
         async def handle_request_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
             """
             Handles FastAPI request validation errors (e.g., invalid JSON body, query params).
@@ -124,7 +126,6 @@ class ErrorHandler:
 
             return response
 
-        @app.exception_handler(ValidationError)
         async def handle_pydantic_validation_error(request: Request, exc: ValidationError) -> JSONResponse:
             """
             Handles internal Pydantic validation errors. This occurs when internal server code tries to instantiate
@@ -151,7 +152,6 @@ class ErrorHandler:
 
             return response
 
-        @app.exception_handler(ValueError)
         async def handle_value_error(request: Request, exc: ValueError) -> JSONResponse:
             """
             Handles Python ValueError exceptions.
@@ -177,7 +177,6 @@ class ErrorHandler:
 
             return response
 
-        @app.exception_handler(Exception)
         async def handle_general_exception(request: Request, exc: Exception) -> JSONResponse:
             """
             Handles all unexpected exceptions.
@@ -203,3 +202,9 @@ class ErrorHandler:
             )
 
             return response
+
+        app.add_exception_handler(StarletteHTTPException, handle_http_exception)
+        app.add_exception_handler(RequestValidationError, handle_request_validation_error)
+        app.add_exception_handler(ValidationError, handle_pydantic_validation_error)
+        app.add_exception_handler(ValueError, handle_value_error)
+        app.add_exception_handler(Exception, handle_general_exception)
