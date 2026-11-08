@@ -62,6 +62,25 @@ only_agent:
     max_cost_usd: 0.5
 """
 
+MIN_TOKENS_AGENT_YAML = """
+default_agent:
+  model:
+    model_name: gpt-4o-mini
+    temperature: 0
+    max_tokens: 8192
+    input_cost_per_million: 0.15
+    output_cost_per_million: 0.60
+  policy:
+    empty_limit: 2
+    repeat_limit: 3
+    finalize_on_max_steps: true
+  budget:
+    max_steps: 12
+    max_seconds: 120
+    max_tokens: 1
+    max_cost_usd: 0.5
+"""
+
 
 @pytest.fixture
 def agents_config(tmp_path: Path, monkeypatch):
@@ -157,6 +176,29 @@ async def test_create_fails_when_default_agent_missing(agents_config, patched_ex
     agents_config(SINGLE_AGENT_YAML)
 
     with pytest.raises(ValueError, match='default_agent'):
+        await PipelineDependencies.create()
+
+    assert patched_externals.openai_client.close.await_count == 1
+    assert patched_externals.search_index_client.close.await_count == 1
+
+
+async def test_create_fails_when_budget_tokens_below_min_expected(agents_config, patched_externals):
+    """Startup must fail fast when budget.max_tokens is below MIN_EXPECTED_TOKENS.
+
+    Otherwise the agent would boot, then die on the first LLM step with BUDGET_TOKENS
+    and no diagnosable message — the pre-flight token check rejects every call.
+
+    Also verifies that partially-created clients are closed — the except
+    BaseException branch of create() must not leak openai_client or
+    search_index_client (same contract as test_create_fails_when_default_agent_missing).
+
+    ``max_tokens=1`` (not 100) keeps the test green regardless of future
+    MIN_EXPECTED_TOKENS values: any positive default is > 1, so the fail-fast
+    branch is always reached.
+    """
+    agents_config(MIN_TOKENS_AGENT_YAML)
+
+    with pytest.raises(ValueError, match='MIN_EXPECTED_TOKENS'):
         await PipelineDependencies.create()
 
     assert patched_externals.openai_client.close.await_count == 1

@@ -70,6 +70,16 @@ class PipelineDependencies:
             # DEFAULT_AGENT_KEY being present in agent_services.
             default_agent = require_default_agent(agent_configs, settings.AGENTS_CONFIG)  # noqa: F841
 
+            # Fail-fast: every agent's budget.max_tokens must be at least MIN_EXPECTED_TOKENS
+            for agent_name, agent_cfg in agent_configs.items():
+                if agent_cfg.budget.max_tokens < settings.MIN_EXPECTED_TOKENS:
+                    raise ValueError(
+                        f"{settings.AGENTS_CONFIG}: agent '{agent_name}' has budget.max_tokens="
+                        f"{agent_cfg.budget.max_tokens}, which is below MIN_EXPECTED_TOKENS="
+                        f"{settings.MIN_EXPECTED_TOKENS}; every LLM step would be rejected "
+                        f"by the pre-flight token check."
+                    )
+
             shared_tools = create_product_tools(
                 products_index,
                 default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,

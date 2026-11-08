@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     SEARCH_ENDPOINT: str
 
     # Agent configuration
-    AGENTS_CONFIG: Path = Path(__file__).resolve().parents[1] / 'agents.yaml'
+    AGENTS_CONFIG: Path = Path(__file__).resolve().parents[1] / 'agents_config.yaml'
     # Maximum number of concurrent agent runs per worker
     MAX_CONCURRENT_AGENT_RUNS: int = Field(default=4, gt=0)
 

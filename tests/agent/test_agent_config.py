@@ -40,7 +40,7 @@ def _agent_config() -> AgentConfig:
 def test_require_default_agent_returns_config():
     """A present 'default_agent' key is returned unchanged (identity, not a copy)."""
     cfg = _agent_config()
-    source = Path('/etc/agents.yaml')
+    source = Path('/etc/agents_config.yaml')
 
     result = require_default_agent({'default_agent': cfg}, source)
 
@@ -49,7 +49,7 @@ def test_require_default_agent_returns_config():
 
 def test_require_default_agent_empty_mapping_names_source_and_keys():
     """An empty mapping fails with the source path and an empty key list."""
-    source = Path('/etc/agents.yaml')
+    source = Path('/etc/agents_config.yaml')
 
     with pytest.raises(ValueError) as exc_info:
         require_default_agent({}, source)
@@ -63,7 +63,7 @@ def test_require_default_agent_empty_mapping_names_source_and_keys():
 def test_require_default_agent_missing_key_lists_available_keys_sorted():
     """A missing key fails with the available keys in deterministic order."""
     cfg = _agent_config()
-    source = Path('/etc/agents.yaml')
+    source = Path('/etc/agents_config.yaml')
 
     with pytest.raises(ValueError) as exc_info:
         require_default_agent({'cheap_agent': cfg, 'another_agent': cfg}, source)
@@ -159,7 +159,7 @@ default_agent:
 
 def test_load_agent_configs_round_trip(tmp_path: Path):
     """YAML→AgentConfig round-trip; per-call and run-wide token budgets stay distinct."""
-    path = tmp_path / 'agents.yaml'
+    path = tmp_path / 'agents_config.yaml'
     path.write_text(_YAML_DOCUMENT)
 
     configs = load_agent_configs(path)
