@@ -9,7 +9,12 @@ from ...context import AgentContextWindow
 from ...domain import Budget, TerminationReason
 from ...tools import ToolRegistry
 from ...trace import Trace
-from .._common import _is_transient_llm_error, _log_internal_exception, _retry_backoff
+from .._common import (
+    _classify_llm_exception,
+    _log_internal_exception,
+    _retry_backoff,
+    _trace_llm_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +37,8 @@ class LLMStepService:
         here to keep a single enforcement point. Mutates ``budget`` by reference; callers must pass
         ``budget=state['budget']``, never a copy. When ``reason`` is not ``None``, ``reply`` may still be
         valid: a completed LLM call that itself pushed the run over a hard budget is preserved so the
-        caller can decide whether it qualifies as a final answer.
+        caller can decide whether it qualifies as a final answer. ``budget.steps`` is incremented at the
+        top of every attempt — a retry is a physical LLM invocation and consumes a step.
 
         Args:
             budget (Budget): Budget for the request (mutated by reference).
@@ -72,87 +78,52 @@ class LLMStepService:
 
             return None, TerminationReason.BUDGET_TOKENS
 
-        budget.steps += 1
-
-        t0 = time.monotonic()
-
-        try:
-            return await self._attempt(budget, context_window, t0)
-        except Exception as exc:  # noqa: BLE001
-            latency_ms = int((time.monotonic() - t0) * 1000)
-
-            _log_internal_exception("LLM request failed.", exc, step=budget.steps)
-
-            # `llm_timeout` only when the budget is exhausted *after* the exception — not for any TimeoutError.
-            if budget.remaining_seconds() <= 0:
-                self._trace.error(
-                    step=budget.steps,
-                    kind='llm_timeout',
-                    message=type(exc).__name__,
-                    latency_ms=latency_ms,
-                    budget=budget,
-                )
-
-                return None, TerminationReason.BUDGET_TIME
-
-            # llm_transient is emitted for every transient failure, regardless of whether a retry follows.
-            first_kind = 'llm_transient' if _is_transient_llm_error(exc) else 'llm_error'
-            self._trace.error(
-                step=budget.steps,
-                kind=first_kind,
-                message=type(exc).__name__,
-                latency_ms=latency_ms,
-                budget=budget,
-            )
-
-            if first_kind != 'llm_transient' or not self._can_retry(budget):
-                return None, TerminationReason.LLM_ERROR
-
-            # Retry bookkeeping: the step is counted before the second attempt so a failed retry is
-            # also accounted for; backoff is capped at remaining/4 to leave time for the retry itself.
+        for attempt in range(2):
             budget.steps += 1
-            backoff = _retry_backoff(budget.remaining_seconds())
-            self._trace.error(
-                step=budget.steps,
-                kind='llm_retry',
-                message=type(exc).__name__,
-                latency_ms=latency_ms,
-                budget=budget,
-            )
-
-            if backoff > 0:
-                await asyncio.sleep(backoff)
 
             t0 = time.monotonic()
 
             try:
                 return await self._attempt(budget, context_window, t0)
-            except Exception as retry_exc:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 latency_ms = int((time.monotonic() - t0) * 1000)
 
-                _log_internal_exception("LLM retry failed.", retry_exc, step=budget.steps)
-
-                if budget.remaining_seconds() <= 0:
-                    self._trace.error(
-                        step=budget.steps,
-                        kind='llm_timeout',
-                        message=type(retry_exc).__name__,
-                        latency_ms=latency_ms,
-                        budget=budget,
-                    )
-
-                    return None, TerminationReason.BUDGET_TIME
-
-                kind = 'llm_transient' if _is_transient_llm_error(retry_exc) else 'llm_error'
-                self._trace.error(
+                _log_internal_exception(
+                    "LLM request failed." if attempt == 0 else "LLM retry failed.",
+                    exc,
                     step=budget.steps,
-                    kind=kind,
-                    message=type(retry_exc).__name__,
-                    latency_ms=latency_ms,
-                    budget=budget,
                 )
 
-                return None, TerminationReason.LLM_ERROR
+                # `llm_timeout` only when the budget is exhausted *after* the exception — not for any TimeoutError.
+                if budget.remaining_seconds() <= 0:
+                    _trace_llm_error(
+                        trace=self._trace, step=budget.steps, kind='llm_timeout',
+                        exc=exc, latency_ms=latency_ms, budget=budget,
+                    )
+                    return None, TerminationReason.BUDGET_TIME
+
+                # llm_transient is emitted for every transient failure, regardless of whether a retry follows.
+                kind = _classify_llm_exception(exc)
+                _trace_llm_error(
+                    trace=self._trace, step=budget.steps, kind=kind,
+                    exc=exc, latency_ms=latency_ms, budget=budget,
+                )
+
+                if attempt == 1 or kind != 'llm_transient' or not self._can_retry(budget):
+                    return None, TerminationReason.LLM_ERROR
+
+                # Retry bookkeeping: `llm_retry` is traced at the retry attempt's step number
+                # (`budget.steps + 1`), preserving the pre-refactor order — increment, then trace.
+                backoff = _retry_backoff(budget.remaining_seconds())
+                _trace_llm_error(
+                    trace=self._trace, step=budget.steps + 1, kind='llm_retry',
+                    exc=exc, latency_ms=latency_ms, budget=budget,
+                )
+
+                if backoff > 0:
+                    await asyncio.sleep(backoff)
+
+        raise RuntimeError("unreachable")  # pragma: no cover
 
     async def _attempt(
             self, budget: Budget, context_window: AgentContextWindow, t0: float,
@@ -217,10 +188,9 @@ class LLMStepService:
     def _can_retry(self, budget: Budget) -> bool:
         """Return True if a retry is allowed by every hard limit.
 
-        The ``remaining_tokens`` check is defensive: :meth:`run` already verified
-        ``remaining_tokens() >= MIN_EXPECTED_TOKENS`` in preflight, and a failed attempt does not consume
-        tokens (``record_llm`` runs only on success). The check guards against future changes where
-        ``record_llm`` might run before a failure is raised.
+        CONTRACT: the ``remaining_tokens`` check is defensive — :meth:`run` already verified it in
+        preflight, and a failed attempt does not consume tokens (``record_llm`` runs only on success).
+        It guards against future changes where ``record_llm`` might run before a failure is raised.
 
         Args:
             budget (Budget): Budget for the request (read-only).

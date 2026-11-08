@@ -908,8 +908,11 @@ async def test_e2e_trace_jsonl_contains_no_raw_keys_after_validation_error(trace
 async def test_finalize_transient_message_in_trace(trace, make_context, fast_retry):
     """A transient LLM error (429) is recorded as message='llm_transient' inside finalization_fallback.
 
-    After Phase B2, a transient error triggers a retry. Both attempts fail transiently
-    here; the second error keeps the retry from falling into FakeLLM's empty reply list
+    Both attempts fail transiently here. The first attempt emits only
+    ``finalization_retry`` (P2 #5: ``finalization_fallback`` is reserved for the
+    terminal path); the retry failure then goes through ``_fallback`` and produces
+    the single ``finalization_fallback`` with ``message='llm_transient'``. The
+    second error keeps the retry from falling into FakeLLM's empty reply list
     (IndexError) and fast_retry removes the real backoff from the suite runtime.
     """
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
@@ -947,7 +950,13 @@ async def test_finalize_permanent_message_in_trace(trace, make_context):
 # ---------------------------------------------------------------------------
 
 async def test_finalize_retries_on_429(trace, make_context, fast_retry):
-    """A transient 429 triggers one retry; the retry success returns Finalization.LLM and records both events."""
+    """A transient 429 triggers one retry; the retry success returns Finalization.LLM.
+
+    P2 #5: only ``finalization_retry`` is emitted on the retry path — no
+    ``finalization_fallback``, because the fallback is reserved for the terminal
+    path (via ``_fallback``). A successful retry therefore leaves zero fallback
+    events and exactly one retry event in the trace.
+    """
     llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(
@@ -964,8 +973,7 @@ async def test_finalize_retries_on_429(trace, make_context, fast_retry):
     records = trace.records()
     fallbacks = [r for r in records if r.get("kind") == "finalization_fallback"]
     retries = [r for r in records if r.get("kind") == "finalization_retry"]
-    assert len(fallbacks) == 1
-    assert fallbacks[0]["message"] == "llm_transient"
+    assert fallbacks == []
     assert len(retries) == 1
 
 
