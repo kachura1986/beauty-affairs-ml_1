@@ -19,8 +19,7 @@
 **/*.log
 **/*.tmp
 **/.runs/
+tools_
 
 # Exclude local configuration files
 .env
-
-
