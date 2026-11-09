@@ -11,16 +11,6 @@ from structlog.types import EventDict, Processor
 
 from core.config import settings
 
-# Fields allowed to pass through extra=... into JSON
-_EXTRA_WHITELIST: tuple[str, ...] = (
-    'run_id',
-    'step',
-    'tool',
-    'error_code',
-    'latency_ms',
-    'log_file',
-)
-
 # Base JSON event fields (never dropped)
 _BASE_KEYS: frozenset[str] = frozenset({
     'timestamp',
@@ -31,7 +21,19 @@ _BASE_KEYS: frozenset[str] = frozenset({
     'stack',
 })
 
-_ALLOWED_KEYS: frozenset[str] = _BASE_KEYS | frozenset(_EXTRA_WHITELIST)
+# Fields the shipped ErrorHandler itself relies on — not user configurable
+_INTERNAL_KEYS: tuple[str, ...] = ('error_code',)
+
+# Fields allowed to pass through extra=... into JSON
+_EXTRA_WHITELIST: tuple[str, ...] = (
+    'run_id',
+    'step',
+    'tool',
+    'latency_ms',
+    'log_file',
+)
+
+_ALLOWED_KEYS = _BASE_KEYS | frozenset(_INTERNAL_KEYS) | frozenset(_EXTRA_WHITELIST)
 
 
 def _add_whitelisted_extras(_logger: Any, _method_name: str, event_dict: EventDict) -> EventDict:
@@ -42,6 +44,10 @@ def _add_whitelisted_extras(_logger: Any, _method_name: str, event_dict: EventDi
 
     For native structlog calls there is no _record, so this is a no-op;
     the final _filter_event_dict still enforces the whitelist.
+
+    Projected keys are _INTERNAL_KEYS plus the user-editable _EXTRA_WHITELIST. The internal keys are copied
+    unconditionally: the shipped ErrorHandler relies on error_code, and that contract must not depend on whether the
+    user whitelist is empty.
 
     Args:
         _logger (Any): structlog logger (unused).
@@ -55,7 +61,7 @@ def _add_whitelisted_extras(_logger: Any, _method_name: str, event_dict: EventDi
     if record is None:
         return event_dict
 
-    for key in _EXTRA_WHITELIST:
+    for key in (*_INTERNAL_KEYS, *_EXTRA_WHITELIST):
         value = record.__dict__.get(key)
         if value is not None:
             event_dict[key] = value
@@ -74,7 +80,7 @@ def _filter_event_dict(_logger: Any, _method_name: str, event_dict: EventDict) -
         * internal LogRecord attributes (args, exc_info, msg, ...);
         * structlog meta keys (_record, _from_structlog);
         * arbitrary extra fields (e.g. SecretStr, large payloads);
-        * whitelisted fields whose value is None.
+        * projected fields (internal keys + user whitelist) whose value is None.
 
     Args:
         _logger: structlog logger (unused).
@@ -88,7 +94,7 @@ def _filter_event_dict(_logger: Any, _method_name: str, event_dict: EventDict) -
         key: value
         for key, value in event_dict.items()
         if key in _ALLOWED_KEYS
-           and not (key in _EXTRA_WHITELIST and value is None)
+           and not (key in (*_INTERNAL_KEYS, *_EXTRA_WHITELIST) and value is None)
     }
 
 

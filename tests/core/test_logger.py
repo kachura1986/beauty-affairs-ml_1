@@ -10,6 +10,7 @@ from core.logger import (
     _ALLOWED_KEYS,
     _BASE_KEYS,
     _EXTRA_WHITELIST,
+    _INTERNAL_KEYS,
     _add_whitelisted_extras,
     _build_shared_processors,
     _filter_event_dict,
@@ -99,10 +100,16 @@ def last_record(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_extra_whitelist_contents():
-    """The whitelist contains exactly the canonical extra= keys."""
+    """The user-editable whitelist contains exactly the canonical extra= keys.
+
+    error_code is intentionally absent: it lives in _INTERNAL_KEYS, because
+    the shipped ErrorHandler relies on it and it must be projected regardless
+    of whether the user has uncommented any example keys.
+    """
     assert set(_EXTRA_WHITELIST) == {
-        'run_id', 'step', 'tool', 'error_code', 'latency_ms', 'log_file',
+        'run_id', 'step', 'tool', 'latency_ms', 'log_file',
     }
+    assert 'error_code' not in _EXTRA_WHITELIST
 
 
 def test_extra_whitelist_rejects_legacy_field_names():
@@ -124,8 +131,8 @@ def test_base_keys_contents():
     }
 
 
-def test_allowed_keys_is_union_of_base_and_whitelist():
-    assert _ALLOWED_KEYS == _BASE_KEYS | frozenset(_EXTRA_WHITELIST)
+def test_allowed_keys_is_union_of_base_internal_and_whitelist():
+    assert _ALLOWED_KEYS == _BASE_KEYS | frozenset(_INTERNAL_KEYS) | frozenset(_EXTRA_WHITELIST)
 
 
 # ---------------------------------------------------------------------------
@@ -633,7 +640,11 @@ def test_timestamp_is_iso_utc(tmp_path):
 
 
 def test_whitelisted_extras_land_in_json(tmp_path):
-    """Every whitelisted key passed through extra= is visible in JSON."""
+    """Every projected key (internal + whitelisted) passed through extra= is visible in JSON.
+
+    error_code is projected via _INTERNAL_KEYS, the remaining keys via
+    _EXTRA_WHITELIST. Both sets must reach the JSON event.
+    """
     logger = setup_logging(tmp_path)
     logger.info(
         'with-extras',
@@ -741,8 +752,9 @@ def test_extra_stack_is_dropped(tmp_path):
 
     'stack' is in _BASE_KEYS, so _filter_event_dict would pass it through
     unchanged. It is dropped earlier — by _add_whitelisted_extras, which
-    only copies keys from _EXTRA_WHITELIST and 'stack' is not in that set.
-    Hence the drop is a consequence of the earlier stage, not the filter.
+    only copies keys from _INTERNAL_KEYS and _EXTRA_WHITELIST, and 'stack'
+    is in neither set. Hence the drop is a consequence of the earlier
+    stage, not the filter.
     """
     logger = setup_logging(tmp_path)
     logger.info('legacy-stack', extra={'stack': ['frame1', 'frame2']})
