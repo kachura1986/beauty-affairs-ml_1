@@ -1,11 +1,13 @@
-"""DECIDE stage tests: _check_budget, _request_llm, decide_node."""
+"""DECIDE stage tests: _check_budget, StepRunner delegation, decide_node."""
+import dataclasses
 import logging
 import time
 
 import pytest
 
 from services.agent.agent_graph.nodes import decide_node
-from services.agent.agent_graph.nodes.decide import _check_budget, _request_llm
+from services.agent.agent_graph.nodes.decide import _check_budget
+from services.agent.agent_graph.ports import StepRunner
 from services.agent.context import AgentContextWindow
 from services.agent.domain import (
     AgentPolicy,
@@ -14,6 +16,7 @@ from services.agent.domain import (
     TerminationReason,
 )
 from services.agent.trace import Trace
+from services.llm import Reply
 
 from _testing import (
     _FakeAPIStatusError,
@@ -24,6 +27,33 @@ from _testing import (
     rate_limit_error,
     reply,
 )
+
+
+# ---------------------------------------------------------------------------
+# Local StepRunner stubs (structural; no inheritance from LLMStepService)
+# ---------------------------------------------------------------------------
+
+class _NoneStepRunner:
+    """StepRunner that always returns ``(None, None)`` — a contract violation."""
+
+    async def run(
+            self, *, budget: Budget, context_window: AgentContextWindow,
+    ) -> tuple[Reply | None, TerminationReason | None]:
+        return None, None
+
+
+class _SpyStepRunner:
+    """StepRunner that records every context window it receives and delegates to ``real``."""
+
+    def __init__(self, real: StepRunner) -> None:
+        self._real = real
+        self.calls: list[AgentContextWindow] = []
+
+    async def run(
+            self, *, budget: Budget, context_window: AgentContextWindow,
+    ) -> tuple[Reply | None, TerminationReason | None]:
+        self.calls.append(context_window)
+        return await self._real.run(budget=budget, context_window=context_window)
 
 
 # ---------------------------------------------------------------------------
@@ -67,10 +97,10 @@ def test_exceeded_without_steps_time_before_tokens():
 
 
 # ---------------------------------------------------------------------------
-# _request_llm
+# StepRunner delegation
 # ---------------------------------------------------------------------------
 
-async def test_request_llm_success(trace, make_context):
+async def test_step_runner_success(trace, make_context):
     """Successful call increments steps and records tokens/cost."""
     llm = FakeLLM(reply(text="hello", in_tokens=5, out_tokens=3, cost_usd=0.001))
     ctx = make_context(llm=llm)
@@ -80,8 +110,8 @@ async def test_request_llm_success(trace, make_context):
         system="custom-system-prompt",
         messages=[{"role": "user", "content": "hi"}],
     )
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=cw,
     )
 
@@ -97,18 +127,16 @@ async def test_request_llm_success(trace, make_context):
     assert llm.calls[0]["system_prompt"] == cw.system
 
 
-async def test_request_llm_chat_and_trace_get_same_messages_object(trace, make_context, monkeypatch):
+async def test_step_runner_chat_and_trace_get_same_messages_object(trace, make_context, monkeypatch):
     """chat() and trace.step() must receive the same messages object — otherwise window_hash no longer matches what was sent."""
-    import services.agent.agent_graph.nodes.decide as decide_mod
-
     seen = {}
-    real_step = decide_mod.Trace.step
+    real_step = Trace.step
 
     def spy_step(self, n, window, reply, budget, latency_ms, *, system_prompt):
         seen["window"] = window
         return real_step(self, n, window, reply, budget, latency_ms, system_prompt=system_prompt)
 
-    monkeypatch.setattr(decide_mod.Trace, "step", spy_step)
+    monkeypatch.setattr(Trace, "step", spy_step)
 
     messages = [{"role": "user", "content": "hi"}]
     cw = make_context_window(system="custom-system", messages=messages)
@@ -116,14 +144,14 @@ async def test_request_llm_chat_and_trace_get_same_messages_object(trace, make_c
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    await _request_llm(llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget, context_window=cw)
+    await ctx.step_runner.run(budget=budget, context_window=cw)
 
     assert llm.calls[0]["messages"] is cw.messages
     assert seen["window"] is cw.messages
     assert seen["window"] is llm.calls[0]["messages"]
 
 
-async def test_request_llm_error_path_does_not_copy_messages(trace, make_context, monkeypatch):
+async def test_step_runner_error_path_does_not_copy_messages(trace, make_context, monkeypatch):
     """Error path must also pass the original messages object to chat() — a defensive copy would break identity."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
@@ -144,17 +172,14 @@ async def test_request_llm_error_path_does_not_copy_messages(trace, make_context
 
     monkeypatch.setattr(type(ctx.trace), "error", spy_error)
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
-        context_window=cw,
-    )
+    await ctx.step_runner.run(budget=budget, context_window=cw)
 
     assert seen["kind"] == "llm_error"
     assert seen["step"] == budget.steps  # step was incremented before the call
     assert llm.calls[0]["messages"] is cw.messages
 
 
-async def test_request_llm_timeout_returns_budget_time(trace, make_context, monkeypatch):
+async def test_step_runner_timeout_returns_budget_time(trace, make_context, monkeypatch):
     """_attempt TOCTOU guard short-circuits before chat() when the wall-clock budget expired.
 
     Pins elapsed() call count: run preflight + _attempt guard = 2; trace.error(snapshot) is
@@ -175,8 +200,8 @@ async def test_request_llm_timeout_returns_budget_time(trace, make_context, monk
 
     monkeypatch.setattr(Budget, "elapsed", fake_elapsed)
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -186,14 +211,14 @@ async def test_request_llm_timeout_returns_budget_time(trace, make_context, monk
     assert len(elapsed_calls) == 2
 
 
-async def test_request_llm_llm_error(trace, make_context):
+async def test_step_runner_llm_error(trace, make_context):
     """LLM exception with remaining time yields LLM_ERROR."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -201,21 +226,21 @@ async def test_request_llm_llm_error(trace, make_context):
     assert reason == TerminationReason.LLM_ERROR
 
 
-async def test_request_llm_error_still_increments_steps(trace, make_context):
+async def test_step_runner_error_still_increments_steps(trace, make_context):
     """Steps are incremented even if the LLM call fails — the step was started."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
     assert budget.steps == 1
 
 
-async def test_request_llm_without_chat_method_returns_llm_error(trace, make_context):
+async def test_step_runner_without_chat_method_returns_llm_error(trace, make_context):
     """LLM object lacking a chat method yields LLM_ERROR."""
 
     class NoChatLLM:
@@ -228,8 +253,8 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace, make_con
     ctx = make_context(llm=NoChatLLM())
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -237,7 +262,7 @@ async def test_request_llm_without_chat_method_returns_llm_error(trace, make_con
     assert reason == TerminationReason.LLM_ERROR
 
 
-async def test_request_llm_exceeded_after_successful_call(trace, make_context):
+async def test_step_runner_exceeded_after_successful_call(trace, make_context):
     """Successful call that pushes usage over the limit yields BUDGET_TOKENS but preserves the reply."""
     from core.config import settings
 
@@ -255,8 +280,8 @@ async def test_request_llm_exceeded_after_successful_call(trace, make_context):
         max_cost_usd=1,
     ))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -265,7 +290,7 @@ async def test_request_llm_exceeded_after_successful_call(trace, make_context):
     assert result.text == "x"
 
 
-async def test_request_llm_timeout_capped_by_default(trace, make_context, monkeypatch):
+async def test_step_runner_timeout_capped_by_default(trace, make_context, monkeypatch):
     """LLM call timeout is capped by the default when remaining budget is larger."""
     from core.config import settings
     monkeypatch.setattr(settings, "LLM_DEFAULT_TIMEOUT_SECONDS", 5.0)
@@ -274,15 +299,15 @@ async def test_request_llm_timeout_capped_by_default(trace, make_context, monkey
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=300, max_tokens=1000, max_cost_usd=1))
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
     assert llm.calls[0]["timeout"] == pytest.approx(5.0, abs=0.1)
 
 
-async def test_request_llm_preflight_tokens_below_minimum(trace, make_context):
+async def test_step_runner_preflight_tokens_below_minimum(trace, make_context):
     """Token budget below MIN_EXPECTED_TOKENS short-circuits before chat() (strict '<')."""
     from core.config import settings
 
@@ -295,8 +320,8 @@ async def test_request_llm_preflight_tokens_below_minimum(trace, make_context):
         max_cost_usd=1,
     ))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -305,7 +330,7 @@ async def test_request_llm_preflight_tokens_below_minimum(trace, make_context):
     assert llm.calls == []
 
 
-async def test_request_llm_preflight_tokens_at_boundary_allowed(trace, make_context):
+async def test_step_runner_preflight_tokens_at_boundary_allowed(trace, make_context):
     """Exactly MIN_EXPECTED_TOKENS remaining must pass through to chat() (strict '<')."""
     from core.config import settings
 
@@ -318,8 +343,8 @@ async def test_request_llm_preflight_tokens_at_boundary_allowed(trace, make_cont
         max_cost_usd=1,
     ))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -328,7 +353,7 @@ async def test_request_llm_preflight_tokens_at_boundary_allowed(trace, make_cont
     assert len(llm.calls) == 1
 
 
-async def test_request_llm_preflight_tokens_emits_trace(trace, make_context):
+async def test_step_runner_preflight_tokens_emits_trace(trace, make_context):
     """Pre-flight rejection is recorded in the trace with kind='preflight_tokens'."""
     from core.config import settings
 
@@ -341,15 +366,15 @@ async def test_request_llm_preflight_tokens_emits_trace(trace, make_context):
         max_cost_usd=1,
     ))
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
     assert any(r.get("kind") == "preflight_tokens" for r in trace.records())
 
 
-async def test_request_llm_precondition_raises_on_exhausted_steps(trace, make_context):
+async def test_step_runner_precondition_raises_on_exhausted_steps(trace, make_context):
     """LLMStepService raises RuntimeError on exhausted steps — an explicit raise survives ``python -O``, an assert does not."""
     llm = FakeLLM(reply(text="never"))
     ctx = make_context(llm=llm)
@@ -359,10 +384,7 @@ async def test_request_llm_precondition_raises_on_exhausted_steps(trace, make_co
     budget.steps = 1  # exhausted
 
     with pytest.raises(RuntimeError, match='precondition violated'):
-        await _request_llm(
-            llm=ctx.llm,
-            tools=ctx.tools,
-            trace=ctx.trace,
+        await ctx.step_runner.run(
             budget=budget,
             context_window=make_context_window(),
         )
@@ -388,15 +410,9 @@ async def test_decide_returns_budget_steps_when_no_steps_left(trace, make_contex
     assert llm.calls == []
 
 
-async def test_decide_raises_if_llm_returns_nothing(trace, make_context, make_state, monkeypatch):
-    """A (None, None) result from _request_llm is a contract violation."""
-    import services.agent.agent_graph.nodes.decide as decide_mod
-    async def fake_request_llm(**kwargs):
-        return None, None
-
-    monkeypatch.setattr(decide_mod, "_request_llm", fake_request_llm)
-
-    ctx = make_context()
+async def test_decide_raises_if_llm_returns_nothing(trace, make_context, make_state):
+    """A (None, None) result from step_runner is a contract violation."""
+    ctx = make_context(step_runner=_NoneStepRunner())
     state = make_state(ctx)
 
     with pytest.raises(RuntimeError, match="no reply"):
@@ -603,7 +619,9 @@ async def test_decide_emits_budget_warning_once(trace, make_context, make_state)
     assert first["budget_warning_emitted"] is True
     assert "WARNING: more than 80%" in llm.calls[0]["system_prompt"]
 
-    state["budget_warning_emitted"] = True
+    # decide_node returns a partial state dict; LangGraph would merge it into the current state via the reducer.
+    # Calling decide_node directly does not merge, so emulate the merge here — this is what the next graph step would see.
+    state["budget_warning_emitted"] = first["budget_warning_emitted"]
     second = await decide_node(state, FakeRuntime(ctx))
     assert second["budget_warning_emitted"] is True
     assert "WARNING: more than 80%" not in llm.calls[1]["system_prompt"]
@@ -710,36 +728,27 @@ async def test_decide_skips_build_context_when_steps_exhausted(trace, make_conte
     assert called == []
 
 
-async def test_decide_forwards_context_window_to_request_llm(trace, make_context, make_state, monkeypatch):
-    """build_context output is forwarded to _request_llm unchanged — a reconstructed system prompt would silently drop the warning."""
-    import services.agent.agent_graph.nodes.decide as decide_mod
+async def test_decide_forwards_context_window_to_step_runner(trace, make_context, make_state):
+    """build_context output is forwarded to step_runner unchanged — a reconstructed system prompt would silently drop the warning."""
+    base = make_context()
+    spy = _SpyStepRunner(base.step_runner)
+    ctx = dataclasses.replace(base, step_runner=spy)
 
-    real_request = decide_mod._request_llm
-    seen = {}
-
-    async def spy(*, llm, tools, trace, budget, context_window):
-        seen["cw"] = context_window
-        return await real_request(
-            llm=llm, tools=tools, trace=trace, budget=budget, context_window=context_window,
-        )
-
-    monkeypatch.setattr(decide_mod, "_request_llm", spy)
-
-    ctx = make_context()
     state = make_state(ctx)
     state["budget"].cost_usd = 0.45  # 90% of the default 0.50 cost budget -> soft warning
 
     await decide_node(state, FakeRuntime(ctx))
 
-    assert isinstance(seen["cw"], AgentContextWindow)
-    assert "WARNING: more than 80%" in seen["cw"].system
+    assert len(spy.calls) == 1
+    assert isinstance(spy.calls[0], AgentContextWindow)
+    assert "WARNING: more than 80%" in spy.calls[0].system
 
 
 # ---------------------------------------------------------------------------
 # Error classification in the trace (Phase A observability)
 # ---------------------------------------------------------------------------
 
-async def test_request_llm_transient_kind_in_trace(trace, make_context, fast_retry):
+async def test_step_runner_transient_kind_in_trace(trace, make_context, fast_retry):
     """Transient error (429) is recorded as kind='llm_transient'.
 
     Both attempts fail transiently; the second error keeps the retry from hitting
@@ -749,8 +758,8 @@ async def test_request_llm_transient_kind_in_trace(trace, make_context, fast_ret
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -761,14 +770,14 @@ async def test_request_llm_transient_kind_in_trace(trace, make_context, fast_ret
     assert "llm_error" not in kinds
 
 
-async def test_request_llm_permanent_kind_in_trace(trace, make_context):
+async def test_step_runner_permanent_kind_in_trace(trace, make_context):
     """Permanent LLM error (RuntimeError) is recorded as kind='llm_error'."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -783,14 +792,14 @@ async def test_request_llm_permanent_kind_in_trace(trace, make_context):
 # Retry (Phase B1)
 # ---------------------------------------------------------------------------
 
-async def test_request_llm_retries_on_429(trace, make_context, fast_retry):
+async def test_step_runner_retries_on_429(trace, make_context, fast_retry):
     """Transient 429 is retried once; retry success returns the reply with steps=2."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -807,14 +816,14 @@ async def test_request_llm_retries_on_429(trace, make_context, fast_retry):
     assert step_records[0]["step"] == 2
 
 
-async def test_request_llm_retries_on_503(trace, make_context, fast_retry):
+async def test_step_runner_retries_on_503(trace, make_context, fast_retry):
     """Transient 503 is retried once; retry success returns the reply with steps=2."""
     llm = FakeLLM(reply(text="ok"), errors=[internal_server_error(503)])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -823,14 +832,14 @@ async def test_request_llm_retries_on_503(trace, make_context, fast_retry):
     assert budget.steps == 2
 
 
-async def test_request_llm_retries_at_most_once(trace, make_context, fast_retry):
+async def test_step_runner_retries_at_most_once(trace, make_context, fast_retry):
     """Even with plenty of step budget, a failed retry is terminal — one retry is the maximum."""
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -842,14 +851,14 @@ async def test_request_llm_retries_at_most_once(trace, make_context, fast_retry)
     assert len(retries) == 1
 
 
-async def test_request_llm_no_retry_on_400(trace, make_context):
+async def test_step_runner_no_retry_on_400(trace, make_context):
     """Permanent 400 is not retried, regardless of the remaining step budget."""
     llm = FakeLLM(errors=[_FakeAPIStatusError(400)])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -861,14 +870,14 @@ async def test_request_llm_no_retry_on_400(trace, make_context):
     assert "llm_retry" not in kinds
 
 
-async def test_request_llm_no_retry_when_max_steps_1(trace, make_context):
+async def test_step_runner_no_retry_when_max_steps_1(trace, make_context):
     """Transient error with max_steps=1 emits llm_transient, no llm_retry, returns LLM_ERROR."""
     llm = FakeLLM(errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -880,7 +889,7 @@ async def test_request_llm_no_retry_when_max_steps_1(trace, make_context):
     assert "llm_retry" not in kinds
 
 
-async def test_request_llm_no_retry_when_time_exhausted(trace, make_context, monkeypatch):
+async def test_step_runner_no_retry_when_time_exhausted(trace, make_context, monkeypatch):
     """No retry when the wall-clock budget expires between the attempt and the except branch."""
     llm = FakeLLM(errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
@@ -895,8 +904,8 @@ async def test_request_llm_no_retry_when_time_exhausted(trace, make_context, mon
 
     monkeypatch.setattr(Budget, "elapsed", fake_elapsed)
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -906,7 +915,7 @@ async def test_request_llm_no_retry_when_time_exhausted(trace, make_context, mon
     assert "llm_retry" not in kinds
 
 
-async def test_request_llm_no_retry_when_tokens_insufficient(trace, make_context, monkeypatch):
+async def test_step_runner_no_retry_when_tokens_insufficient(trace, make_context, monkeypatch):
     """_can_retry rejects a retry when the token budget shrank below MIN_EXPECTED_TOKENS.
 
     ``remaining_tokens()`` is called twice: run preflight (call #1, pass) and
@@ -929,8 +938,8 @@ async def test_request_llm_no_retry_when_tokens_insufficient(trace, make_context
 
     monkeypatch.setattr(Budget, "remaining_tokens", fake_remaining_tokens)
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -939,14 +948,14 @@ async def test_request_llm_no_retry_when_tokens_insufficient(trace, make_context
     assert not any(r.get("kind") == "llm_retry" for r in trace.records())
 
 
-async def test_request_llm_retry_consumes_step(trace, make_context, fast_retry):
+async def test_step_runner_retry_consumes_step(trace, make_context, fast_retry):
     """A successful retry consumes a second step — budget.steps reflects physical invocations."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -955,14 +964,14 @@ async def test_request_llm_retry_consumes_step(trace, make_context, fast_retry):
     assert budget.steps == 2
 
 
-async def test_request_llm_retry_does_not_exceed_max_steps(trace, make_context, fast_retry):
+async def test_step_runner_retry_does_not_exceed_max_steps(trace, make_context, fast_retry):
     """With max_steps=2, a failed retry terminates at steps=2 — no third attempt."""
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    result, reason = await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    result, reason = await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -972,14 +981,14 @@ async def test_request_llm_retry_does_not_exceed_max_steps(trace, make_context, 
     assert len(llm.calls) == 2
 
 
-async def test_request_llm_retry_records_real_latency(trace, make_context, fast_retry):
+async def test_step_runner_retry_records_real_latency(trace, make_context, fast_retry):
     """llm_retry.latency_ms reflects the first attempt's real duration (raise_after sleeps before raising)."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()], raise_after=0.02)
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -988,14 +997,14 @@ async def test_request_llm_retry_records_real_latency(trace, make_context, fast_
     assert retry_events[0]["latency_ms"] >= 15
 
 
-async def test_request_llm_retry_records_separate_steps(trace, make_context, fast_retry):
+async def test_step_runner_retry_records_separate_steps(trace, make_context, fast_retry):
     """llm_transient records the first attempt's step; llm_retry records the retry's step — they differ."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -1008,7 +1017,7 @@ async def test_request_llm_retry_records_separate_steps(trace, make_context, fas
     assert retry[0]["step"] == 2
 
 
-async def test_request_llm_retry_also_emits_llm_transient(trace, make_context, fast_retry):
+async def test_step_runner_retry_also_emits_llm_transient(trace, make_context, fast_retry):
     """llm_transient is emitted for every transient failure — including the retry's failure.
 
     Pins Z2: introducing llm_retry must not silence llm_transient on either attempt;
@@ -1018,8 +1027,8 @@ async def test_request_llm_retry_also_emits_llm_transient(trace, make_context, f
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
-    await _request_llm(
-        llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+    await ctx.step_runner.run(
+        budget=budget,
         context_window=make_context_window(),
     )
 
@@ -1054,8 +1063,8 @@ async def test_attempt_trace_step_raises_does_not_double_count(
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     with caplog.at_level(logging.ERROR):
-        result, reason = await _request_llm(
-            llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        result, reason = await ctx.step_runner.run(
+            budget=budget,
             context_window=make_context_window(),
         )
 
@@ -1096,8 +1105,8 @@ async def test_attempt_record_llm_raises_does_not_double_count(
     budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
 
     with caplog.at_level(logging.ERROR):
-        result, reason = await _request_llm(
-            llm=ctx.llm, tools=ctx.tools, trace=ctx.trace, budget=budget,
+        result, reason = await ctx.step_runner.run(
+            budget=budget,
             context_window=make_context_window(),
         )
 

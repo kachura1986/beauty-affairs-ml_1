@@ -4,6 +4,7 @@ from ..domain import AgentPolicy, AgentResult, Task
 from ..tools import ToolRegistry
 from ..trace import Trace
 from .graph import GRAPH
+from .services import FinalizeService, LLMStepService
 from .state import AgentContext, create_initial_state
 
 
@@ -33,6 +34,8 @@ async def run_graph(
                 llm=llm,
                 trace=trace,
                 policy=policy,
+                step_runner=LLMStepService(llm=llm, tools=tools, trace=trace),
+                finalizer=FinalizeService(llm=llm, trace=trace, task=task),
             ),
             config={
                 # Your max_steps counts LLM calls. LangGraph's recursion_limit counts graph super-steps,

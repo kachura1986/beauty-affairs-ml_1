@@ -7,6 +7,7 @@ from services.llm import LLMModel, ToolCall
 from ..domain import AgentPolicy, AgentResult, Budget, Finalization, Task, TerminationReason
 from ..tools import ToolRegistry
 from ..trace import Trace
+from .ports import Finalizer, StepRunner
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,10 @@ class AgentContext:
         llm (LLMModel): LLM used for decision and finalization steps.
         trace (Trace): Trace sink for the run.
         policy (AgentPolicy): Anti-loop / finalization policy.
+        step_runner (StepRunner): Performs one bounded LLM decision step. Injected via the runtime context so tests
+            substitute a fake structurally, instead of monkeypatching a private module function.
+        finalizer (Finalizer): Performs one bounded finalization call when
+            max_steps is exhausted. Injected symmetrically with step_runner.
     """
 
     task: Task
@@ -29,6 +34,8 @@ class AgentContext:
     llm: LLMModel
     trace: Trace
     policy: AgentPolicy
+    step_runner: StepRunner
+    finalizer: Finalizer
 
 
 class GraphState(TypedDict, total=False):

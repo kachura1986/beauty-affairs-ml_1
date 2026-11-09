@@ -1,5 +1,7 @@
 import pytest
 
+from services.agent.agent_graph.ports import Finalizer, StepRunner
+from services.agent.agent_graph.services import FinalizeService, LLMStepService
 from services.agent.agent_graph.state import AgentContext, create_initial_state
 from services.agent.domain import AgentPolicy, BudgetLimits, Task
 from services.agent.tools import Tool, ToolRegistry
@@ -39,7 +41,12 @@ def make_context(trace, make_registry):
             max_tokens: int = 200_000,
             max_cost_usd: float = 0.50,
             system_prompt: str = "sys",
+            step_runner: StepRunner | None = None,
+            finalizer: Finalizer | None = None,
     ) -> AgentContext:
+        tools_ = tools or make_registry()
+        llm_ = llm or FakeLLM(reply(text="ok"))
+
         task = Task(
             system_prompt=system_prompt,
             initial_messages=[{"role": "user", "content": "hi"}],
@@ -53,10 +60,12 @@ def make_context(trace, make_registry):
         )
         return AgentContext(
             task=task,
-            tools=tools or make_registry(),
-            llm=llm or FakeLLM(reply(text="ok")),
+            tools=tools_,
+            llm=llm_,
             trace=trace,
             policy=policy or AgentPolicy(empty_limit=3, repeat_limit=3),
+            step_runner=step_runner or LLMStepService(llm=llm_, tools=tools_, trace=trace),
+            finalizer=finalizer or FinalizeService(llm=llm_, trace=trace, task=task),
         )
 
     return _make

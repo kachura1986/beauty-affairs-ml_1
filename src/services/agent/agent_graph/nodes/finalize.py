@@ -3,7 +3,6 @@ from typing import Any
 from langgraph.runtime import Runtime
 
 from ...domain import Finalization, TerminationReason
-from ..services.finalize import FinalizeService
 from ..state import AgentContext, GraphState
 
 
@@ -17,6 +16,7 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
     The only place where an LLM call may run without can_start_step(); bounded to exactly one call
     and gated by policy.finalize_on_max_steps and hard-budget checks. All budget/LLM accounting and
     trace.error(kind='finalization_*') live in FinalizeService.run; this node only orchestrates.
+    The FinalizeService implementation is injected via ``AgentContext.finalizer``.
 
     Args:
     state (GraphState): The current graph state.
@@ -38,9 +38,8 @@ async def finalize_node(state: GraphState, runtime: Runtime[AgentContext]) -> di
         }
 
     ctx = runtime.context
-    service = FinalizeService(llm=ctx.llm, trace=ctx.trace, task=ctx.task)
 
-    answer, finalization = await service.run(
+    answer, finalization = await ctx.finalizer.run(
         budget=state['budget'],  # by reference — do not copy
         history=state['history'],
         last_tool_ok=state.get('last_tool_ok'),

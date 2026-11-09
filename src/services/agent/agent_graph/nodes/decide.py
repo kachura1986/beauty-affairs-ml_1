@@ -3,14 +3,9 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
-from services.llm import LLMModel, Reply
-
-from ...context import AgentContextWindow, ContextOverflow, build_context, build_observation_message
+from ...context import ContextOverflow, build_context, build_observation_message
 from ...domain import Budget, TerminationReason
-from ...tools import ToolRegistry
-from ...trace import Trace
 from .._fallback import _has_tool_results
-from ..services.llm_step import LLMStepService
 from ..state import AgentContext, GraphState
 
 logger = logging.getLogger(__name__)
@@ -30,33 +25,6 @@ def _check_budget(budget: Budget) -> TerminationReason | None:
         return TerminationReason.BUDGET_STEPS
 
     return budget.exceeded_without_steps()
-
-
-async def _request_llm(
-        *,
-        llm: LLMModel,
-        tools: ToolRegistry,
-        trace: Trace,
-        budget: Budget,
-        context_window: AgentContextWindow,
-) -> tuple[Reply | None, TerminationReason | None]:
-    """
-    Thin compatibility wrapper around :class:`LLMStepService`.
-
-    Preserved because existing tests monkeypatch ``nodes._request_llm``.
-    New code should call ``LLMStepService`` directly.
-
-    Args:
-        llm (LLMModel): LLM to use for the request.
-        tools (ToolRegistry): Tool registry for the request.
-        trace (Trace): Trace for the request.
-        budget (Budget): Budget for the request (mutated by reference).
-        context_window (AgentContextWindow): Context for the request.
-
-    Returns:
-        tuple[Reply | None, TerminationReason | None]: Tuple of (reply, termination reason).
-    """
-    return await LLMStepService(llm=llm, tools=tools, trace=trace).run(budget=budget, context_window=context_window)
 
 
 async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
@@ -133,10 +101,7 @@ async def decide_node(state: GraphState, runtime: Runtime[AgentContext]) -> dict
             'termination_reason': TerminationReason.CONTEXT_OVERFLOW,
         }
 
-    reply, reason = await _request_llm(
-        llm=ctx.llm,
-        tools=ctx.tools,
-        trace=ctx.trace,
+    reply, reason = await ctx.step_runner.run(
         budget=budget,
         context_window=context_window,
     )
