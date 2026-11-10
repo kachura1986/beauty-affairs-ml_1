@@ -156,9 +156,9 @@ class FinalizeService:
         if reply is not None:
             budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
 
-        # tool_calls are ignored on finalization: the model was given an empty tool list, but the
-        # Responses API does not enforce it. Propagating them into pending_tool_calls would break
-        # the execute_node pairing invariant.
+        # tool_calls are ignored on finalization: the model was given an empty tool list, but llm does not guarantee it
+        # returns none. This call bypasses decide -> execute, so propagating them into pending_tool_calls would leave
+        # an assistant tool_call without a paired tool message.
         if reply is None or not reply.text.strip():
             return self._fallback(
                 budget=budget, history=history, last_tool_ok=last_tool_ok,
