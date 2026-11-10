@@ -13,12 +13,7 @@ class ModelSettings(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    model_name: str = Field(
-        description=(
-            "Azure OpenAI deployment/model name used by this agent. "
-            "Deployment is per-agent; endpoint/key stay in Settings (shared transport)."
-        ),
-    )
+    model_name: str = Field(description="Model name used by this agent.")
     temperature: float = Field(
         ge=0, le=2,
         description="Sampling temperature for this agent's model.",

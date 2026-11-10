@@ -10,26 +10,6 @@ class ToolCall(TypedDict):
     arguments: dict[str, Any]
 
 
-@dataclass(slots=True)
-class Message:
-    """
-    Represent a single chat message.
-
-    Attributes:
-        role (str): Logical role of the message author.
-        content (str): Text content of the message.
-        tool_calls (list[ToolCall] | None): List of tool calls.
-        tool_call_id (str | None): ID of the tool call.
-        name (str | None): Name of the message author.
-    """
-
-    role: str
-    content: str
-    tool_calls: list[ToolCall] | None = None
-    tool_call_id: str | None = None
-    name: str | None = None
-
-
 class UnknownRoleError(ValueError):
     """Raise an error when a message contains an unsupported role."""
 
