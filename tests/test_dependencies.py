@@ -122,7 +122,7 @@ def patched_externals():
         patch('dependencies.AzureSearchIndexManager', return_value=_mock_async_client()),
         patch('dependencies.ProductsSearchIndex'),
         patch('dependencies.create_product_tools', return_value=MagicMock()),
-        patch('dependencies.AzureOpenAIModel') as mock_model,
+        patch('dependencies.OpenAICompatibleModel') as mock_model,
         patch('dependencies.IndexService'),
     ):
         yield SimpleNamespace(

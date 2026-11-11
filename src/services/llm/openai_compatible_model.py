@@ -19,7 +19,7 @@ def _is_transient_openai_error(exc: Exception) -> bool:
     Builtin ``TimeoutError`` from ``asyncio.wait_for`` is the production timeout path and is transient.
 
     Args:
-        exc (Exception): Exception raised during ``AzureOpenAIModel.chat``.
+        exc (Exception): Exception raised during ``OpenAICompatibleModel.chat``.
 
     Returns:
         bool: True if a retry has a non-trivial chance of succeeding.
@@ -47,30 +47,29 @@ def _is_transient_openai_error(exc: Exception) -> bool:
     if isinstance(status, int) and (status == 429 or status >= 500):
         return True
 
-    # Azure SDK core names (ServiceRequestError, ...) are not matched: they do not
-    # appear in the LLM path — ``openai`` is httpx-based; those types come from
-    # ``azure-search-documents``, not from the LLM path.
+    # Provider-specific SDK types (e.g. ``ServiceRequestError`` from Azure SDKs,
+    # used by ``azure-search-documents``) are not matched: ...
     return False
 
 
-class AzureOpenAIModel(BaseLLMModel):
-    """Implement the chat model for the Azure OpenAI API using an asynchronous client."""
+class OpenAICompatibleModel(BaseLLMModel):
+    """Implement the chat model for any OpenAI-compatible Responses API endpoint over an asynchronous client."""
 
     def __init__(
             self,
             model_name: str,
-            azure_openai_client: AsyncOpenAI,
+            client: AsyncOpenAI,
             temperature: float,
             max_tokens: int,
             input_cost_per_million: float,
             output_cost_per_million: float,
     ) -> None:
         """
-        Initialize the Azure OpenAI chat model.
+        Initialize the OpenAI-compatible chat model.
 
         Args:
-            model_name (str): Azure OpenAI deployment or model name.
-            azure_openai_client (AsyncOpenAI): Pre-initialized asynchronous Azure OpenAI client.
+            model_name (str): Provider-specific deployment or model name (e.g. Azure deployment name, Ollama model tag).
+            client (AsyncOpenAI): Pre-initialized asynchronous OpenAI-compatible client.
             temperature (float): Sampling temperature for generation.
             max_tokens (int): Maximum number of tokens to generate.
             input_cost_per_million (float): Cost in USD per 1M input tokens.
@@ -79,7 +78,7 @@ class AzureOpenAIModel(BaseLLMModel):
         super().__init__()
 
         self._model_name = model_name
-        self._client = azure_openai_client
+        self._client = client
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._input_cost_per_million = input_cost_per_million
@@ -92,12 +91,11 @@ class AzureOpenAIModel(BaseLLMModel):
 
     def _format_chat_messages(self, messages: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
         """
-        Validate and format chat messages for the Azure OpenAI API.
+        Validate and format chat messages for the OpenAI-compatible API.
 
-        CONTRACT: ``role='system'`` messages are dropped — the system prompt goes via
-        ``chat(..., system_prompt=...)`` (``instructions``), never through ``input``.
-        Tool calls without an explicit ``id`` get a deterministic synthetic id
-        ``f'{name}:{index}'`` so the tool result can be paired back.
+        CONTRACT: ``role='system'`` messages are dropped — the system prompt goes via ``chat(..., system_prompt=...)``
+        (``instructions``), never through ``input``. Tool calls without an explicit ``id`` get a deterministic
+        synthetic id ``f'{name}:{index}'`` so the tool result can be paired back.
 
         Args:
             messages (Sequence[Mapping[str, Any]]): Messages to format, including optional tool calls.
@@ -181,7 +179,7 @@ class AzureOpenAIModel(BaseLLMModel):
         Extract text from a Responses API response.
 
         Args:
-            response (Any): Raw Azure OpenAI Responses API response.
+            response (Any): Raw OpenAI-compatible Responses API response.
 
         Returns:
             str: Response text, or an empty string if unavailable.
@@ -192,12 +190,11 @@ class AzureOpenAIModel(BaseLLMModel):
         """
         Extract and normalize tool calls from a Responses API response.
 
-        CONTRACT: non-``function_call`` output items are silently skipped. Missing
-        ``call_id`` gets a deterministic synthetic id ``f'{name}:{index}'`` so the
-        tool result can be paired back.
+        CONTRACT: non-``function_call`` output items are silently skipped. Missing ``call_id`` gets
+        a deterministic synthetic id ``f'{name}:{index}'`` so the tool result can be paired back.
 
         Args:
-            response (Any): Raw Azure OpenAI Responses API response.
+            response (Any): Raw OpenAI-compatible Responses API response.
 
         Returns:
             list[ToolCall]: Tool calls with IDs, function names, and argument mappings.
@@ -247,7 +244,7 @@ class AzureOpenAIModel(BaseLLMModel):
         Extract input and output token counts from a completion response.
 
         Args:
-            response (Any): Raw Azure OpenAI completion response.
+            response (Any): Raw OpenAI-compatible completion response.
 
         Returns:
             tuple[int, int]: Input token count and output token count, defaulting to zero.
@@ -266,9 +263,8 @@ class AzureOpenAIModel(BaseLLMModel):
         """
         Compute the request cost in USD from token counts and configured per-million rates.
 
-        CONTRACT: returns ``0.0`` when both token counts are ``<= 0`` — cost-based
-        budget limits are not enforced for that call. The caller must not treat
-        ``0.0`` as "free call", only as "no accounting data".
+        CONTRACT: returns ``0.0`` when both token counts are ``<= 0`` — cost-based budget limits are not enforced for
+        that call. The caller must not treat ``0.0`` as "free call", only as "no accounting data".
 
         Args:
             input_tokens (int): Number of input tokens reported by the API.
@@ -296,9 +292,8 @@ class AzureOpenAIModel(BaseLLMModel):
         """
         Send a chat request and return a normalized response.
 
-        CONTRACT: ``timeout`` is required — the caller (``LLMStepService`` /
-        ``FinalizeService``) owns the per-call wall-clock cap; SDK-level timeouts
-        are disabled in the composition root (``timeout=None``) so that
+        CONTRACT: ``timeout`` is required — the caller (``LLMStepService`` / ``FinalizeService``) owns the per-call
+        wall-clock cap; SDK-level timeouts are disabled in the composition root (``timeout=None``) so that
         ``asyncio.wait_for`` here is the single source of timeout enforcement.
 
         Args:

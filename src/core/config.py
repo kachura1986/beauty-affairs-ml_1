@@ -24,12 +24,8 @@ class Settings(BaseSettings):
 
     # Azure
     # OpenAI
-    AZURE_OPENAI_API_KEY: SecretStr
-    AZURE_OPENAI_ENDPOINT: str
-    AZURE_OPENAI_EMBEDDING_MODEL: str
-    # Searching
-    SEARCH_API_KEY: SecretStr
-    SEARCH_ENDPOINT: str
+    OPENAI_BASE_URL: str
+    OPENAI_API_KEY: SecretStr
 
     # Agent configuration
     AGENTS_CONFIG: Path = Path(__file__).resolve().parents[1] / 'agents_config.yaml'
@@ -47,7 +43,11 @@ class Settings(BaseSettings):
     LLM_RETRY_BACKOFF_SECONDS: float = 1.0
     LLM_RETRY_MIN_TIMEOUT_SECONDS: float = 5.0
 
+    # Searching
+    SEARCH_API_KEY: SecretStr
+    SEARCH_ENDPOINT: str
     # Embedding
+    AZURE_OPENAI_EMBEDDING_MODEL: str
     EMBEDDING_DIMENSIONS: int = 1024
 
 

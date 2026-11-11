@@ -12,7 +12,7 @@ from services.agent.config import DEFAULT_AGENT_KEY, load_agent_configs, require
 from services.agent.context import SYSTEM_PROMPT
 from services.agent.tools import create_product_tools
 from services.embedding import AzureOpenAIEmbedder
-from services.llm import AzureOpenAIModel
+from services.llm import OpenAICompatibleModel
 from services.search_index import AzureSearchIndexManager, ProductsSearchIndex
 from services.text_normalization import TextNormalizer
 from use_cases import AgentService, IndexService
@@ -36,9 +36,9 @@ class PipelineDependencies:
 
         try:
             openai_client = AsyncOpenAI(
-                base_url=settings.AZURE_OPENAI_ENDPOINT,
-                api_key=settings.AZURE_OPENAI_API_KEY.get_secret_value(),
-                # The only time limit is asyncio.wait_for(remaining) in AzureOpenAIModel.chat,
+                base_url=settings.OPENAI_BASE_URL,
+                api_key=settings.OPENAI_API_KEY.get_secret_value(),
+                # The only time limit is asyncio.wait_for(remaining) in OpenAICompatibleModel.chat,
                 # driven by the agent Budget. SDK defaults here (600s timeout, 2 retries)
                 # would race with that budget and raise a different exception type.
                 timeout=None,
@@ -90,9 +90,9 @@ class PipelineDependencies:
             agent_services: dict[str, AgentService] = {}
 
             for name, cfg in agent_configs.items():
-                model = AzureOpenAIModel(
+                model = OpenAICompatibleModel(
                     model_name=cfg.model.model_name,
-                    azure_openai_client=openai_client,
+                    client=openai_client,
                     temperature=cfg.model.temperature,
                     max_tokens=cfg.model.max_tokens,
                     input_cost_per_million=cfg.model.input_cost_per_million,

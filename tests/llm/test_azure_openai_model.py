@@ -1,7 +1,7 @@
 """Unit tests for the OpenAI-path transient classifier ``_is_transient_openai_error``."""
 import httpx
 
-from services.llm.azure_openai_model import _is_transient_openai_error
+from services.llm.openai_compatible_model import _is_transient_openai_error
 
 from _testing import _FakeAPIStatusError
 
