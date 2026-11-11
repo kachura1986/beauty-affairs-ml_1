@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     RUNS_DIR: Path = TEMP_DIR / 'runs'
     LOGS_DIR: Path = TEMP_DIR / 'logs'
 
-    # Azure
     # OpenAI
     OPENAI_BASE_URL: str
     OPENAI_API_KEY: SecretStr
