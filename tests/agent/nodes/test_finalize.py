@@ -45,7 +45,7 @@ def _finalize_state(ctx, *, history, last_tool_ok=None, steps=1):
     return state
 
 
-def _task(*, max_steps=1, max_seconds=300.0, max_tokens=200_000, max_cost_usd=0.50):
+def _task(*, max_steps=1, max_seconds=300.0, max_tokens=200_000, max_cost=0.50):
     return Task(
         system_prompt="sys",
         initial_messages=[{"role": "user", "content": "hi"}],
@@ -53,7 +53,7 @@ def _task(*, max_steps=1, max_seconds=300.0, max_tokens=200_000, max_cost_usd=0.
             max_steps=max_steps,
             max_seconds=max_seconds,
             max_tokens=max_tokens,
-            max_cost_usd=max_cost_usd,
+            max_cost=max_cost,
         ),
     )
 
@@ -169,14 +169,14 @@ async def test_finalize_service_timeout_passed_to_chat_is_positive(trace, make_c
 
 async def test_finalize_does_not_block_on_cost_exhausted(trace, make_context):
     """Cost exhaustion is NOT a pre-flight: a free model can still answer at zero cost, so the call proceeds."""
-    llm = FakeLLM(reply(text="final", in_tokens=0, out_tokens=0, cost_usd=0.0))
-    ctx = make_context(llm=llm, max_steps=1, max_cost_usd=0.0001)
+    llm = FakeLLM(reply(text="final", in_tokens=0, out_tokens=0, cost=0.0))
+    ctx = make_context(llm=llm, max_steps=1, max_cost=0.0001)
     state = _finalize_state(
         ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok",
     )
     # Simulate that the accumulated cost already reached the limit before
     # entering finalize_node.
-    state["budget"].cost_usd = 0.0001
+    state["budget"].cost = 0.0001
 
     result = await finalize_node(state, FakeRuntime(ctx))
 
@@ -251,12 +251,12 @@ async def test_finalize_fallback_does_not_record_llm_usage(trace, make_context):
         ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok",
     )
     tokens_before = state["budget"].tokens
-    cost_before = state["budget"].cost_usd
+    cost_before = state["budget"].cost
 
     await finalize_node(state, FakeRuntime(ctx))
 
     assert state["budget"].tokens == tokens_before
-    assert state["budget"].cost_usd == cost_before
+    assert state["budget"].cost == cost_before
     assert llm.calls == []
 
 
@@ -376,7 +376,7 @@ async def test_finalize_records_overrun_in_trace(trace, make_context):
     """A successful finalize that pushes over a hard budget records finalization_overrun while preserving BUDGET_STEPS as the reason."""
     from core.config import settings
 
-    llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost_usd=0.0))
+    llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost=0.0))
     ctx = make_context(
         llm=llm,
         max_steps=1,
@@ -403,7 +403,7 @@ async def test_finalize_overrun_does_not_rewrite_termination_reason(trace, make_
     """Overrun is diagnostic only — state['termination_reason'] must stay BUDGET_STEPS so AgentResult reports the run ended on step exhaustion."""
     from core.config import settings
 
-    llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost_usd=0.0))
+    llm = FakeLLM(reply(text="final", in_tokens=10_000_000, out_tokens=0, cost=0.0))
     ctx = make_context(
         llm=llm, max_steps=1, max_tokens=settings.MIN_EXPECTED_TOKENS + 100,
     )
@@ -440,7 +440,7 @@ async def test_finalize_does_not_increment_steps(trace, make_context):
 
 async def test_finalize_records_llm_usage(trace, make_context):
     """Without record_llm, overrun detection would be blind and finish.budget would underreport the true run cost."""
-    llm = FakeLLM(reply(text="final", in_tokens=5, out_tokens=3, cost_usd=0.0001))
+    llm = FakeLLM(reply(text="final", in_tokens=5, out_tokens=3, cost=0.0001))
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(
         ctx,
@@ -451,7 +451,7 @@ async def test_finalize_records_llm_usage(trace, make_context):
     await finalize_node(state, FakeRuntime(ctx))
 
     assert state["budget"].tokens == 8
-    assert state["budget"].cost_usd == pytest.approx(0.0001)
+    assert state["budget"].cost == pytest.approx(0.0001)
 
 
 async def test_finalize_writes_finalize_record_on_success(trace, make_context):
@@ -460,7 +460,7 @@ async def test_finalize_writes_finalize_record_on_success(trace, make_context):
         text="final answer",
         in_tokens=10,
         out_tokens=5,
-        cost_usd=0.001,
+        cost=0.001,
     ))
     ctx = make_context(llm=llm, max_steps=1)
     state = _finalize_state(

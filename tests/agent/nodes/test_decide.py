@@ -62,27 +62,27 @@ class _SpyStepRunner:
 
 def test_check_budget_steps_exhausted():
     """Exhausted step budget yields BUDGET_STEPS."""
-    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=10, max_cost=1))
     budget.steps = 1
     assert _check_budget(budget) == TerminationReason.BUDGET_STEPS
 
 
 def test_check_budget_time_exceeded():
     """Expired wall-clock budget yields BUDGET_TIME even when steps remain."""
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=10, max_cost=1))
     budget.started = time.monotonic() - 10
     assert _check_budget(budget) == TerminationReason.BUDGET_TIME
 
 
 def test_check_budget_ok():
     """Fresh budget with all limits intact yields None."""
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=10, max_cost=1))
     assert _check_budget(budget) is None
 
 
 def test_check_budget_steps_take_priority_over_time():
     """Steps exhaustion is checked before time exhaustion."""
-    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=0.001, max_tokens=10, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=0.001, max_tokens=10, max_cost=1))
     budget.steps = 1
     budget.started = time.monotonic() - 10
     assert _check_budget(budget) == TerminationReason.BUDGET_STEPS
@@ -90,7 +90,7 @@ def test_check_budget_steps_take_priority_over_time():
 
 def test_exceeded_without_steps_time_before_tokens():
     """Time exhaustion is checked before token exhaustion."""
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=1, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=0.001, max_tokens=1, max_cost=1))
     budget.tokens = 100
     budget.started = time.monotonic() - 10
     assert budget.exceeded_without_steps() == TerminationReason.BUDGET_TIME
@@ -102,9 +102,9 @@ def test_exceeded_without_steps_time_before_tokens():
 
 async def test_step_runner_success(trace, make_context):
     """Successful call increments steps and records tokens/cost."""
-    llm = FakeLLM(reply(text="hello", in_tokens=5, out_tokens=3, cost_usd=0.001))
+    llm = FakeLLM(reply(text="hello", in_tokens=5, out_tokens=3, cost=0.001))
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     cw = make_context_window(
         system="custom-system-prompt",
@@ -119,7 +119,7 @@ async def test_step_runner_success(trace, make_context):
     assert result is not None and result.text == "hello"
     assert budget.steps == 1
     assert budget.tokens == 8
-    assert budget.cost_usd == pytest.approx(0.001)
+    assert budget.cost == pytest.approx(0.001)
     assert llm.calls[0]["tools"] == ctx.tools.schemas()
     assert llm.calls[0]["timeout"] == pytest.approx(10.0, abs=0.1)
     assert llm.calls[0]["messages"] is cw.messages
@@ -142,7 +142,7 @@ async def test_step_runner_chat_and_trace_get_same_messages_object(trace, make_c
     cw = make_context_window(system="custom-system", messages=messages)
     llm = FakeLLM(reply(text="ok"))
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     await ctx.step_runner.run(budget=budget, context_window=cw)
 
@@ -156,7 +156,7 @@ async def test_step_runner_error_path_does_not_copy_messages(trace, make_context
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(
-        max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1,
+        max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1,
     ))
     messages = [{"role": "user", "content": "hi"}]
     cw = make_context_window(system="sys", messages=messages)
@@ -188,7 +188,7 @@ async def test_step_runner_timeout_returns_budget_time(trace, make_context, monk
     llm = FakeLLM(errors=[TimeoutError("slow")])
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(
-        max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost_usd=1,
+        max_steps=10, max_seconds=1.0, max_tokens=1000, max_cost=1,
     ))
 
     elapsed_calls: list[int] = []
@@ -215,7 +215,7 @@ async def test_step_runner_llm_error(trace, make_context):
     """LLM exception with remaining time yields LLM_ERROR."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -230,7 +230,7 @@ async def test_step_runner_error_still_increments_steps(trace, make_context):
     """Steps are incremented even if the LLM call fails — the step was started."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     await ctx.step_runner.run(
         budget=budget,
@@ -251,7 +251,7 @@ async def test_step_runner_without_chat_method_returns_llm_error(trace, make_con
             return isinstance(exc, (ConnectionError, TimeoutError))
 
     ctx = make_context(llm=NoChatLLM())
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -270,14 +270,14 @@ async def test_step_runner_exceeded_after_successful_call(trace, make_context):
         text="x",
         in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
         out_tokens=0,
-        cost_usd=0,
+        cost=0,
     ))
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(
         max_steps=10,
         max_seconds=10,
         max_tokens=settings.MIN_EXPECTED_TOKENS,
-        max_cost_usd=1,
+        max_cost=1,
     ))
 
     result, reason = await ctx.step_runner.run(
@@ -297,7 +297,7 @@ async def test_step_runner_timeout_capped_by_default(trace, make_context, monkey
 
     llm = FakeLLM(reply(text="hello"))
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=300, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=300, max_tokens=1000, max_cost=1))
 
     await ctx.step_runner.run(
         budget=budget,
@@ -317,7 +317,7 @@ async def test_step_runner_preflight_tokens_below_minimum(trace, make_context):
         max_steps=10,
         max_seconds=10,
         max_tokens=settings.MIN_EXPECTED_TOKENS - 1,
-        max_cost_usd=1,
+        max_cost=1,
     ))
 
     result, reason = await ctx.step_runner.run(
@@ -340,7 +340,7 @@ async def test_step_runner_preflight_tokens_at_boundary_allowed(trace, make_cont
         max_steps=10,
         max_seconds=10,
         max_tokens=settings.MIN_EXPECTED_TOKENS,
-        max_cost_usd=1,
+        max_cost=1,
     ))
 
     result, reason = await ctx.step_runner.run(
@@ -363,7 +363,7 @@ async def test_step_runner_preflight_tokens_emits_trace(trace, make_context):
         max_steps=10,
         max_seconds=10,
         max_tokens=settings.MIN_EXPECTED_TOKENS - 1,
-        max_cost_usd=1,
+        max_cost=1,
     ))
 
     await ctx.step_runner.run(
@@ -379,7 +379,7 @@ async def test_step_runner_precondition_raises_on_exhausted_steps(trace, make_co
     llm = FakeLLM(reply(text="never"))
     ctx = make_context(llm=llm)
     budget = Budget(limits=BudgetLimits(
-        max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1,
+        max_steps=1, max_seconds=10, max_tokens=1000, max_cost=1,
     ))
     budget.steps = 1  # exhausted
 
@@ -504,7 +504,7 @@ async def test_decide_preserves_answer_when_budget_exceeded_after_final_text(
         text="final answer",
         in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
         out_tokens=0,
-        cost_usd=0,
+        cost=0,
     ))
     ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
     state = make_state(ctx)
@@ -526,7 +526,7 @@ async def test_decide_does_not_preserve_tool_call_as_answer(trace, make_context,
         tool_calls=[call],
         in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
         out_tokens=0,
-        cost_usd=0,
+        cost=0,
     ))
     ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
     state = make_state(ctx)
@@ -545,7 +545,7 @@ async def test_decide_does_not_preserve_empty_text_as_answer(trace, make_context
         text="   ",
         in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
         out_tokens=0,
-        cost_usd=0,
+        cost=0,
     ))
     ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
     state = make_state(ctx)
@@ -566,7 +566,7 @@ async def test_decide_tool_call_with_text_at_budget_not_preserved(trace, make_co
         tool_calls=[call],
         in_tokens=settings.MIN_EXPECTED_TOKENS + 1,
         out_tokens=0,
-        cost_usd=0,
+        cost=0,
     ))
     ctx = make_context(llm=llm, max_tokens=settings.MIN_EXPECTED_TOKENS)
     state = make_state(ctx)
@@ -613,7 +613,7 @@ async def test_decide_emits_budget_warning_once(trace, make_context, make_state)
     llm = FakeLLM(reply(text="a"), reply(text="b"))
     ctx = make_context(llm=llm, max_steps=10)
     state = make_state(ctx)
-    state["budget"].cost_usd = 0.45  # 90% of the default 0.50 cost budget
+    state["budget"].cost = 0.45  # 90% of the default 0.50 cost budget
 
     first = await decide_node(state, FakeRuntime(ctx))
     assert first["budget_warning_emitted"] is True
@@ -632,7 +632,7 @@ async def test_decide_budget_warning_not_reemitted(trace, make_context, make_sta
     llm = FakeLLM(reply(text="a"))
     ctx = make_context(llm=llm, max_steps=10)
     state = make_state(ctx)
-    state["budget"].cost_usd = 0.45
+    state["budget"].cost = 0.45
     state["budget_warning_emitted"] = True
 
     result = await decide_node(state, FakeRuntime(ctx))
@@ -641,12 +641,12 @@ async def test_decide_budget_warning_not_reemitted(trace, make_context, make_sta
     assert "WARNING: more than 80%" not in llm.calls[0]["system_prompt"]
 
 
-@pytest.mark.parametrize("cost_usd,expected_emitted", [
+@pytest.mark.parametrize("cost,expected_emitted", [
     (0.0, False),
     (0.45, True),
 ])
 async def test_decide_context_overflow_preserves_budget_warning_flag(
-        trace, make_context, make_state, monkeypatch, cost_usd, expected_emitted,
+        trace, make_context, make_state, monkeypatch, cost, expected_emitted,
 ):
     """ContextOverflow becomes a normal termination and preserves the warning flag (both pre-set and set on this step)."""
     import services.agent.context.context_window as cw_mod
@@ -656,7 +656,7 @@ async def test_decide_context_overflow_preserves_budget_warning_flag(
     llm = FakeLLM()
     ctx = make_context(llm=llm)
     state = make_state(ctx)
-    state["budget"].cost_usd = cost_usd
+    state["budget"].cost = cost
 
     result = await decide_node(state, FakeRuntime(ctx))
 
@@ -735,7 +735,7 @@ async def test_decide_forwards_context_window_to_step_runner(trace, make_context
     ctx = dataclasses.replace(base, step_runner=spy)
 
     state = make_state(ctx)
-    state["budget"].cost_usd = 0.45  # 90% of the default 0.50 cost budget -> soft warning
+    state["budget"].cost = 0.45  # 90% of the default 0.50 cost budget -> soft warning
 
     await decide_node(state, FakeRuntime(ctx))
 
@@ -756,7 +756,7 @@ async def test_step_runner_transient_kind_in_trace(trace, make_context, fast_ret
     """
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -774,7 +774,7 @@ async def test_step_runner_permanent_kind_in_trace(trace, make_context):
     """Permanent LLM error (RuntimeError) is recorded as kind='llm_error'."""
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -796,7 +796,7 @@ async def test_step_runner_retries_on_429(trace, make_context, fast_retry):
     """Transient 429 is retried once; retry success returns the reply with steps=2."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -820,7 +820,7 @@ async def test_step_runner_retries_on_503(trace, make_context, fast_retry):
     """Transient 503 is retried once; retry success returns the reply with steps=2."""
     llm = FakeLLM(reply(text="ok"), errors=[internal_server_error(503)])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -836,7 +836,7 @@ async def test_step_runner_retries_at_most_once(trace, make_context, fast_retry)
     """Even with plenty of step budget, a failed retry is terminal — one retry is the maximum."""
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -855,7 +855,7 @@ async def test_step_runner_no_retry_on_400(trace, make_context):
     """Permanent 400 is not retried, regardless of the remaining step budget."""
     llm = FakeLLM(errors=[_FakeAPIStatusError(400)])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -874,7 +874,7 @@ async def test_step_runner_no_retry_when_max_steps_1(trace, make_context):
     """Transient error with max_steps=1 emits llm_transient, no llm_retry, returns LLM_ERROR."""
     llm = FakeLLM(errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -893,7 +893,7 @@ async def test_step_runner_no_retry_when_time_exhausted(trace, make_context, mon
     """No retry when the wall-clock budget expires between the attempt and the except branch."""
     llm = FakeLLM(errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=10, max_seconds=10, max_tokens=1000, max_cost=1))
 
     # Preflight + _attempt guard see elapsed=0.0 (pass); except branch sees 15.0
     # with max_seconds=10 → remaining=0 → BUDGET_TIME, no retry.
@@ -926,7 +926,7 @@ async def test_step_runner_no_retry_when_tokens_insufficient(trace, make_context
 
     llm = FakeLLM(reply(text="never"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     call_count = [0]
 
@@ -952,7 +952,7 @@ async def test_step_runner_retry_consumes_step(trace, make_context, fast_retry):
     """A successful retry consumes a second step — budget.steps reflects physical invocations."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -968,7 +968,7 @@ async def test_step_runner_retry_does_not_exceed_max_steps(trace, make_context, 
     """With max_steps=2, a failed retry terminates at steps=2 — no third attempt."""
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=2, max_seconds=10, max_tokens=1000, max_cost=1))
 
     result, reason = await ctx.step_runner.run(
         budget=budget,
@@ -985,7 +985,7 @@ async def test_step_runner_retry_records_real_latency(trace, make_context, fast_
     """llm_retry.latency_ms reflects the first attempt's real duration (raise_after sleeps before raising)."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()], raise_after=0.02)
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     await ctx.step_runner.run(
         budget=budget,
@@ -1001,7 +1001,7 @@ async def test_step_runner_retry_records_separate_steps(trace, make_context, fas
     """llm_transient records the first attempt's step; llm_retry records the retry's step — they differ."""
     llm = FakeLLM(reply(text="ok"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     await ctx.step_runner.run(
         budget=budget,
@@ -1025,7 +1025,7 @@ async def test_step_runner_retry_also_emits_llm_transient(trace, make_context, f
     """
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     await ctx.step_runner.run(
         budget=budget,
@@ -1058,9 +1058,9 @@ async def test_attempt_trace_step_raises_does_not_double_count(
 
     monkeypatch.setattr(Trace, "step", raise_conn)
 
-    llm = FakeLLM(reply(text="ok", in_tokens=5, out_tokens=3, cost_usd=0.001))
+    llm = FakeLLM(reply(text="ok", in_tokens=5, out_tokens=3, cost=0.001))
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     with caplog.at_level(logging.ERROR):
         result, reason = await ctx.step_runner.run(
@@ -1071,7 +1071,7 @@ async def test_attempt_trace_step_raises_does_not_double_count(
     assert len(llm.calls) == 1  # no retry — chat() called exactly once
     assert budget.steps == 1
     assert budget.tokens == 8  # not 16 — accounting ran once
-    assert budget.cost_usd == pytest.approx(0.001)
+    assert budget.cost == pytest.approx(0.001)
     assert result is not None and result.text == "ok"
     assert reason is None  # run continues normally
 
@@ -1100,9 +1100,9 @@ async def test_attempt_record_llm_raises_does_not_double_count(
     # instance. The test holds a single Budget, so a class patch is safe.
     monkeypatch.setattr(Budget, "record_llm", raise_conn)
 
-    llm = FakeLLM(reply(text="ok", in_tokens=5, out_tokens=3, cost_usd=0.001))
+    llm = FakeLLM(reply(text="ok", in_tokens=5, out_tokens=3, cost=0.001))
     ctx = make_context(llm=llm)
-    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost_usd=1))
+    budget = Budget(limits=BudgetLimits(max_steps=3, max_seconds=10, max_tokens=1000, max_cost=1))
 
     with caplog.at_level(logging.ERROR):
         result, reason = await ctx.step_runner.run(

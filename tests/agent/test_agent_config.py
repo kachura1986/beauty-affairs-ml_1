@@ -29,7 +29,7 @@ def _agent_config() -> AgentConfig:
     return AgentConfig(
         model=_model_settings(),
         policy=AgentPolicy(empty_limit=3, repeat_limit=3),
-        budget=BudgetLimits(max_steps=5, max_seconds=60, max_tokens=10_000, max_cost_usd=0),
+        budget=BudgetLimits(max_steps=5, max_seconds=60, max_tokens=10_000, max_cost=0),
     )
 
 
@@ -91,7 +91,7 @@ def test_agent_config_requires_model_block():
     cfg = {
         'policy': AgentPolicy(empty_limit=3, repeat_limit=3).model_dump(),
         'budget': BudgetLimits(
-            max_steps=5, max_seconds=60, max_tokens=10_000, max_cost_usd=0,
+            max_steps=5, max_seconds=60, max_tokens=10_000, max_cost=0,
         ).model_dump(),
     }
 
@@ -153,7 +153,7 @@ default_agent:
     max_steps: 12
     max_seconds: 120
     max_tokens: 100000
-    max_cost_usd: 0.5
+    max_cost: 0.5
 """
 
 

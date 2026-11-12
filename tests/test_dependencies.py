@@ -24,7 +24,7 @@ default_agent:
     max_steps: 12
     max_seconds: 120
     max_tokens: 100000
-    max_cost_usd: 0.5
+    max_cost: 0.5
 classifier_agent:
   model:
     model_name: gpt-4o-mini
@@ -40,7 +40,7 @@ classifier_agent:
     max_steps: 3
     max_seconds: 30
     max_tokens: 5000
-    max_cost_usd: 0.1
+    max_cost: 0.1
 """
 
 SINGLE_AGENT_YAML = """
@@ -59,7 +59,7 @@ only_agent:
     max_steps: 12
     max_seconds: 120
     max_tokens: 100000
-    max_cost_usd: 0.5
+    max_cost: 0.5
 """
 
 MIN_TOKENS_AGENT_YAML = """
@@ -78,7 +78,7 @@ default_agent:
     max_steps: 12
     max_seconds: 120
     max_tokens: 1
-    max_cost_usd: 0.5
+    max_cost: 0.5
 """
 
 

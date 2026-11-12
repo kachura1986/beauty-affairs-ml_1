@@ -39,7 +39,7 @@ def make_context(trace, make_registry):
             max_steps: int = 16,
             max_seconds: float = 300.0,
             max_tokens: int = 200_000,
-            max_cost_usd: float = 0.50,
+            max_cost: float = 0.50,
             system_prompt: str = "sys",
             step_runner: StepRunner | None = None,
             finalizer: Finalizer | None = None,
@@ -55,7 +55,7 @@ def make_context(trace, make_registry):
                 max_steps=max_steps,
                 max_seconds=max_seconds,
                 max_tokens=max_tokens,
-                max_cost_usd=max_cost_usd,
+                max_cost=max_cost,
             ),
         )
         return AgentContext(

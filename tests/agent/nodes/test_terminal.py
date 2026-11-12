@@ -148,7 +148,7 @@ def test_finish_result_numeric_fields(trace, make_context, make_state):
     state = make_state(ctx)
     state["budget"].steps = 3
     state["budget"].tokens = 42
-    state["budget"].cost_usd = 0.0123456
+    state["budget"].cost = 0.0123456
     state["history"] = [{"role": "user", "content": "a"}] * 5
     state["termination_reason"] = TerminationReason.DONE
 
@@ -156,7 +156,7 @@ def test_finish_result_numeric_fields(trace, make_context, make_state):
 
     assert r.steps == 3
     assert r.tokens == 42
-    assert r.cost_usd == pytest.approx(0.012346)
+    assert r.cost == pytest.approx(0.012346)
     assert r.history_len == 5
 
 
@@ -253,7 +253,7 @@ def test_create_initial_state_copies_history():
             max_steps=16,
             max_seconds=300.0,
             max_tokens=200_000,
-            max_cost_usd=0.50,
+            max_cost=0.50,
         ),
     )
     state = create_initial_state(task)
@@ -280,7 +280,7 @@ def test_agent_result_finalization_enum():
             answer="x",
             steps=1,
             tokens=1,
-            cost_usd=0.0,
+            cost=0.0,
             seconds=0.1,
             history_len=1,
             trace="/tmp/t",
@@ -295,7 +295,7 @@ def test_agent_result_finalization_enum():
         answer="x",
         steps=1,
         tokens=1,
-        cost_usd=0.0,
+        cost=0.0,
         seconds=0.1,
         history_len=1,
         trace="/tmp/t",
@@ -347,7 +347,7 @@ def test_agent_result_agent_name_defaults_to_none():
         answer="x",
         steps=1,
         tokens=1,
-        cost_usd=0.0,
+        cost=0.0,
         seconds=0.1,
         history_len=1,
         trace="/tmp/t",
@@ -364,7 +364,7 @@ def test_agent_result_agent_name_preserved():
         answer="x",
         steps=1,
         tokens=1,
-        cost_usd=0.0,
+        cost=0.0,
         seconds=0.1,
         history_len=1,
         trace="/tmp/t",

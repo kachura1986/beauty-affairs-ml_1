@@ -182,7 +182,7 @@ class LLMStepService:
 
         # (B) record_llm()
         try:
-            budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
+            budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost)
         except Exception as acc_exc:  # noqa: BLE001
             _log_internal_exception("Failed to record LLM usage.", acc_exc, step=budget.steps)
             _trace_llm_error(

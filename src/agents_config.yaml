@@ -13,4 +13,4 @@ default_agent:
     max_steps: 8
     max_seconds: 400
     max_tokens: 80000        # run-wide token budget; NOT model.max_tokens
-    max_cost_usd: 0.5         # 0 = free model (run stops on any nonzero cost)
+    max_cost: 0.5         # 0 = free model (run stops on any nonzero cost)

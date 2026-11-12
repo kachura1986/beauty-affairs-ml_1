@@ -154,7 +154,7 @@ class FinalizeService:
 
         # Account for the call regardless of outcome: tokens and cost were consumed.
         if reply is not None:
-            budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost_usd)
+            budget.record_llm(reply.in_tokens, reply.out_tokens, reply.cost)
 
         # tool_calls are ignored on finalization: the model was given an empty tool list, but llm does not guarantee it
         # returns none. This call bypasses decide -> execute, so propagating them into pending_tool_calls would leave

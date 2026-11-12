@@ -121,14 +121,14 @@ class FakeRuntime:
         self.context = context
 
 
-def reply(text="ok", tool_calls=None, in_tokens=0, out_tokens=0, cost_usd=0.0, model="fake"):
+def reply(text="ok", tool_calls=None, in_tokens=0, out_tokens=0, cost=0.0, model="fake"):
     """Build a Reply with defaults, so tests stay resilient to Reply field changes."""
     return Reply(
         text=text,
         tool_calls=tool_calls or [],
         in_tokens=in_tokens,
         out_tokens=out_tokens,
-        cost_usd=cost_usd,
+        cost=cost,
         model=model,
     )
 

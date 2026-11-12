@@ -14,7 +14,7 @@ def test_chat_response_includes_finalization_field():
         content='final',
         termination_reason=TerminationReason.BUDGET_STEPS,
         finalization=Finalization.FALLBACK,
-        usage=ChatUsage(steps=1, tokens=10, cost_usd=0.0, seconds=0.1),
+        usage=ChatUsage(steps=1, tokens=10, cost=0.0, seconds=0.1),
     )
 
     assert response.finalization == Finalization.FALLBACK
@@ -28,5 +28,5 @@ def test_chat_response_requires_finalization():
             role='assistant',
             content=None,
             termination_reason=TerminationReason.BUDGET_STEPS,
-            usage=ChatUsage(steps=1, tokens=10, cost_usd=0.0, seconds=0.1),
+            usage=ChatUsage(steps=1, tokens=10, cost=0.0, seconds=0.1),
         )

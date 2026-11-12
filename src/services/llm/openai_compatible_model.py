@@ -72,8 +72,8 @@ class OpenAICompatibleModel(BaseLLMModel):
             client (AsyncOpenAI): Pre-initialized asynchronous OpenAI-compatible client.
             temperature (float): Sampling temperature for generation.
             max_tokens (int): Maximum number of tokens to generate.
-            input_cost_per_million (float): Cost in USD per 1M input tokens.
-            output_cost_per_million (float): Cost in USD per 1M output tokens.
+            input_cost_per_million (float): Cost per 1M input tokens, in the currency of the configured tariff.
+            output_cost_per_million (float): Cost per 1M output tokens, in the currency of the configured tariff.
         """
         super().__init__()
 
@@ -261,7 +261,7 @@ class OpenAICompatibleModel(BaseLLMModel):
 
     def _compute_cost(self, input_tokens: int, output_tokens: int) -> float:
         """
-        Compute the request cost in USD from token counts and configured per-million rates.
+        Compute the request cost in currency from token counts and configured per-million rates.
 
         CONTRACT: returns ``0.0`` when both token counts are ``<= 0`` — cost-based budget limits are not enforced for
         that call. The caller must not treat ``0.0`` as "free call", only as "no accounting data".
@@ -271,8 +271,8 @@ class OpenAICompatibleModel(BaseLLMModel):
             output_tokens (int): Number of output tokens reported by the API.
 
         Returns:
-            float: Cost in USD. Zero if both rates are explicitly zero or token stats are missing
-                (in which case cost-based budget limits are not enforced for this call).
+            float: Cost in the currency of the configured tariff. Zero if both rates are explicitly zero or token stats
+                are missing (in which case cost-based budget limits are not enforced for this call).
         """
         input_rate = self._input_cost_per_million
         output_rate = self._output_cost_per_million
@@ -303,7 +303,8 @@ class OpenAICompatibleModel(BaseLLMModel):
             system_prompt (str | None, optional): System instructions.
 
         Returns:
-            Reply: Normalized response containing text, tool calls, token usage, and cost.
+            Reply: Normalized response containing text, tool calls, token usage, and cost
+                (in the currency of the configured tariff).
         """
         if system_prompt is not None:
             system_prompt = system_prompt.strip() or None
@@ -344,7 +345,7 @@ class OpenAICompatibleModel(BaseLLMModel):
         text = self._extract_text(response)
         tool_calls = self._extract_tool_calls(response)
         input_tokens, output_tokens = self._extract_usage(response)
-        cost_usd = self._compute_cost(input_tokens, output_tokens)
+        cost = self._compute_cost(input_tokens, output_tokens)
 
         return Reply(
             text=self._postprocess(text),
@@ -352,7 +353,7 @@ class OpenAICompatibleModel(BaseLLMModel):
             model=self._model_name,
             in_tokens=input_tokens,
             out_tokens=output_tokens,
-            cost_usd=cost_usd,
+            cost=cost,
         )
 
     def is_transient_error(self, exc: Exception) -> bool:

@@ -10,7 +10,7 @@ class BudgetLimits(BaseModel):
     """
     Resource limits for an agent_graph run.
 
-    CONTRACT: ``max_cost_usd == 0`` means a free model — the run proceeds as long as no nonzero cost is
+    CONTRACT: ``max_cost == 0`` means a free model — the run proceeds as long as no nonzero cost is
     recorded. The extra finalization call after ``max_steps`` does not increment the step counter.
     """
 
@@ -28,11 +28,11 @@ class BudgetLimits(BaseModel):
     )
     max_seconds: float = Field(gt=0, description="Maximum wall-clock time in seconds.")
     max_tokens: int = Field(gt=0, description="Token budget for LLM input and output.")
-    max_cost_usd: float = Field(
+    max_cost: float = Field(
         ge=0,
         description=(
-            "Cost budget for LLM usage, in USD. A value of 0 means a free model: "
-            "the run proceeds as long as no nonzero cost is recorded."
+            "Cost budget for LLM usage, in the currency of the configured tariff (typically USD). "
+            "A value of 0 means a free model: the run proceeds as long as no nonzero cost is recorded."
         ),
     )
 
@@ -58,7 +58,11 @@ class Budget(BaseModel):
         ),
     )
     tokens: int = Field(default=0, ge=0, description="Total tokens consumed.")
-    cost_usd: float = Field(default=0.0, ge=0, description="Accumulated cost in USD.")
+    cost: float = Field(
+        default=0.0,
+        ge=0,
+        description="Accumulated cost of this reply in the currency of the configured tariff."
+    )
 
     def elapsed(self) -> float:
         """
@@ -87,20 +91,20 @@ class Budget(BaseModel):
         """
         return max(0, self.limits.max_tokens - self.tokens)
 
-    def remaining_cost_usd(self) -> float:
+    def remaining_cost(self) -> float:
         """
         Return the remaining LLM cost budget.
 
-        CONTRACT: ``max_cost_usd == 0`` means a free model → returns ``math.inf`` (never a hard stop
+        CONTRACT: ``max_cost == 0`` means a free model → returns ``math.inf`` (never a hard stop
         on cost), so callers must not treat the result as a finite cap.
 
         Returns:
-            float: Remaining budget in USD; ``math.inf`` for a free model, ``0.0`` when exhausted.
+            float: Remaining budget; ``math.inf`` for a free model, ``0.0`` when exhausted.
         """
-        if self.limits.max_cost_usd == 0:
+        if self.limits.max_cost == 0:
             return math.inf
 
-        return max(0.0, self.limits.max_cost_usd - self.cost_usd)
+        return max(0.0, self.limits.max_cost - self.cost)
 
     def remaining_steps(self) -> int:
         """
@@ -126,7 +130,7 @@ class Budget(BaseModel):
 
         CONTRACT: steps are intentionally not checked here — the final allowed LLM step must be processed
         before the run is stopped. Checks are ordered time → tokens → cost.
-        ``max_cost_usd == 0`` means a free model: the run terminates as soon as any nonzero cost is reported.
+        ``max_cost == 0`` means a free model: the run terminates as soon as any nonzero cost is reported.
 
         Returns:
             TerminationReason | None: A budget reason if a limit has been reached or exceeded, otherwise ``None``.
@@ -137,25 +141,25 @@ class Budget(BaseModel):
         if self.tokens >= self.limits.max_tokens:
             return TerminationReason.BUDGET_TOKENS
 
-        if self.limits.max_cost_usd > 0:
-            if self.cost_usd >= self.limits.max_cost_usd:
+        if self.limits.max_cost > 0:
+            if self.cost >= self.limits.max_cost:
                 return TerminationReason.BUDGET_COST
-        elif self.cost_usd > 0:
+        elif self.cost > 0:
             return TerminationReason.BUDGET_COST
 
         return None
 
-    def record_llm(self, in_tokens: int, out_tokens: int, cost_usd: float) -> None:
+    def record_llm(self, in_tokens: int, out_tokens: int, cost: float) -> None:
         """
         Record resource usage for a completed LLM call.
 
         Args:
             in_tokens (int): Number of input tokens consumed.
             out_tokens (int): Number of output tokens generated.
-            cost_usd (float): Cost of the LLM call, in USD.
+            cost (float): Cost of the LLM call in the currency of the configured tariff (typically USD).
         """
         self.tokens += in_tokens + out_tokens
-        self.cost_usd += cost_usd
+        self.cost += cost
 
     def ratios(self) -> dict[str, float]:
         """
@@ -169,7 +173,7 @@ class Budget(BaseModel):
             'steps': self.steps / max(self.limits.max_steps, 1),
             'time': self.elapsed() / max(self.limits.max_seconds, 1e-9),
             'tokens': self.tokens / max(self.limits.max_tokens, 1),
-            'cost': self.cost_usd / max(self.limits.max_cost_usd, 1e-9),
+            'cost': self.cost / max(self.limits.max_cost, 1e-9),
         }
 
     def soft_warning(self) -> str | None:
@@ -200,6 +204,6 @@ class Budget(BaseModel):
         return {
             'steps': f'{self.steps}/{self.limits.max_steps}',
             'tokens': f'{self.tokens}/{self.limits.max_tokens}',
-            'cost': f'{self.cost_usd:.4f}/{self.limits.max_cost_usd}',
+            'cost': f'{self.cost:.4f}/{self.limits.max_cost}',
             'seconds': f'{self.elapsed():.1f}/{self.limits.max_seconds}',
         }

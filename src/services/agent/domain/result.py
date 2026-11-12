@@ -17,7 +17,7 @@ class AgentResult(BaseModel):
     answer: str | None = None
     steps: int
     tokens: int
-    cost_usd: float
+    cost: float
     seconds: float
     history_len: int
     trace: str

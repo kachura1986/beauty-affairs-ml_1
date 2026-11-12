@@ -31,7 +31,7 @@ async def chat(request: ChatRequest, agent_service: AgentService = Depends(get_a
         usage=ChatUsage(
             steps=result.steps,
             tokens=result.tokens,
-            cost_usd=result.cost_usd,
+            cost=result.cost,
             seconds=result.seconds,
         ),
     )

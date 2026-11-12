@@ -26,7 +26,7 @@ def _fake_result() -> AgentResult:
         answer="ok",
         steps=0,
         tokens=0,
-        cost_usd=0.0,
+        cost=0.0,
         seconds=0.0,
         history_len=0,
         trace="/tmp/test",
@@ -99,7 +99,7 @@ def service_kwargs(tmp_path):
         system_prompt="sys",
         runs_dir=tmp_path,
         policy=AgentPolicy(empty_limit=1, repeat_limit=1),
-        budget_limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost_usd=0),
+        budget_limits=BudgetLimits(max_steps=1, max_seconds=10, max_tokens=1000, max_cost=0),
     )
 
 
@@ -186,7 +186,7 @@ async def test_queue_wait_not_counted_in_budget(service_kwargs):
         "llm": llm,
         "tools": ToolRegistry([], default_timeout_seconds=1.0, max_output_chars=1000),
         "budget_limits": BudgetLimits(
-            max_steps=1, max_seconds=0.2, max_tokens=1000, max_cost_usd=0,
+            max_steps=1, max_seconds=0.2, max_tokens=1000, max_cost=0,
         ),
     }
 
@@ -223,7 +223,7 @@ async def test_semaphore_serializes_runs_over_time(service_kwargs, monkeypatch):
         "llm": llm,
         "tools": ToolRegistry([], default_timeout_seconds=1.0, max_output_chars=1000),
         "budget_limits": BudgetLimits(
-            max_steps=1, max_seconds=2.0, max_tokens=1000, max_cost_usd=0,
+            max_steps=1, max_seconds=2.0, max_tokens=1000, max_cost=0,
         ),
     }
     semaphore = asyncio.Semaphore(1)

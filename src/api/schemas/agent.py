@@ -17,7 +17,7 @@ class ChatRequest(BaseModel):
 class ChatUsage(BaseModel):
     steps: int
     tokens: int
-    cost_usd: float
+    cost: float
     seconds: float
 
 

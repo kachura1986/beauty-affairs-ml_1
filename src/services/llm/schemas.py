@@ -27,7 +27,7 @@ class Reply:
         model (str): Name of the model that generated the response.
         in_tokens (int): Number of input tokens.
         out_tokens (int): Number of output tokens.
-        cost_usd (float): Estimated response cost in US dollars.
+        cost (float): Estimated response cost, in the currency of the configured tariff (typically USD).
     """
 
     text: str = ''
@@ -35,4 +35,4 @@ class Reply:
     model: str = 'fake'
     in_tokens: int = 0
     out_tokens: int = 0
-    cost_usd: float = 0.0
+    cost: float = 0.0
