@@ -66,9 +66,9 @@ class PipelineDependencies:
             )
 
             agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
-            # Fail-fast validation AND explicit capture: get_agent_service() relies on
-            # DEFAULT_AGENT_KEY being present in agent_services.
-            default_agent = require_default_agent(agent_configs, settings.AGENTS_CONFIG)  # noqa: F841
+            # Fail-fast: the composition root requires 'default_agent' to exist. get_agent_service() looks it up in
+            # agent_services by DEFAULT_AGENT_KEY, so the invariant must hold before the loop below builds the services.
+            require_default_agent(agent_configs, settings.AGENTS_CONFIG)
 
             # Fail-fast: every agent's budget.max_tokens must be at least MIN_EXPECTED_TOKENS
             for agent_name, agent_cfg in agent_configs.items():

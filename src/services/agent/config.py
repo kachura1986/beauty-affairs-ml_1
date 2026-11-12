@@ -56,7 +56,8 @@ def load_agent_configs(path: Path) -> dict[str, AgentConfig]:
 
 
 def require_default_agent(agent_configs: dict[str, AgentConfig], source: Path) -> AgentConfig:
-    """Return the ``default_agent`` config, or raise ``ValueError`` naming the source file.
+    """
+    Return the ``default_agent`` config, or raise ``ValueError`` naming the source file.
 
     CONTRACT: the composition root requires ``default_agent`` to exist. A missing key must fail with a message that
     names the file and the keys actually present, so a startup failure is diagnosable from logs alone.
