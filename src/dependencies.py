@@ -145,7 +145,7 @@ class PipelineDependencies:
 
         for name, resource in (
                 ("Azure Search client", self.azure_search_index_manager),
-                ("Azure OpenAI client", self.openai_client),
+                ("OpenAI client", self.openai_client),
         ):
             try:
                 await resource.close()

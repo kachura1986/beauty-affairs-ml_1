@@ -47,8 +47,8 @@ def _is_transient_openai_error(exc: Exception) -> bool:
     if isinstance(status, int) and (status == 429 or status >= 500):
         return True
 
-    # Provider-specific SDK types (e.g. ``ServiceRequestError`` from Azure SDKs,
-    # used by ``azure-search-documents``) are not matched: ...
+    # Fallthrough: unclassified errors are permanent on purpose — retrying an already-billed call would double-charge.
+    # Only steps 1–4 carry a clear retry signal; provider SDK wrappers without a builtin/httpx cause don't.
     return False
 
 
