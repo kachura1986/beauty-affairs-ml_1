@@ -3,10 +3,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from services.agent.tools import Tool, ToolRegistry
+from services.agent.tools import Tool
 from services.datetime_utils import get_datetime
 
-_MAX_OUTPUT_CHARS_HARD_CAP: Final[int] = 2000
+_MAX_OUTPUT_CHARS_HARD_CAP: Final[int] = 1000
 
 
 class GetDatetimeArgs(BaseModel):
@@ -23,6 +23,22 @@ class GetDatetimeArgs(BaseModel):
     @field_validator("timezone")
     @classmethod
     def _check_timezone(cls, v: Optional[str]) -> Optional[str]:
+        """
+        Validate that ``timezone`` is a known IANA name.
+
+        CONTRACT: empty string is rejected explicitly; ``None`` passes through. Distinguishes host misconfiguration
+        (no tzdata; the model cannot fix it) from an unknown zone name (model error; retry is possible).
+
+        Args:
+            v (Optional[str]): Raw timezone value from the tool call.
+
+        Returns:
+            Optional[str]: The validated timezone name, or ``None`` when omitted.
+
+        Raises:
+            ValueError: If ``v`` is an empty string, an unknown IANA name, or the
+                server has no IANA timezone database installed.
+        """
         if v is None:
             return None
 
@@ -56,45 +72,46 @@ class GetDatetimeArgs(BaseModel):
         return v
 
 
-def create_base_tools(default_timeout_seconds: float, max_output_chars: int) -> ToolRegistry:
+def create_base_tools(max_output_chars: int) -> list[Tool]:
+    """Return the always-registered base tools as a list.
+
+    CONTRACT: callers merge these with domain tools and pass the combined list to ToolRegistry, which validates
+    async-callable and unique names in one place. ``default_timeout_seconds`` is applied by ToolRegistry when a
+    Tool does not declare ``timeout_seconds``.
+
+    Args:
+        max_output_chars (int): Per-tool output character budget; clamped to max_chars for the ``get_datetime`` tool.
+
+    Returns:
+        list[Tool]: The base tools, ready to be merged with domain tools.
+    """
+
     async def get_datetime_tool(timezone: Optional[str] = None) -> str:
+        """
+        Return the current date and time as a JSON string.
+
+        Args:
+            timezone (Optional[str]): IANA timezone name; ``None`` means UTC.
+
+        Returns:
+            str: JSON payload produced by :func:`services.datetime_utils.get_datetime`.
+        """
         return get_datetime(timezone)
 
-    return ToolRegistry([
+    return [
         Tool(
             name="get_datetime",
             description="""
-Get the current date and time in a given IANA timezone (UTC if not specified).
+Get the current date and time in an IANA timezone (UTC if omitted).
 
-Use this tool whenever the answer depends on the current moment: "what time is it?", "what is today's date?",
-"what day of the week is it in Tokyo?", scheduling relative to "now", etc. The model's internal knowledge of
-the current time is unreliable — always call this tool when freshness matters.
+Call whenever the answer depends on the current moment ("what time is it?", "today's date", "what day is it in Tokyo?",
+scheduling relative to "now", etc.). The model's internal sense of the current time is unreliable.
 
-The result is a JSON object with the following fields:
-- datetime: ISO-8601 timestamp with offset (second precision)
-- timezone: resolved tzinfo name as reported by zoneinfo ("UTC" for omitted or
-  literally "UTC"; other UTC aliases like "Etc/UTC" are not normalized)
-- utc_offset: numeric offset, e.g. "+0300"
-- date: "YYYY-MM-DD"
-- time: "HH:MM:SS"
-- day_of_week: English weekday name (Monday..Sunday), independent of server locale
-- iso_weekday: 1 (Monday) .. 7 (Sunday)
-- unix_timestamp: integer epoch seconds (matches `datetime` exactly)
-
-`datetime` and `unix_timestamp` describe the same instant.
-
-Do not pass an empty string for `timezone`; omit the argument to get UTC.
-
-Examples:
-- "What time is it?" -> get_datetime()
-- "What is today's date in Moscow?" -> get_datetime(timezone="Europe/Moscow")
-- "What day is it in New York?" -> get_datetime(timezone="America/New_York")
+Returns JSON: datetime (ISO-8601, seconds), timezone, utc_offset ("+0300"), date ("YYYY-MM-DD"), time ("HH:MM:SS"),
+day_of_week (Monday..Sunday), iso_weekday (1..7), unix_timestamp (epoch seconds).
 """,
             fn=get_datetime_tool,
             args_model=GetDatetimeArgs,
             max_output_chars=min(max_output_chars, _MAX_OUTPUT_CHARS_HARD_CAP),
         ),
-    ],
-        default_timeout_seconds=default_timeout_seconds,
-        max_output_chars=max_output_chars,
-    )
+    ]
