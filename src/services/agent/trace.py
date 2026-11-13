@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from services.llm import Reply, ToolCall
+
 from .domain import Budget, Finalization, TerminationReason
 from .tools import ToolResult
 

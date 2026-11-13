@@ -1,6 +1,6 @@
-from .openai_compatible_model import OpenAICompatibleModel
 from .base_model import BaseLLMModel
 from .model import LLMModel
+from .openai_compatible_model import OpenAICompatibleModel
 from .schemas import CANONICAL_ROLES, Reply, ToolCall, UnknownRoleError
 
 __all__ = [

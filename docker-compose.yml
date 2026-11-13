@@ -1,4 +1,4 @@
-name: demo
+name: gold-agent
 
 services:
   backend:

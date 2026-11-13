@@ -1,7 +1,7 @@
+from asyncio import Semaphore
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal, Protocol
-from asyncio import Semaphore
 
 from services.agent.agent_graph import run_graph
 from services.agent.domain import AgentPolicy, AgentResult, BudgetLimits, Task

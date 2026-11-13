@@ -10,7 +10,8 @@ from core.config import settings
 from core.logger import get_logger
 from services.agent.config import DEFAULT_AGENT_KEY, load_agent_configs, require_default_agent
 from services.agent.context import SYSTEM_PROMPT
-from services.agent.tools import create_product_tools
+from services.agent.tools import ToolRegistry
+from services.agent.tools.base_tools import create_base_tools
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import OpenAICompatibleModel
 from services.search_index import AzureSearchIndexManager, ProductsSearchIndex
@@ -80,13 +81,15 @@ class PipelineDependencies:
                         f"by the pre-flight token check."
                     )
 
-            shared_tools = create_product_tools(
-                products_index,
+            base_tools = create_base_tools(max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS)
+
+            tools = ToolRegistry(
+                base_tools,
                 default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,
                 max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS,
             )
-            agent_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_AGENT_RUNS)
 
+            agent_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_AGENT_RUNS)
             agent_services: dict[str, AgentService] = {}
 
             for name, cfg in agent_configs.items():
@@ -101,7 +104,7 @@ class PipelineDependencies:
 
                 agent_services[name] = AgentService(
                     llm=model,
-                    tools=shared_tools,
+                    tools=tools,
                     system_prompt=SYSTEM_PROMPT,
                     runs_dir=settings.RUNS_DIR,
                     policy=cfg.policy,
