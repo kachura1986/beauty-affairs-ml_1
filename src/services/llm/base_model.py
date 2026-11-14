@@ -63,7 +63,7 @@ class BaseLLMModel(ABC):
         Returns:
             Reply: Model response including text, tool calls, token usage and cost.
         """
-        pass
+        ...
 
     def is_transient_error(self, exc: Exception) -> bool:
         """Default classification: builtin connection/timeout errors are transient.
