@@ -1,5 +1,7 @@
 """Unit tests for the OpenAI-path transient classifier ``_is_transient_openai_error``."""
 import httpx
+import openai
+import pytest
 
 from services.llm.openai_compatible_model import _is_transient_openai_error
 
@@ -68,7 +70,7 @@ def test_runtime_error_is_permanent():
 # ---------------------------------------------------------------------------
 
 def test_wrapped_httpx_timeout_is_permanent():
-    """``httpx.TimeoutException`` cause → permanent.
+    """``httpx.TimeoutException`` cause → permanent (step 1, second half).
 
     CONTRACT: the SDK call was billed; a retry would double-bill.
     """
@@ -89,18 +91,101 @@ def test_wrapped_httpx_connect_is_transient():
 
 
 # ---------------------------------------------------------------------------
-# APITimeoutError without __cause__
+# APITimeoutError (step 1, first half) — real SDK instance
 # ---------------------------------------------------------------------------
 
-def test_ap_timeout_error_without_cause_is_permanent():
-    """Timeout-shaped exception without ``__cause__`` falls through to permanent.
+def _api_timeout_error() -> openai.APITimeoutError:
+    """Build a real ``openai.APITimeoutError`` with no ``__cause__``.
 
-    CONTRACT: no ``status_code`` and no temporary exception name in the MRO →
-    fallthrough returns False. A dropped cause must never trigger a retry of
-    an already-consumed budget.
+    CONTRACT: ``APITimeoutError.__init__`` requires ``request=`` and does not
+    set ``__cause__`` on its own; a plain constructor call therefore
+    reproduces the SDK path exactly. ``APITimeoutError`` is an
+    ``APIConnectionError`` subclass, so without step 1 it would slip through
+    the connection branch (step 3) and be misclassified as transient — this
+    is precisely the regression step 1 exists to prevent.
     """
+    request = httpx.Request("POST", "https://api.example.test/v1/responses")
+    return openai.APITimeoutError(request=request)
 
-    class APITimeoutError(Exception):
-        pass
 
-    assert _is_transient_openai_error(APITimeoutError()) is False
+def test_real_api_timeout_error_without_cause_is_permanent():
+    """Real ``openai.APITimeoutError`` → permanent (step 1, first half).
+
+    CONTRACT: the SDK call was billed; a retry would double-bill. ``__cause__``
+    is None (no ``raise ... from ...`` was used), so only step 1 — the
+    ``isinstance(exc, APITimeoutError)`` check — can catch it. Without that
+    check, step 3 would classify it as transient because ``APITimeoutError``
+    is an ``APIConnectionError`` subclass.
+
+    Also pins the deliberate order of step 1 vs step 2: ``APITimeoutError``
+    is not a builtin ``TimeoutError`` subclass, so step 2 cannot rescue it.
+    Reordering steps 1 and 2 would not change this outcome, but removing
+    step 1 entirely would — and no other test fails if step 1 disappears.
+    """
+    exc = _api_timeout_error()
+    assert exc.__cause__ is None
+    assert _is_transient_openai_error(exc) is False
+
+
+def test_api_timeout_error_with_timeout_cause_is_permanent():
+    """``openai.APITimeoutError`` with ``httpx.TimeoutException`` cause → permanent.
+
+    CONTRACT: both halves of step 1 agree here. This documents that the two
+    checks are not redundant — either one alone would suffice for this shape,
+    and the test guards against a future "optimization" that removes one of
+    them without understanding the other's coverage.
+    """
+    exc = _api_timeout_error()
+    exc.__cause__ = httpx.ReadTimeout("slow")
+    assert _is_transient_openai_error(exc) is False
+
+
+# ---------------------------------------------------------------------------
+# Bare httpx.HTTPStatusError (status code on exc.response.status_code)
+# ---------------------------------------------------------------------------
+
+def _httpx_status_error(status_code: int) -> httpx.HTTPStatusError:
+    """Build a bare httpx.HTTPStatusError carrying the given status code.
+
+    CONTRACT: ``httpx.HTTPStatusError`` does NOT expose ``status_code`` as
+    a direct attribute — the code lives on ``exc.response.status_code``. A
+    classifier that only reads the direct attribute silently downgrades
+    every bare-httpx 429/5xx to permanent. This helper pins that shape so
+    the regression fails a test, not a production run.
+
+    ``httpx.HTTPStatusError`` also does NOT subclass ``httpx.TransportError``,
+    so the connection-level branch does not cover it — the 429/5xx
+    classification must live in step 4.
+    """
+    request = httpx.Request("POST", "https://api.example.test/v1/responses")
+    response = httpx.Response(status_code, request=request)
+    return httpx.HTTPStatusError(
+        f"HTTP {status_code}",
+        request=request,
+        response=response,
+    )
+
+
+@pytest.mark.parametrize("status_code", [429, 500, 502, 503])
+def test_bare_httpx_status_error_429_and_5xx_is_transient(status_code: int):
+    """Bare ``httpx.HTTPStatusError`` 429/5xx is transient — status read from ``exc.response.status_code``."""
+    assert _is_transient_openai_error(_httpx_status_error(status_code)) is True
+
+
+@pytest.mark.parametrize("status_code", [400, 401, 403, 404, 408, 422])
+def test_bare_httpx_status_error_4xx_is_permanent(status_code: int):
+    """Bare ``httpx.HTTPStatusError`` 4xx (except 429) is permanent.
+
+    Pins the boundary of step 4: only 429/5xx are transient; all other
+    statuses fall through to permanent — same contract as the SDK path.
+    Without this negative control, a future simplification of step 4 to
+    ``isinstance(exc, httpx.HTTPStatusError)`` would make 4xx transient
+    and no other test would fail.
+
+    ``408 Request Timeout`` is intentionally included: it is semantically
+    transient at the HTTP level, but the step 4 contract is "429/5xx only",
+    and 408 falls on the permanent side. If someone later widens step 4 to
+    ``status in (408, 429) or status >= 500``, this test is the signal that
+    the contract is changing.
+    """
+    assert _is_transient_openai_error(_httpx_status_error(status_code)) is False

@@ -18,6 +18,12 @@ def _is_transient_openai_error(exc: Exception) -> bool:
     contractual only today, because the SDK timeout is disabled (``timeout=None`` + ``asyncio.wait_for``).
     Builtin ``TimeoutError`` from ``asyncio.wait_for`` is the production timeout path and is transient.
 
+    STATUS CODE RESOLUTION: ``openai.APIStatusError`` (and subclasses) exposes ``status_code`` as a direct
+    attribute; a bare ``httpx.HTTPStatusError`` keeps it on ``exc.response.status_code``. Both paths are
+    checked so a 429/5xx is never silently downgraded to permanent, regardless of which layer wraps the
+    response today; other statuses (e.g. 4xx except 429) intentionally fall through to permanent.
+    ``httpx.HTTPStatusError`` is not a ``httpx.TransportError``, so step 3 does not cover it.
+
     Args:
         exc (Exception): Exception raised during ``OpenAICompatibleModel.chat``.
 
@@ -43,7 +49,12 @@ def _is_transient_openai_error(exc: Exception) -> bool:
         return True
 
     # Step 4: HTTP 429 / 5xx → transient.
+    # SDK-path: `openai.APIStatusError` (and subclasses) exposes `status_code` directly.
+    # Bare-httpx path: `httpx.HTTPStatusError` keeps it on `exc.response.status_code`.
     status = getattr(exc, 'status_code', None)
+    if status is None:
+        response = getattr(exc, 'response', None)
+        status = getattr(response, 'status_code', None)
     if isinstance(status, int) and (status == 429 or status >= 500):
         return True
 
