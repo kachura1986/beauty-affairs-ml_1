@@ -22,6 +22,11 @@ MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 # addition to the MAX_TRACE_FILES count cap. Bounds on-disk retention over time.
 TRACE_TTL_DAYS = 7
 
+# Fields injected by _write() itself; a payload must not contain them —
+# **rec would otherwise silently overwrite. Extend explicitly if a future
+# record needs one of these names.
+_RESERVED_FIELDS = frozenset({'run_id', 'agent', 'ts'})
+
 
 class Trace:
     """
@@ -202,17 +207,28 @@ class Trace:
         CONTRACT: no-op when closed or capped. On overflow, writes a single
         ``truncated_at_bytes`` marker and drops all further records.
 
-        RESERVED FIELDS: ``run_id``, ``agent``, ``ts`` are injected here; callers MUST NOT pass them in ``rec`` —
-        ``**rec`` would silently overwrite. Extend the reserved set explicitly if a future payload needs one of these names.
+        RESERVED FIELDS: ``run_id``, ``agent``, ``ts`` are injected here and enforced — callers
+        MUST NOT pass them in ``rec``. ``**rec`` would otherwise silently overwrite the injected
+        values; extend ``_RESERVED_FIELDS`` explicitly if a payload needs one of these names.
+        The ``truncated_at_bytes`` marker is written manually below and bypasses the check.
 
         Args:
             rec (dict[str, Any]): Record payload; ``run_id``, ``agent``, and ``ts`` are added automatically.
+
+        Raises:
+            ValueError: If ``rec`` contains any of ``_RESERVED_FIELDS``.
         """
         if self._closed:
             return
 
         if self._capped:
             return
+
+        overlap = _RESERVED_FIELDS & rec.keys()
+        if overlap:
+            raise ValueError(
+                f"Trace._write: payload contains reserved keys: {sorted(overlap)}; reserved: {sorted(_RESERVED_FIELDS)}"
+            )
 
         rec = {
             'run_id': self._run_id,
