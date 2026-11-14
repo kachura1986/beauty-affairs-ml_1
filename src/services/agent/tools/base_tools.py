@@ -3,8 +3,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from services.agent.tools import Tool
 from services.datetime_utils import get_datetime
+from .tool import Tool
 
 _MAX_OUTPUT_CHARS_HARD_CAP: Final[int] = 1000
 
