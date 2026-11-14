@@ -326,6 +326,9 @@ class OpenAICompatibleModel(BaseLLMModel):
 
                 formatted_tools.append(formatted_tool)
 
+        if timeout is None:
+            raise ValueError(f"{self.__class__.__name__}: timeout is required.")
+
         request = self._client.responses.create(
             model=self._model_name,
             input=formatted_messages,
@@ -334,9 +337,6 @@ class OpenAICompatibleModel(BaseLLMModel):
             max_output_tokens=self._max_tokens,
             instructions=system_prompt or None,
         )
-
-        if timeout is None:
-            raise ValueError(f"{self.__class__.__name__}: timeout is required.")
 
         # asyncio.wait_for raises builtin TimeoutError on expiry, not openai.APITimeoutError.
         # _is_transient_openai_error treats that builtin TimeoutError as transient.
