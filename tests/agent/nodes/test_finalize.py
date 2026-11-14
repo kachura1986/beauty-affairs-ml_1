@@ -174,8 +174,7 @@ async def test_finalize_does_not_block_on_cost_exhausted(trace, make_context):
     state = _finalize_state(
         ctx, history=[{"role": "tool", "content": "ok"}], last_tool_ok="ok",
     )
-    # Simulate that the accumulated cost already reached the limit before
-    # entering finalize_node.
+    # Simulate that the accumulated cost already reached the limit before entering finalize_node.
     state["budget"].cost = 0.0001
 
     result = await finalize_node(state, FakeRuntime(ctx))
@@ -535,16 +534,9 @@ def test_deterministic_fallback_uses_last_tool_ok():
 def test_deterministic_fallback_does_not_cap_last_tool_ok():
     """_deterministic_fallback must not re-truncate last_tool_ok.
 
-    last_tool_ok is already capped by ToolRegistry.invoke → truncate_for_model
-    (per-tool max_output_chars or TOOL_DEFAULT_MAX_OUTPUT_CHARS). A second cap
-    here would double-truncate the answer and embed two markers. This test
-    pins the responsibility boundary: the cap lives upstream, not here.
-
-    The ``big in result`` assertion is the sole contract guard: any
-    re-truncation drops the contiguous 100_000-char run, so the full
-    ``big`` can no longer appear in the result. Format details (exact
-    position of last_tool_ok, marker spelling) are intentionally not
-    asserted — they are implementation choices, not the contract.
+    CONTRACT: last_tool_ok is already capped upstream (ToolRegistry.invoke -> truncate_for_model); a second cap here
+    would double-truncate and embed two markers. The ``big in result`` assertion is the sole guard: any re-truncation
+    drops the contiguous 100_000-char run. Format details are not asserted.
     """
     big = 'x' * 100_000  # above any plausible per-tool or registry default
     result = _deterministic_fallback([{"role": "tool", "content": big}], big)
@@ -675,15 +667,8 @@ async def test_max_steps_1_tool_fails_and_llm_fails_returns_fallback_explanation
 async def test_e2e_huge_tool_result_fallback_is_capped(trace, make_registry):
     """End-to-end: a huge tool result does not inflate the fallback answer.
 
-    Tool returns 100 KB; the finalize LLM reply is empty → deterministic
-    fallback. The answer must be bounded by the per-tool max_output_chars
-    (plus a short prefix), proving the cap propagates from ToolRegistry
-    through execute_node.last_tool_ok into the fallback answer.
-
-    Expected upper bound: ~90 (prefix) + 1 (\\n) + 500 (cap) ≈ 591. The
-    first assertion uses 1000 — comfortable slack for prefix tweaks. The
-    second is a backstop against a weakened first threshold: a regression
-    that lets the full 100 KB through produces ~100_090 chars.
+    CONTRACT: the answer is bounded by the per-tool max_output_chars (plus a short prefix), proving the cap propagates
+    from ToolRegistry through execute_node.last_tool_ok into the fallback answer.
     """
 
     async def huge_fn(**kwargs):
@@ -908,12 +893,9 @@ async def test_e2e_trace_jsonl_contains_no_raw_keys_after_validation_error(trace
 async def test_finalize_transient_message_in_trace(trace, make_context, fast_retry):
     """A transient LLM error (429) is recorded as message='llm_transient' inside finalization_fallback.
 
-    Both attempts fail transiently here. The first attempt emits only
-    ``finalization_retry`` (P2 #5: ``finalization_fallback`` is reserved for the
-    terminal path); the retry failure then goes through ``_fallback`` and produces
-    the single ``finalization_fallback`` with ``message='llm_transient'``. The
-    second error keeps the retry from falling into FakeLLM's empty reply list
-    (IndexError) and fast_retry removes the real backoff from the suite runtime.
+    CONTRACT: both attempts fail transiently; the first emits ``llm_transient`` + ``finalization_retry``,
+    the retry failure produces the single ``finalization_fallback`` with ``message='llm_transient'``. The second error
+    keeps the retry from hitting FakeLLM's exhausted queue (IndexError).
     """
     llm = FakeLLM(errors=[rate_limit_error(), rate_limit_error()])
     ctx = make_context(llm=llm, max_steps=1)
@@ -952,10 +934,8 @@ async def test_finalize_permanent_message_in_trace(trace, make_context):
 async def test_finalize_retries_on_429(trace, make_context, fast_retry):
     """A transient 429 triggers one retry; the retry success returns Finalization.LLM.
 
-    P2 #5: only ``finalization_retry`` is emitted on the retry path — no
-    ``finalization_fallback``, because the fallback is reserved for the terminal
-    path (via ``_fallback``). A successful retry therefore leaves zero fallback
-    events and exactly one retry event in the trace.
+    CONTRACT: the retry path emits ``llm_transient`` + ``finalization_retry``; ``finalization_fallback`` is reserved
+    for the terminal path, so a successful retry leaves zero fallback events and exactly one retry event.
     """
     llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm, max_steps=1)
@@ -997,13 +977,84 @@ async def test_finalize_no_retry_on_400(trace, make_context, fast_retry):
     assert not any(r.get("kind") == "finalization_retry" for r in records)
 
 
+async def test_finalize_retry_emits_first_classification_before_retry(trace, make_context, fast_retry):
+    """The retry path emits the first attempt's classification before finalization_retry.
+
+    CONTRACT: dashboards counting ``kind='llm_transient'`` must see finalize-path failures; the classification comes
+    BEFORE ``finalization_retry`` in the JSONL stream (line-by-line reader: "classified as transient" then "retry").
+    """
+    llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    # Exactly two LLM calls: first fails transient, second succeeds. Without this, a FakeLLM that returns `reply`
+    # after all errors are exhausted would pass the assertions below for the wrong reason.
+    assert len(llm.calls) == 2
+
+    kinds = [r.get("kind") for r in trace.records() if r.get("t") == "error"]
+
+    # One event of each kind pins the single-occurrence assumption that ``list.index`` below relies on. If a future
+    # change introduces a second ``llm_transient`` from another source in the same trace, this fails loudly instead of
+    # letting the order check match the wrong event.
+    assert kinds.count("llm_transient") == 1
+    assert kinds.count("finalization_retry") == 1
+    assert "finalization_fallback" not in kinds  # successful retry leaves no fallback
+
+    assert kinds.index("llm_transient") < kinds.index("finalization_retry")
+
+
+async def test_finalize_first_classification_preserved_when_retry_fails_differently(
+        trace, make_context, fast_retry,
+):
+    """First attempt's classification is preserved when the retry fails differently.
+
+    CONTRACT: the terminal ``finalization_fallback`` carries the SECOND attempt's classification by design (it explains
+    why the run ended); the first attempt's classification is preserved in the preceding ``llm_transient`` event. Pins
+    the line-by-line ordering on the terminal path too — the successful-retry test never reaches ``finalization_fallback``.
+    """
+    llm = FakeLLM(errors=[rate_limit_error(), RuntimeError("boom")])
+    ctx = make_context(llm=llm, max_steps=1)
+    state = _finalize_state(
+        ctx,
+        history=[{"role": "tool", "content": "ok"}],
+        last_tool_ok="ok",
+    )
+
+    await finalize_node(state, FakeRuntime(ctx))
+
+    # Exactly two LLM calls: first transient, second permanent. A third call would exhaust FakeLLM's error queue and
+    # raise IndexError inside the service, failing the test for the wrong reason.
+    assert len(llm.calls) == 2
+
+    records = [r for r in trace.records() if r.get("t") == "error"]
+    kinds = [r.get("kind") for r in records]
+
+    # First attempt's transient classification survives as its own event — this is the whole point of the change.
+    assert kinds.count("llm_transient") == 1
+    assert kinds.count("finalization_retry") == 1
+    assert kinds.count("finalization_fallback") == 1
+
+    # The line-by-line ordering invariant holds on the terminal path too: classification → retry decision → terminal fallback.
+    assert kinds.index("llm_transient") < kinds.index("finalization_retry")
+    assert kinds.index("finalization_retry") < kinds.index("finalization_fallback")
+
+    # The terminal fallback records the SECOND attempt's classification, not the first — that is intentional and unchanged.
+    fallbacks = [r for r in records if r.get("kind") == "finalization_fallback"]
+    assert fallbacks[0]["message"] == "llm_error"
+
+
 async def test_finalize_permanent_emits_single_fallback_event(trace, make_context):
     """A permanent error emits exactly one finalization_fallback event, not two.
 
-    Regression (C6): the explicit trace.error for the first attempt used to be
-    emitted before the retry decision, so a permanent failure was recorded twice —
-    once explicitly, once via _fallback. The any()-style assertions in the
-    message-classification tests cannot catch this; only an exact count can.
+    Regression (C6): the explicit trace.error for the first attempt used to be emitted before the retry decision,
+    so a permanent failure was recorded twice (once explicitly, once via _fallback). any()-style assertions cannot catch
+    this; only an exact count can.
     """
     llm = FakeLLM(errors=[RuntimeError("boom")])
     ctx = make_context(llm=llm, max_steps=1)
@@ -1023,10 +1074,8 @@ async def test_finalize_permanent_emits_single_fallback_event(trace, make_contex
 async def test_finalize_retry_does_not_increment_steps(trace, make_context, fast_retry):
     """A retry after a transient error must not increment budget.steps.
 
-    Finalize runs out-of-steps by contract; the retry is bounded by wall-clock
-    and tokens only. The test also verifies the retry actually happened — without
-    the trace assertion, the test would pass trivially even if _can_retry had
-    returned False and no retry was attempted.
+    CONTRACT: finalize runs out-of-steps; the retry is bounded by wall-clock and tokens only. The trace assertion
+    proves the retry actually happened — otherwise the test passes trivially even if _can_retry returned False.
     """
     llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()])
     ctx = make_context(llm=llm, max_steps=1)
@@ -1045,11 +1094,10 @@ async def test_finalize_retry_does_not_increment_steps(trace, make_context, fast
 
 
 async def test_finalize_retry_records_real_latency(trace, make_context, fast_retry):
-    """llm_retry.latency_ms reflects the first attempt's real duration.
+    """finalization_retry.latency_ms reflects the first attempt's real duration.
 
-    ``raise_after`` sleeps before raising on the first attempt, so a zero
-    latency would indicate the retry branch was never entered or the trace
-    record was written with a stale timestamp.
+    CONTRACT: ``raise_after`` sleeps before raising on the first attempt, so a zero latency would indicate the retry
+    branch was never entered or the trace record was written with a stale timestamp.
     """
     llm = FakeLLM(reply(text="final"), errors=[rate_limit_error()], raise_after=0.02)
     ctx = make_context(llm=llm, max_steps=1)

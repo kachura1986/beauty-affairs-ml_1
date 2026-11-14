@@ -80,11 +80,11 @@ class FinalizeService:
         """
         Perform the bounded finalization call with at most one transient retry; on failure return the fallback.
 
-        CONTRACT: cost exhaustion is NOT a pre-flight — a free model can still answer at zero cost
-        (overrun then recorded as ``trace.error('finalization_overrun')``). ``budget.steps`` is NOT
-        incremented on retry (finalize runs out-of-steps by contract). ``finalization_fallback`` is
-        emitted only on the terminal path; the retry path emits only ``finalization_retry``, so a
-        successful retry leaves zero ``finalization_fallback`` events.
+        CONTRACT: cost exhaustion is NOT a pre-flight — a free model can still answer at zero cost (overrun then
+        recorded as ``trace.error('finalization_overrun')``). ``budget.steps`` is NOT incremented on retry (finalize
+        runs out-of-steps by contract). ``finalization_fallback`` is emitted only on the terminal path; the retry path
+        emits the first attempt's classification followed by ``finalization_retry``, so a successful retry leaves zero
+        ``finalization_fallback`` events. Both retry events carry the first attempt's ``latency_ms``.
 
         Args:
             budget (Budget): Budget for the run (mutated by reference).
@@ -136,11 +136,14 @@ class FinalizeService:
                         message=classification, latency_ms=latency_ms,
                     )
 
-                # `finalization_fallback` is reserved for the terminal path (via `_fallback`). On the retry path
-                # we emit only `finalization_retry`, so a successful retry leaves zero `finalization_fallback` events —
-                # the alert "one fallback per failure" holds. Finalize runs out-of-steps by contract, so budget.steps is
-                # intentionally NOT incremented here — the retry is bounded by wall-clock and tokens only
-                # (see _can_retry).
+                # Retry path: first attempt's classification, then `finalization_retry`. `finalization_fallback`
+                # stays reserved for the terminal path; `budget.steps` is not incremented (out-of-steps contract).
+                # Both events carry the FIRST attempt's latency_ms — the retry's own latency is not measured.
+                _trace_llm_error(
+                    trace=self._trace, step=budget.steps, kind=classification,
+                    exc=exc, latency_ms=latency_ms, budget=budget,
+                )
+
                 backoff = _retry_backoff(budget.remaining_seconds())
                 _trace_llm_error(
                     trace=self._trace, step=budget.steps, kind='finalization_retry',
