@@ -40,6 +40,9 @@ class LLMStepService:
         caller can decide whether it qualifies as a final answer. ``budget.steps`` is incremented at the
         top of every attempt — a retry is a physical LLM invocation and consumes a step.
 
+        NOT ALL ``LLM_ERROR`` RETURNS GO THROUGH THE RETRY LOOP — accounting failure and the TOCTOU
+        ``BUDGET_TIME`` are normal returns from :meth:`_attempt` (see there).
+
         Args:
             budget (Budget): Budget for the request (mutated by reference).
             context_window (AgentContextWindow): Context for the request.
@@ -78,7 +81,7 @@ class LLMStepService:
 
             return None, TerminationReason.BUDGET_TOKENS
 
-        for attempt in range(2):
+        for attempt in (0, 1):
             budget.steps += 1
 
             t0 = time.monotonic()
@@ -132,18 +135,11 @@ class LLMStepService:
 
         CONTRACT: the TOCTOU guard (``remaining <= 0``) returns a sentinel tuple instead of raising.
 
-        ACCOUNTING FAILURE (``budget.record_llm``): hard-fail with ``LLM_ERROR``, no retry — a retry
-        would invoke ``chat()`` a second time while the first call was already billed, doubling
-        token/cost accounting. The failure is traced once as ``llm_error`` with
-        ``message=type(exc).__name__``.
+        ACCOUNTING FAILURE: hard-fail with ``LLM_ERROR``, no retry — a retry would invoke ``chat()``
+        a second time while the first call was already billed, doubling unaccounted cost. The reply
+        is intentionally dropped: returning it would yield ``answer_chars > 0`` with ``tokens = 0``.
 
-        TRADE-OFF: on accounting failure the already-received ``reply`` is intentionally dropped
-        (``return None, LLM_ERROR``). Returning it as ``answer`` would yield an inconsistent trace
-        (``answer_chars > 0`` but ``tokens = 0``). A future design that returns the reply must add an
-        ``accounting_failed=true`` marker.
-
-        TRACE FAILURE (``trace.step``): best-effort — logged, then swallowed. The trace is
-        diagnostic; a failed trace write must not affect the run, let alone trigger a retry.
+        TRACE FAILURE: best-effort — logged, then swallowed; must not trigger a retry.
 
         Args:
             budget (Budget): Budget for the request (mutated by reference on success).
