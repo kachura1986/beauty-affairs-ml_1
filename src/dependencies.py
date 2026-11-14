@@ -10,13 +10,53 @@ from core.config import settings
 from core.logger import get_logger
 from services.agent.config import DEFAULT_AGENT_KEY, load_agent_configs, require_default_agent
 from services.agent.context import SYSTEM_PROMPT
-from services.agent.tools import ToolRegistry, create_product_tools
+from services.agent.tools import Tool, ToolRegistry, create_product_tools
 from services.agent.tools.base_tools import create_base_tools
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import OpenAICompatibleModel
 from services.search_index import AzureSearchIndexManager, ProductsSearchIndex
 from services.text_normalization import TextNormalizer
 from use_cases import AgentService, IndexService
+
+
+def _select_tools(
+        *,
+        agent_name: str,
+        requested_tools: tuple[str, ...] | None,
+        catalog: list[Tool],
+        available: dict[str, Tool],
+) -> list[Tool]:
+    """Resolve an agent's tool selection against the available catalog.
+
+    CONTRACT: ``requested_tools is None`` returns the full ``catalog`` by identity (not a copy). Otherwise
+    ``requested_tools`` is treated as a whitelist: every name must exist in ``available`` (fail-fast with the agent name
+    and config file, so a startup failure is diagnosable from logs alone). An empty whitelist yields an empty
+    list (tool-less agent). The returned list preserves the order of ``requested_tools``, which makes
+    ``ToolRegistry.schemas()`` deterministic.
+
+    Args:
+        agent_name (str): Agent name, used in the error message.
+        requested_tools (tuple[str, ...] | None): Agent's tool whitelist, or ``None`` for the full catalog.
+        catalog (list[Tool]): The full catalog, in creation order.
+        available (dict[str, Tool]): Name → Tool lookup over ``catalog``.
+
+    Returns:
+        list[Tool]: The selected tools, in whitelist order (or catalog order for ``None``).
+
+    Raises:
+        ValueError: If ``requested_tools`` contains a name not present in ``available``.
+    """
+    if requested_tools is None:
+        return catalog
+
+    unknown = sorted(set(requested_tools) - set(available))
+    if unknown:
+        raise ValueError(
+            f"{settings.AGENTS_CONFIG}: agent '{agent_name}' requests unknown tools {unknown}; "
+            f"available: {sorted(available)}"
+        )
+
+    return [available[tool_name] for tool_name in requested_tools]
 
 
 # DI container
@@ -36,12 +76,11 @@ class PipelineDependencies:
         azure_search_index_client = None
 
         try:
+            # SDK defaults (600s timeout, 2 retries) would race with the agent Budget; the only
+            # time limit is asyncio.wait_for(remaining) in OpenAICompatibleModel.chat
             openai_client = AsyncOpenAI(
                 base_url=settings.OPENAI_BASE_URL,
                 api_key=settings.OPENAI_API_KEY.get_secret_value(),
-                # The only time limit is asyncio.wait_for(remaining) in OpenAICompatibleModel.chat,
-                # driven by the agent Budget. SDK defaults here (600s timeout, 2 retries)
-                # would race with that budget and raise a different exception type.
                 timeout=None,
                 max_retries=0,
             )
@@ -67,11 +106,12 @@ class PipelineDependencies:
             )
 
             agent_configs = load_agent_configs(settings.AGENTS_CONFIG)
-            # Fail-fast: the composition root requires 'default_agent' to exist. get_agent_service() looks it up in
-            # agent_services by DEFAULT_AGENT_KEY, so the invariant must hold before the loop below builds the services.
+
+            # Fail-fast: get_agent_service() looks up DEFAULT_AGENT_KEY, so the invariant must hold
+            # before the loop below builds the services
             require_default_agent(agent_configs, settings.AGENTS_CONFIG)
 
-            # Fail-fast: every agent's budget.max_tokens must be at least MIN_EXPECTED_TOKENS
+            # Fail-fast: every LLM step would be rejected by the pre-flight token check
             for agent_name, agent_cfg in agent_configs.items():
                 if agent_cfg.budget.max_tokens < settings.MIN_EXPECTED_TOKENS:
                     raise ValueError(
@@ -89,18 +129,12 @@ class PipelineDependencies:
             agent_services: dict[str, AgentService] = {}
 
             for name, cfg in agent_configs.items():
-                # Fail-fast: an unknown tool name is a config error and must fail at startup with the
-                # agent and file named, not surface as unknown_tool on the first request.
-                if cfg.tools is None:
-                    selected = catalog
-                else:
-                    unknown = sorted(set(cfg.tools) - set(available))
-                    if unknown:
-                        raise ValueError(
-                            f"{settings.AGENTS_CONFIG}: agent '{name}' requests unknown tools {unknown}; "
-                            f"available: {sorted(available)}"
-                        )
-                    selected = [available[tool_name] for tool_name in cfg.tools]
+                selected = _select_tools(
+                    agent_name=name,
+                    requested_tools=cfg.tools,
+                    catalog=catalog,
+                    available=available,
+                )
 
                 tools = ToolRegistry(
                     selected,
@@ -142,6 +176,7 @@ class PipelineDependencies:
             )
 
         except BaseException:
+            # Best-effort cleanup: log and continue on close failures so the original error is not masked
             logger.exception("Failed to initialize pipeline dependencies")
 
             if azure_search_index_client is not None:
