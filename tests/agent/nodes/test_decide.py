@@ -410,6 +410,45 @@ async def test_decide_returns_budget_steps_when_no_steps_left(trace, make_contex
     assert llm.calls == []
 
 
+async def test_decide_budget_steps_tool_less_agent_skips_finalization(trace, make_context, make_state):
+    """Tool-less agent (tools: [] in agents_config): history never contains tool messages, so
+    BUDGET_STEPS must not arm finalization even with finalize_on_max_steps=True — finalize_node
+    is never reached and the run terminates cleanly."""
+    llm = FakeLLM()
+    ctx = make_context(
+        llm=llm,
+        max_steps=1,
+        policy=AgentPolicy(empty_limit=3, repeat_limit=3, finalize_on_max_steps=True),
+    )
+    state = make_state(ctx)
+    state["budget"].steps = 1
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_STEPS
+    assert result.get("needs_finalization") is not True
+    assert llm.calls == []
+
+
+async def test_decide_budget_steps_with_tool_history_arms_finalization(trace, make_context, make_state):
+    """Contrast: with a tool message in history, BUDGET_STEPS + finalize_on_max_steps arms finalization."""
+    llm = FakeLLM()
+    ctx = make_context(
+        llm=llm,
+        max_steps=1,
+        policy=AgentPolicy(empty_limit=3, repeat_limit=3, finalize_on_max_steps=True),
+    )
+    state = make_state(ctx)
+    state["budget"].steps = 1
+    state["history"].append({"role": "tool", "content": "ok"})
+
+    result = await decide_node(state, FakeRuntime(ctx))
+
+    assert result["termination_reason"] == TerminationReason.BUDGET_STEPS
+    assert result["needs_finalization"] is True
+    assert llm.calls == []
+
+
 async def test_decide_raises_if_llm_returns_nothing(trace, make_context, make_state):
     """A (None, None) result from step_runner is a contract violation."""
     ctx = make_context(step_runner=_NoneStepRunner())

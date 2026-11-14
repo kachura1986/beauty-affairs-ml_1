@@ -170,3 +170,63 @@ def test_load_agent_configs_round_trip(tmp_path: Path):
     assert cfg.model.max_tokens == 8192  # per-call max_output_tokens
     assert cfg.budget.max_tokens == 100_000  # run-wide token budget
     assert cfg.model.max_tokens != cfg.budget.max_tokens  # not the same field
+
+
+# ---------------------------------------------------------------------------
+# AgentConfig.tools: optional per-agent tool whitelist
+# ---------------------------------------------------------------------------
+
+def test_agent_config_tools_defaults_to_none():
+    """Omitted tools block means 'all catalog tools' — existing YAML stays valid."""
+    assert _agent_config().tools is None
+
+
+def test_agent_config_tools_empty_list_means_no_tools():
+    """An explicit empty whitelist is valid: the agent runs without tools."""
+    cfg = AgentConfig.model_validate({**_agent_config().model_dump(), 'tools': []})
+
+    assert cfg.tools == ()
+
+
+@pytest.mark.parametrize('names', [
+    ['get_datetime', 'get_datetime'],  # duplicate
+    [''],  # empty name
+    ['   '],  # whitespace-only name
+])
+def test_agent_config_tools_rejects_invalid_names(names: list[str]):
+    """Shape errors fail at parse time (fail-fast on startup)."""
+    with pytest.raises(ValidationError):
+        AgentConfig.model_validate({**_agent_config().model_dump(), 'tools': names})
+
+
+_YAML_DOCUMENT_WITH_TOOLS = """
+default_agent:
+  model:
+    model_name: gpt-4o-mini
+    temperature: 0
+    max_tokens: 8192
+    input_cost_per_million: 0.15
+    output_cost_per_million: 0.60
+  policy:
+    empty_limit: 2
+    repeat_limit: 3
+    finalize_on_max_steps: true
+  budget:
+    max_steps: 12
+    max_seconds: 120
+    max_tokens: 100000
+    max_cost: 0.5
+  tools:
+    - get_datetime
+    - search_products
+"""
+
+
+def test_load_agent_configs_tools_round_trip(tmp_path: Path):
+    """YAML whitelist order is preserved as a tuple."""
+    path = tmp_path / 'agents_config.yaml'
+    path.write_text(_YAML_DOCUMENT_WITH_TOOLS)
+
+    configs = load_agent_configs(path)
+
+    assert configs['default_agent'].tools == ('get_datetime', 'search_products')

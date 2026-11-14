@@ -10,7 +10,7 @@ from core.config import settings
 from core.logger import get_logger
 from services.agent.config import DEFAULT_AGENT_KEY, load_agent_configs, require_default_agent
 from services.agent.context import SYSTEM_PROMPT
-from services.agent.tools import ToolRegistry
+from services.agent.tools import ToolRegistry, create_product_tools
 from services.agent.tools.base_tools import create_base_tools
 from services.embedding import AzureOpenAIEmbedder
 from services.llm import OpenAICompatibleModel
@@ -81,18 +81,33 @@ class PipelineDependencies:
                         f"by the pre-flight token check."
                     )
 
-            base_tools = create_base_tools(max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS)
-
-            tools = ToolRegistry(
-                base_tools,
-                default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,
-                max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS,
-            )
+            catalog = create_base_tools()
+            catalog += create_product_tools(products_index)
+            available = {tool.name: tool for tool in catalog}
 
             agent_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_AGENT_RUNS)
             agent_services: dict[str, AgentService] = {}
 
             for name, cfg in agent_configs.items():
+                # Fail-fast: an unknown tool name is a config error and must fail at startup with the
+                # agent and file named, not surface as unknown_tool on the first request.
+                if cfg.tools is None:
+                    selected = catalog
+                else:
+                    unknown = sorted(set(cfg.tools) - set(available))
+                    if unknown:
+                        raise ValueError(
+                            f"{settings.AGENTS_CONFIG}: agent '{name}' requests unknown tools {unknown}; "
+                            f"available: {sorted(available)}"
+                        )
+                    selected = [available[tool_name] for tool_name in cfg.tools]
+
+                tools = ToolRegistry(
+                    selected,
+                    default_timeout_seconds=settings.TOOL_DEFAULT_TIMEOUT_SECONDS,
+                    max_output_chars=settings.TOOL_DEFAULT_MAX_OUTPUT_CHARS,
+                )
+
                 model = OpenAICompatibleModel(
                     model_name=cfg.model.model_name,
                     client=openai_client,

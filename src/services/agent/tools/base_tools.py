@@ -1,4 +1,4 @@
-from typing import Final, Optional
+from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -12,7 +12,7 @@ _MAX_OUTPUT_CHARS_HARD_CAP: Final[int] = 1000
 class GetDatetimeArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
-    timezone: Optional[str] = Field(
+    timezone: str | None = Field(
         default=None,
         description=(
             "IANA timezone name, e.g. 'Europe/Moscow', 'America/New_York', 'Asia/Tokyo'.  If omitted or null,"
@@ -22,7 +22,7 @@ class GetDatetimeArgs(BaseModel):
 
     @field_validator("timezone")
     @classmethod
-    def _check_timezone(cls, v: Optional[str]) -> Optional[str]:
+    def _check_timezone(cls, v: str | None) -> str | None:
         """
         Validate that ``timezone`` is a known IANA name.
 
@@ -30,10 +30,10 @@ class GetDatetimeArgs(BaseModel):
         (no tzdata; the model cannot fix it) from an unknown zone name (model error; retry is possible).
 
         Args:
-            v (Optional[str]): Raw timezone value from the tool call.
+            v (str | None): Raw timezone value from the tool call.
 
         Returns:
-            Optional[str]: The validated timezone name, or ``None`` when omitted.
+            str | None: The validated timezone name, or ``None`` when omitted.
 
         Raises:
             ValueError: If ``v`` is an empty string, an unknown IANA name, or the
@@ -72,26 +72,23 @@ class GetDatetimeArgs(BaseModel):
         return v
 
 
-def create_base_tools(max_output_chars: int) -> list[Tool]:
+def create_base_tools() -> list[Tool]:
     """Return the always-registered base tools as a list.
 
     CONTRACT: callers merge these with domain tools and pass the combined list to ToolRegistry, which validates
-    async-callable and unique names in one place. ``default_timeout_seconds`` is applied by ToolRegistry when a
-    Tool does not declare ``timeout_seconds``.
-
-    Args:
-        max_output_chars (int): Per-tool output character budget; clamped to max_chars for the ``get_datetime`` tool.
+    async-callable and unique names in one place. ``default_timeout_seconds`` and the fallback
+    ``max_output_chars`` are applied by ToolRegistry when a Tool does not declare them.
 
     Returns:
         list[Tool]: The base tools, ready to be merged with domain tools.
     """
 
-    async def get_datetime_tool(timezone: Optional[str] = None) -> str:
+    async def get_datetime_tool(timezone: str | None = None) -> str:
         """
         Return the current date and time as a JSON string.
 
         Args:
-            timezone (Optional[str]): IANA timezone name; ``None`` means UTC.
+            timezone (str | None): IANA timezone name; ``None`` means UTC.
 
         Returns:
             str: JSON payload produced by :func:`services.datetime_utils.get_datetime`.
@@ -112,6 +109,6 @@ day_of_week (Monday..Sunday), iso_weekday (1..7), unix_timestamp (epoch seconds)
 """,
             fn=get_datetime_tool,
             args_model=GetDatetimeArgs,
-            max_output_chars=min(max_output_chars, _MAX_OUTPUT_CHARS_HARD_CAP),
+            max_output_chars=_MAX_OUTPUT_CHARS_HARD_CAP,
         ),
     ]

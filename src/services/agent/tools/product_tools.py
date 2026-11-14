@@ -1,8 +1,10 @@
+from typing import Final
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ...search_index.products_search_index import ProductsSearchIndex
-from .registry import ToolRegistry
 from .tool import Tool
+
+_MAX_OUTPUT_CHARS_HARD_CAP: Final[int] = 25000
 
 
 class SearchProductsArgs(BaseModel):
@@ -67,11 +69,20 @@ def _build_product_filter(min_price: float | None, max_price: float | None) -> s
     return " and ".join(conditions) if conditions else None
 
 
-def create_product_tools(
-        products_index: ProductsSearchIndex,
-        default_timeout_seconds: float,
-        max_output_chars: int,
-) -> ToolRegistry:
+def create_product_tools(products_index: ProductsSearchIndex) -> list[Tool]:
+    """Return the product catalog tools as a list.
+
+    CONTRACT: same as ``create_base_tools`` — callers merge these with the other tools and pass the
+    combined list to ToolRegistry, which applies ``default_timeout_seconds`` / ``max_output_chars``
+    and validates async-callable and unique names in one place.
+
+    Args:
+        products_index (ProductsSearchIndex): Search index queried by the ``search_products`` tool.
+
+    Returns:
+        list[Tool]: The product tools, ready to be merged into the catalog.
+    """
+
     async def search_products(
             query: str,
             top_k: int = 10,
@@ -100,7 +111,7 @@ def create_product_tools(
             for document in documents
         ]
 
-    return ToolRegistry([
+    return [
         Tool(
             name="search_products",
             description="""
@@ -132,9 +143,6 @@ are not present in the results.
 """,
             fn=search_products,
             args_model=SearchProductsArgs,
-            max_output_chars=25000,
+            max_output_chars=_MAX_OUTPUT_CHARS_HARD_CAP,
         ),
-    ],
-        default_timeout_seconds=default_timeout_seconds,
-        max_output_chars=max_output_chars,
-    )
+    ]

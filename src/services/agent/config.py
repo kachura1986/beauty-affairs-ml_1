@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .domain import AgentPolicy, BudgetLimits
 
@@ -33,6 +33,43 @@ class AgentConfig(BaseModel):
     model: ModelSettings
     policy: AgentPolicy
     budget: BudgetLimits
+    tools: tuple[str, ...] | None = Field(
+        default=None,
+        description=(
+            "Whitelist of tool names available to this agent. "
+            "None (block omitted) = every tool in the catalog; [] = no tools. "
+            "Name existence is validated by the composition root, which owns the catalog."
+        ),
+    )
+
+    @field_validator('tools')
+    @classmethod
+    def _check_tool_names(cls, value: tuple[str, ...] | None) -> tuple[str, ...] | None:
+        """
+        Validate tool name shape: non-empty, no duplicates.
+
+        CONTRACT: only shape is checked here — whether a name exists in the catalog is decided by the
+        composition root at startup, because the catalog is not known at config-parse time.
+
+        Args:
+            value (tuple[str, ...] | None): Raw whitelist from YAML; ``None`` when the block is omitted.
+
+        Returns:
+            tuple[str, ...] | None: The validated whitelist, unchanged.
+
+        Raises:
+            ValueError: If any name is empty/whitespace or names repeat.
+        """
+        if value is None:
+            return None
+
+        if any(not name.strip() for name in value):
+            raise ValueError('tools must contain non-empty names')
+
+        if len(set(value)) != len(value):
+            raise ValueError('tools must not contain duplicate names')
+
+        return value
 
 
 def load_agent_configs(path: Path) -> dict[str, AgentConfig]:
